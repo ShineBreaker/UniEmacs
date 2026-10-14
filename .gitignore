@@ -9,3 +9,13 @@
 Thumbs.db
 
 reference/
+
+# Emacs 运行时产物
+*.elc
+eln-cache/
+var/
+auto-save-list/
+.sandbox/
+
+# agent 任务书（临时操作文档，不入库）
+.agents/tasks/
