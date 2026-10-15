@@ -4,9 +4,9 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-keys, self-windowing
-;; Packages: magit, magit-diff, diff-hl, forge
+;; Packages: magit, magit-diff, diff-hl, forge, magit-fast
 ;;
 ;; 移植自桌面端配置「Git 与窗口路由 / Git 命令」一节，以及同节末尾的
 ;; Magit 状态页文件打开重定向与 C-c g 键位注册。
@@ -83,6 +83,7 @@
 (declare-function diff-hl-revert-hunk "diff-hl")          ; 还原当前改动块
 (declare-function diff-hl-update "diff-hl")               ; 重算当前 buffer 的改动块
 (declare-function diff-hl-magit-post-refresh "diff-hl")   ; Magit 刷新后重算
+(declare-function magit-fast-mode "magit-fast")           ; magit status 加速模式
 (declare-function turn-on-diff-hl-mode "diff-hl" nil)     ; prog/text 模式的挂钩入口
 (defvar diff-hl-mode)                                     ; 当前 buffer 是否启用
 (defvar global-diff-hl-mode)                              ; 全局开关
@@ -345,6 +346,17 @@ Dired 的 `..'/`.' 行显式拒绝（等价暂存整个仓库，超出意图）�
 (use-package forge
   :demand t
   :after magit)
+
+;; magit-fast 把 magit status 里最贵的 untracked/unstaged/staged/recent
+;; 四个 section 换成一次缓存的 git status --porcelain 结果，跳过多余
+;; Git 调用；大仓库下状态页刷新差异非常明显。:after magit 保证它 patch
+;; magit-status-sections-hook 时 magit 已加载；Magit 不被唤起则整段
+;; 不生效。
+(use-package magit-fast
+  :demand t
+  :after magit
+  :config
+  (magit-fast-mode 1))
 
 (provide 'self-vcs)
 ;;; self-vcs.el ends here

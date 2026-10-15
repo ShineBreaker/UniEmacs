@@ -31,7 +31,7 @@
         indent-bars goto-chg multiple-cursors expand-region
         vundo idle-highlight-mode tempel
         geiser arei
-        magit diff-hl forge
+        magit diff-hl forge magit-fast
         org-appear org-modern org-modern-indent olivetti
         org-roam emacsql
         markdown-mode
