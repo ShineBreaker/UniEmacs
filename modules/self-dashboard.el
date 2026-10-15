@@ -5,8 +5,9 @@
 
 ;;; Commentary:
 ;; Profiles: portable, full
-;; Requires: self-glyph（`self/glyph'）、self-touch（触屏键盘与存储权限）、
-;;           self-org（`self/org--ensure-directories' 等）、self-help-zh（`self/show-help'）
+;; Requires: self-glyph（`self/glyph'，宽屏分支加载期也调用）、self-org
+;;           （`self/org--ensure-directories' 等）、self-help-zh（`self/show-help'）；
+;;           self-touch 仅在 Android 分支内调用（触屏键盘与存储权限）
 ;; Packages: dashboard, nerd-icons
 ;;
 ;; 桌面端配置的「Dashboard」域七个子节（启动路由 / 顶部按钮与 ASCII 横幅 /

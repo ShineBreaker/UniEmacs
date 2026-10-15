@@ -62,6 +62,10 @@
 ;; · self-agenote    经验卡知识库，必须晚于 self-org。
 ;; · self-prog / self-langs / self-vcs / self-project  编程栈。
 ;; · self-modeline   mode-line 增强，必须早于 self-tabline。
+;; · self-glyph      字形回退原语，self-dashboard 的桌面分支在加载期
+;;                   就调用 `self/glyph'，必须排在它前面。
+;; · self-dashboard  欢迎屏，消费 org / roam 的渲染结果与 help-zh 的
+;;                   `self/show-help'，排在这三家之后。
 ;; · self-keys-desktop 桌面键位表，Requires 里列了 editing / terminal /
 ;;                   project / prog / tabline / completion / help-zh，
 ;;                   故排在全部模块之后。
@@ -84,6 +88,8 @@
 (require 'self-project)
 (require 'self-modeline)
 (require 'self-tabline)
+(require 'self-glyph)
+(require 'self-dashboard)
 (require 'self-apps)
 (require 'self-daemon)
 (require 'self-keys-desktop)

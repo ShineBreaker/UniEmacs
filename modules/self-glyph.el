@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable
+;; Profiles: portable, full
 ;; Requires: 无
 ;; Packages: 无
 ;;
