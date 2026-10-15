@@ -6,7 +6,7 @@
 ;;; Commentary:
 ;; Profiles: full, portable
 ;; Requires: 无
-;; Packages: modus-themes, context-menu
+;; Packages: modus-themes（Emacs 28+ 内建，仅声明语义归属）
 ;;
 ;; 移植自桌面端配置的三个部分：「Frame 生命周期与 daemon」、
 ;; 「主题与字体」（含 GUI/TTY 混合 daemon 约束）与
@@ -139,18 +139,14 @@ main.el 之前完成(standalone 首帧也要生效);此处仅供
                               agent-shell-mode-hook))
   (add-hook hook #'self/theme--disable-file-line-numbers))
 
-(use-package context-menu
+(use-package mouse
   :demand t
-  ;; :if 让缺包环境（Guix manifest 未登记、elpaca 未装）静默跳过，
-  ;; 而不是在 :demand 的 require 上抛 Error 级失败。下面的 fboundp 守卫
-  ;; 针对包已加载但 mode 未定义的极端情况。
-  :if (locate-library "context-menu")
+  ;; `context-menu-mode' 定义在内建库 mouse.el（不存在 context-menu.el，
+  ;; 不能按包名 require）；右键菜单只在桌面图形端有入口，TTY 与
+  ;; Android 触屏都用不上，故按平台守卫。
+  :if (not self:android-p)
   :config
-  ;; 右键菜单只在桌面图形端有入口：TTY 与 Android 触屏都用不上，
-  ;; 故按平台守卫。
-  (when (and (not self:android-p)
-             (fboundp 'context-menu-mode))
-    (context-menu-mode 1)))
+  (context-menu-mode 1))
 
 (global-hl-line-mode 1)
 
