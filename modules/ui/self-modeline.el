@@ -84,9 +84,9 @@
 (declare-function nerd-icons-faicon "nerd-icons")
 (declare-function nerd-icons-mdicon "nerd-icons")
 
-(defvar self:nerd-icons-available
-  (require 'nerd-icons nil t)
-  "nerd-icons 包是否已加载；图标渲染的统一守卫变量。")
+;; `self:nerd-icons-available' 的唯一定义在 core/self-lib.el（跨模块
+;; 共享能力变量）；此处只声明不赋值。
+(defvar self:nerd-icons-available)
 
 ;; 渲染状态放在最前面声明：段求值、刷新调度、消息接管三段都要读它，
 ; 声明放在用点之后会触发 byte-compile 的自由变量告警。

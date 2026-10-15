@@ -62,8 +62,8 @@
 
 ;; 跨域符号就近声明（Nerd 图标来自外观域的 modeline 模块，终端取色
 ;; 来自主题域；模块由 manifest 保证已加载，不用 fboundp 守卫）。
-(defvar self:nerd-icons-available
-  "nerd-icons 包是否已加载；图标渲染的统一守卫变量。由 self-modeline 设置。")
+;; 定义在 core/self-lib.el（跨模块共享能力变量），此处只声明。
+(defvar self:nerd-icons-available)
 (declare-function nerd-icons-icon-for-buffer "nerd-icons")
 (declare-function self/terminal-theme-color "self-theme")
 

@@ -21,7 +21,7 @@ early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_
 init.el          引导：定位仓库根 → 配 load-path → require self-lib → self/load-profile
 core/self-lib.el      平台谓词、路径常量、加载辅助（三档共享）
 core/self-package.el  包后端抽象（guix | elpaca）与包清单装/验（三档共享）
-modules/self-*.el     全部功能模块；一个文件一个内聚功能单元，provide 'self-<名>
+modules/<域>/self-*.el 全部功能模块，按域归档（base/ui/touch/org/prog/desktop）；一个文件一个内聚功能单元，provide 'self-<名>；跨模块共享变量唯一定义在 core/self-lib.el 或首个消费模块，其余处一律不带值 defvar 声明
 profiles/<档>.el      该档的加载契约：包清单 + 模块 require 序列 + 档内覆写
 data/                 静态数据（翻译表、图标资产）；只允许字面量 setq / defconst 与注释
 scripts/              运维脚本

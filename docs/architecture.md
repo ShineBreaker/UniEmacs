@@ -23,8 +23,13 @@ UniEmacs/
 ├── core/
 │   ├── self-lib.el       #   平台谓词、路径常量、profile 解析结果、加载辅助
 │   └── self-package.el   #   包后端抽象（guix 校验 / elpaca 安装）
-├── modules/
-│   └── self-*.el         #   功能模块，文件头标注 Profiles / Requires
+├── modules/              # 功能模块按域归档（require 语义与目录无关）
+│   ├── base/             #   三档共用底座：session / keys / editing / completion
+│   ├── ui/               #   视觉层：theme / modeline / tabline / windowing / dashboard / help-zh
+│   ├── touch/            #   触屏层：glyph / ui-touch / touch / bar / markdown / reading / misc
+│   ├── org/              #   Org 知识栈：org / roam / agenote
+│   ├── prog/             #   编程栈：compat / prog / langs / project / vcs / terminal
+│   └── desktop/          #   桌面运行环境：daemon / apps / keys-desktop
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
@@ -46,7 +51,7 @@ emacs
    │                        ③ 解析 self:profile：UNI_EMACS_PROFILE → android→portable → full
    │                        ④ （Android 部署形态）user-emacs-directory 重定向到仓库
  └─ init.el
-   ├─ load-path += core/ modules/ profiles/
+   ├─ load-path += core/ modules/<六域>/ profiles/
    ├─ (require 'self-lib)          路径常量、谓词、self/load-profile
    ├─ (require 'self-package)      检测后端；暂不安装
    └─ (self/load-profile self:profile)
@@ -72,53 +77,68 @@ self-package 检测顺序：
 
 ## 5. 模块划分方案
 
-移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫。
+移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫。`modules/` 按域分六个子目录归档——目录只是分类归属，`require 'self-<名>` 的语义与目录无关；**共享度优先**：同一概念只允许一处定义（变量真相源归 `core/self-lib.el` 或首个消费模块，其余文件一律不带值 `defvar` / `declare-function`），重复实现一经发现立即收敛。
 
-### 5.1 底座层（minimal 也加载）
+### 5.1 `modules/base/` —— 三档共用底座（minimal 也加载）
 
 | 模块             | 内容                                             | 来源域              |
 | ---------------- | ------------------------------------------------ | ------------------- |
-| `self-session`   | GC 复位、历史持久化（recentf/savehist/saveplace）、失焦自动保存、auto-revert、备份策略 | startup/core-behavior |
+| `self-session`   | 持久化（recentf/savehist/saveplace）、失焦自动保存、auto-revert、备份策略 | startup/core-behavior |
 | `self-editing`   | 基础编辑增强：缩进、DWIM、pair、内置补全默认值     | editing（基础子集） |
 | `self-keys`      | `self/bind` 键位声明机制 + 顶层前缀声明          | keys-completion（机制层） |
-| `self-completion`| 内置补全栈（fido/icomplete 底线 + vertico 档可选）| completion（两端合并）|
+| `self-completion`| 内置补全栈（桌面端全内建，vertico 栈在 Android 分支）| completion（两端合并）|
 
-### 5.2 界面层（full / portable 分流）
+### 5.2 `modules/ui/` —— 视觉层
 
 | 模块              | 档位           | 内容                                |
 | ----------------- | -------------- | ----------------------------------- |
+| `self-theme`      | full, portable | modus 主题 + D-Bus 深浅色 + 字体    |
 | `self-modeline`   | full           | 桌面自研 modeline（缓存/分段/调度） |
 | `self-tabline`    | full           | per-frame buffer 标签               |
-| `self-theme`      | full, portable | modus 主题 + D-Bus 深浅色 + 字体    |
-| `self-help-zh`    | full, portable | 帮助系统/右键菜单/which-key 中文化  |
 | `self-windowing`  | full           | display-buffer 路由、窗口面板布局   |
-| `self-ui-touch`   | portable       | 移动端 UI（mode-line 简化版等）     |
-| `self-touch`      | portable       | 触屏交互（tap/选择/键盘联动）       |
-| `self-bar`        | portable       | tool-bar / modifier-bar 按钮管线    |
-| `self-glyph`      | portable       | 图标资产加载、NF 字形降级唯一入口   |
+| `self-dashboard`  | full, portable | 欢迎屏（两端合并，平台段守卫）      |
+| `self-help-zh`    | full, portable | 帮助系统/右键菜单/which-key 中文化（含触屏分页） |
 
-### 5.3 功能层
+### 5.3 `modules/touch/` —— 触屏层（portable 为主）
+
+| 模块              | 档位            | 内容                                |
+| ----------------- | --------------- | ----------------------------------- |
+| `self-glyph`      | portable, full  | 图标资产加载、NF 字形降级唯一入口   |
+| `self-ui-touch`   | portable        | 移动端 UI（mode-line 按钮、配色状态、Android 落盘兜底） |
+| `self-touch`      | portable        | 触屏交互（tap/选择/键盘联动、存储权限） |
+| `self-bar`        | portable        | tool-bar / modifier-bar 按钮管线    |
+| `self-markdown`   | portable        | 触屏 markdown UX（桌面由 self-langs 管 markdown-mode）|
+| `self-reading`    | portable        | nov/阅读辅助                        |
+| `self-misc`       | portable        | Android 杂项（分享入库、agenda 提醒等） |
+
+### 5.4 `modules/org/` —— Org 知识栈
 
 | 模块              | 档位            | 内容                                   |
 | ----------------- | --------------- | -------------------------------------- |
-| `self-prog`       | full            | tree-sitter、eglot、flymake、格式化    |
-| `self-project`    | full            | project.el、目录树、项目导航           |
-| `self-vcs`        | full            | git 命令包装与状态展示                 |
-| `self-org`        | full, portable  | org 基础、capture、agenda 基线         |
+| `self-org`        | full, portable  | org 基础、capture 模板装配、agenda 基线 |
 | `self-roam`       | full, portable  | org-roam（Android 降额策略内守卫）     |
 | `self-agenote`    | full            | agenote 知识库适配                     |
-| `self-markdown`   | portable        | 触屏 markdown UX（桌面由 self-langs 管 markdown-mode）|
-| `self-dashboard`  | full, portable  | 欢迎屏（两端合并，平台段守卫）         |
-| `self-reading`    | portable        | eww/阅读辅助                           |
-| `self-terminal`   | full            | ghostel 终端面板 + GIT_EDITOR 导出     |
-| `self-daemon`     | full            | server-mode、daemon 预热、client 帧行为 |
-| `self-compat`     | full            | Emacs 31 兼容 shim（arei 兜底；唯一消费方 self-langs） |
-| `self-keys-desktop` | full          | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys |
-| `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript 等） |
-| `self-apps`       | full            | agent-shell / telega / guix / newsticker 等应用集成 |
-| `self-misc`       | portable        | Android 杂项（分享入库、agenda 提醒等） |
 
-模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表。
+### 5.5 `modules/prog/` —— 编程与项目栈（full 为主）
+
+| 模块              | 档位            | 内容                                   |
+| ----------------- | --------------- | -------------------------------------- |
+| `self-compat`     | full            | Emacs 31 兼容 shim（arei 兜底；唯一消费方 self-langs） |
+| `self-prog`       | full            | tree-sitter、eglot、flymake、apheleia 格式化 |
+| `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等） |
+| `self-project`    | full            | project.el、目录树、项目导航           |
+| `self-vcs`        | full            | magit/forge/diff-hl、git 状态展示      |
+| `self-terminal`   | full            | ghostel 终端面板 + GIT_EDITOR 导出     |
+
+### 5.6 `modules/desktop/` —— 桌面运行环境（full 为主）
+
+| 模块              | 档位            | 内容                                   |
+| ----------------- | --------------- | -------------------------------------- |
+| `self-daemon`     | full            | server-mode、daemon 预热、client 帧行为 |
+| `self-apps`       | full            | agent-shell / telega / guix / newsticker 等应用集成 |
+| `self-keys-desktop` | full          | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys |
+
+模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表与目录归属。
 
 ## 6. 部署模型
 

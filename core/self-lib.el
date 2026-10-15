@@ -188,6 +188,21 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 (defconst self:emacs-31-p (>= emacs-major-version 31)
   "当前 Emacs 是否为 31 及以上（load-path 查找缓存等新特性可用）。")
 
+;; ─── 跨模块共享的能力与阈值（唯一真相源） ─────────────────────────
+;;
+;; 曾被多个模块各自重复声明的变量归并于此；模块侧只写不带值的 defvar。
+
+(defvar self:nerd-icons-available (require 'nerd-icons nil t)
+  "nerd-icons 包是否已加载；图标渲染的统一守卫变量。
+缺包环境返回 nil 不报错；UI 模块（modeline/tabline/dashboard）
+据此走字形降级链，不在各自文件里重复探测。")
+
+(defcustom self:large-file-size-threshold (* 2 1024 1024)
+  "关闭高成本显示功能的文件大小阈值（字节）。
+self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
+  :type 'integer
+  :group 'self)
+
 ;; ─── profile 加载器 ──────────────────────────────────────────────
 
 (defun self/load-profile (profile)

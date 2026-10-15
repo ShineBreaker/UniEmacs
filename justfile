@@ -37,7 +37,7 @@ compile:
     export XDG_CACHE_HOME="$HOME/cache"
     mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
     fail=0
-    for f in early-init.el init.el core/*.el modules/*.el profiles/*.el; do
+    for f in early-init.el init.el core/*.el modules/*/*.el profiles/*.el; do
       echo "--- compile: $f ---"
       out=$(emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
       echo "$out" | grep -q "COMPILE-DONE" || { echo "FAIL(哨兵缺失): $f"; echo "$out"; fail=1; continue; }
@@ -54,5 +54,5 @@ compile:
 
 # 清字节码、沙箱与 eln 缓存。
 clean:
-    rm -f early-init.elc init.elc core/*.elc modules/*.elc profiles/*.elc
+    rm -f early-init.elc init.elc core/*.elc modules/*/*.elc profiles/*.elc
     rm -rf .sandbox eln-cache

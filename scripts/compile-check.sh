@@ -33,7 +33,7 @@ mkdir -p .sandbox
 
 # 文件清单：shell 通配在无匹配时会留下字面量，逐项存在性检查。
 files=()
-for f in early-init.el init.el core/*.el modules/*.el profiles/*.el; do
+for f in early-init.el init.el core/*.el modules/*/*.el profiles/*.el; do
   [ -f "$f" ] && files+=("$f")
 done
 

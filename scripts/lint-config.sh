@@ -43,14 +43,14 @@ if [ ${#el_files[@]} -eq 0 ]; then
 fi
 
 # ─── 规则 1：模块文件头元信息 ───────────────────────────────────
-for f in modules/self-*.el; do
+for f in modules/*/self-*.el; do
   [ -f "$f" ] || continue
   grep -q "^;; Profiles:" "$f" || viol "$f" 1 "module-header-missing:Profiles"
   grep -q "^;; Requires:" "$f" || viol "$f" 1 "module-header-missing:Requires"
 done
 
 # ─── 规则 2：文件格式硬要求 ────────────────────────────────────
-# 判据取 AGENTS.md §3 原文：`modules/self-*.el' 要求 provide 'self-<名>；
+# 判据取 AGENTS.md §3 原文：`modules/*/self-*.el' 要求 provide 'self-<名>；
 # 其余 .el 只要求 `(provide '<feature>)' + `ends here'。
 # data/ 是纯数据文件（AGENTS.md §2：只允许字面量 setq/defconst），
 # 不要求 provide/ends here，但仍要求首行 cookie。
@@ -61,7 +61,7 @@ for f in "${el_files[@]}"; do
     data/*) ;;
     *)
       case "$f" in
-        modules/self-*.el)
+        modules/*/self-*.el)
           grep -q "(provide 'self-" "$f" \
             || viol "$f" 1 "missing-provide-self" ;;
         *)
@@ -78,7 +78,7 @@ while IFS= read -r hit; do
   [ -n "$hit" ] || continue
   file="${hit%%:*}"; rest="${hit#*:}"; line="${rest%%:*}"
   viol "$file" "$line" "use-package-ensure-keyword"
-done < <(grep -nE ':ensure|:straight|:elpaca' modules/*.el profiles/*.el 2>/dev/null || true)
+done < <(grep -nE ':ensure|:straight|:elpaca' modules/*/*.el profiles/*.el 2>/dev/null || true)
 
 # ─── 规则 4：不得残留 custom: / custom/ 前缀的本项目符号 ─────────
 # 用 custom:[a-z] / custom/[a-z] 形态匹配：custom-file、custom-set 等
@@ -94,12 +94,12 @@ while IFS= read -r hit; do
   [ -n "$hit" ] || continue
   file="${hit%%:*}"; rest="${hit#*:}"; line="${rest%%:*}"
   viol "$file" "$line" "profile-self-pruning"
-done < <(grep -n '(eq self:profile' modules/*.el 2>/dev/null || true)
+done < <(grep -n '(eq self:profile' modules/*/*.el 2>/dev/null || true)
 
 # ─── 规则 6.5：模块 Profiles 头与 profile require 清单双向一致 ──
 # 教训来源：full.el 曾漏 require self-dashboard/self-glyph，daemon
 # 加载时才以 void-function 暴露；声明方与清单方必须互相咬合。
-for f in modules/self-*.el; do
+for f in modules/*/self-*.el; do
   [ -f "$f" ] || continue
   m="$(basename "$f" .el)"
   declared="$(grep -m1 '^;; Profiles:' "$f" | sed 's/.*Profiles://;s/（.*//')"

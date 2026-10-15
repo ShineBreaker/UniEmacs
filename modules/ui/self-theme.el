@@ -116,10 +116,9 @@ main.el 之前完成(standalone 首帧也要生效);此处仅供
       display-line-numbers-width-start t)
 (global-display-line-numbers-mode 1)
 
-(defcustom self:large-file-size-threshold (* 2 1024 1024)
-  "关闭高成本显示功能的文件大小阈值（字节）。"
-  :type 'integer
-  :group 'self-theme)
+;; `self:large-file-size-threshold' 的唯一定义在 core/self-lib.el
+;;（本模块与 self-prog 共用），此处只声明不赋值。
+(defvar self:large-file-size-threshold)
 
 (defun self/theme--setup-file-line-numbers ()
   "大型文件直接关闭行号，避免扫描完整 buffer。

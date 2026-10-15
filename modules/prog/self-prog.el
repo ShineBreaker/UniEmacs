@@ -75,8 +75,9 @@
 
 ;; ─── 跨模块依赖的就近声明 ────────────────────────────────────────────
 
-(defvar self:large-file-size-threshold (* 2 1024 1024)
-  "关闭高成本显示功能的文件大小阈值（字节）。")
+;; `self:large-file-size-threshold' 的唯一定义在 core/self-lib.el
+;;（self-theme 与本模块共用），此处只声明不赋值。
+(defvar self:large-file-size-threshold)
 
 ;; 外部命令名常量（self:executable-* 族）统一在 core/self-lib.el 定义，
 ;; 这里只声明不赋值：带值声明会把那里的 defconst 顶掉（defvar 不会覆盖已绑
@@ -433,11 +434,10 @@ SCRATCH 为承载变换的临时 buffer,CALLBACK 在变换完成后调用。
               (insert content))))))
     (funcall callback)))
 
-(defun self/format-org-src-blocks ()
-  "按各语言的 major mode 缩进当前 org buffer 的全部 src block 代码。
-交互命令（绑定在 =C-c o f=），走 Apheleia 的异步格式化协议。"
-  (interactive)
-  (apheleia-format-buffer 'org-src-blocks))
+;; `self/format-org-src-blocks' 的唯一实现在 self-org.el：它在
+;; Apheleia 可用时走下面的 org-src-blocks formatter，否则退回内建
+;; 缩进——命令本体不重复定义，本模块只负责注册 formatter。
+(declare-function self/format-org-src-blocks "self-org")
 
 ;; ─── 异步保存自动格式化（Apheleia）─────────────────────────────────
 

@@ -485,15 +485,19 @@ TTY 退回 ASCII 表格与 Unicode 子弹；GUI 保留像素细线与 Nerd 子�
 (autoload 'org-clock-goto "org-clock" nil t)
 
 (defun self/format-org-src-blocks ()
-  "按各代码块声明的语言缩进规则，重新缩进当前 buffer 里全部 Org 代码块。
-交互命令：M-x self/format-org-src-blocks，也绑在 C-c o f。
-`org-src-for-each-block' 会跳过 begin/end 标记行，只遍历块体，
-故缩进不会污染结构行。"
+  "重新格式化当前 buffer 里全部 Org 代码块。
+full 档走 Apheleia 的异步格式化协议（`org-src-blocks' formatter 由
+self-prog 注册）；没有 Apheleia 的环境（portable 等）退回按各语言
+缩进规则 `indent-region'。`org-src-for-each-block' 跳过 begin/end
+标记行、只遍历块体，故缩进不会污染结构行。
+交互命令：M-x self/format-org-src-blocks，也绑在 C-c o f。"
   (interactive)
-  (save-restriction
-    (org-src-for-each-block
-     (lambda (_lang start end)
-       (indent-region start end)))))
+  (if (fboundp 'apheleia-format-buffer)
+      (apheleia-format-buffer 'org-src-blocks)
+    (save-restriction
+      (org-src-for-each-block
+       (lambda (_lang start end)
+         (indent-region start end))))))
 
 (self/bind "C-c o a" #'org-agenda "议程视图" "Org 与知识库")
 (self/bind "C-c o f" #'self/format-org-src-blocks "格式化全部代码块" "Org 与知识库")
