@@ -18,7 +18,7 @@ verify:
     mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
     for profile in minimal portable full; do
       echo "--- smoke: $profile ---"
-      out=$(UNI_EMACS_PROFILE="$profile" emacs --batch -q -l early-init.el -l init.el --eval '(message "VERIFY-SMOKE-OK")' 2>&1)
+      out=$(UNI_EMACS_PROFILE="$profile" emacs --batch -q -l early-init.el -l init.el --eval '(message "VERIFY-SMOKE-OK")' </dev/null 2>&1)
       echo "$out" | grep -E "UniEmacs|Warning|Error" || true
       echo "$out" | grep -q "VERIFY-SMOKE-OK" || { echo "FAIL: $profile（哨兵缺失）"; echo "$out"; exit 1; }
       echo "OK: $profile"
@@ -39,7 +39,7 @@ compile:
     fail=0
     for f in early-init.el init.el core/*.el modules/*/*.el profiles/*.el; do
       echo "--- compile: $f ---"
-      out=$(emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
+      out=$(emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' </dev/null 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
       echo "$out" | grep -q "COMPILE-DONE" || { echo "FAIL(哨兵缺失): $f"; echo "$out"; fail=1; continue; }
       warns=$(echo "$out" | grep -E "Warning|Error" | grep -v "COMPILE-DONE" || true)
       if [ -n "$warns" ]; then

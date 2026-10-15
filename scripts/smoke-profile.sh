@@ -38,10 +38,13 @@ mkdir -p .sandbox
 out_file="$(mktemp "${TMPDIR:-/tmp}/uniemacs-smoke-$profile.XXXXXX")"
 trap 'rm -f "$out_file"' EXIT
 
+# stdin 固定 /dev/null：batch 里若触发交互提示（如 org-agenda-files
+# 指向不存在的文件时 org 会问 [R]emove/[A]bort），stdin 是开着的管道
+# 就会永久阻塞，EOF 则自动走 Abort 分支继续跑完。
 HOME="$(pwd)/.sandbox" UNI_EMACS_PROFILE="$profile" \
   emacs --batch -q -l early-init.el -l init.el \
        -l scripts/verify-common.el --eval '(verify/smoke-sentinel)' \
-  >"$out_file" 2>&1 || true
+  </dev/null >"$out_file" 2>&1 || true
 
 # 冒烟过程的相关行：启动链消息 + 错误行。
 grep -E "UniEmacs|Error|error:|Warning" "$out_file" || true

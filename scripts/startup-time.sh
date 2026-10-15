@@ -37,10 +37,11 @@ runs=3
 times=()
 for _ in $(seq "$runs"); do
   out_file="$(mktemp "${TMPDIR:-/tmp}/uniemacs-startup.XXXXXX")"
+  # stdin /dev/null：防 batch 中的交互提示把计时跑挂（见 smoke-profile.sh）。
   HOME="$(pwd)/.sandbox" UNI_EMACS_PROFILE="$profile" \
     emacs --batch -q -l early-init.el -l init.el \
          --eval '(message "INIT-TIME %s" (emacs-init-time))' \
-    >"$out_file" 2>&1 || true
+    </dev/null >"$out_file" 2>&1 || true
   t="$(sed -n 's/^INIT-TIME \([0-9.]*\) seconds$/\1/p' "$out_file" | tail -1)"
   rm -f "$out_file"
   if [ -n "$t" ]; then times+=("$t"); fi

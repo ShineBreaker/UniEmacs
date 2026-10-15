@@ -931,7 +931,11 @@ let 绑定请求级缓存变量,渲染结束自动丢弃,下次渲染重新扫�
   (insert "\n"))
 
 ;; 启动路由：emacsclient 不带文件参数时才走欢迎屏。
-(setq initial-buffer-choice #'self/dashboard-initial-buffer)
+;; batch（--batch / 脚本 / 冒烟）也要豁免：command-line-1 在非交互模式同样
+;; 会求值 initial-buffer-choice，渲染 agenda 段会触发 org-agenda-files 的
+;; 存在性询问——batch 里没有可答话的交互界面，stdin 一旦不是 EOF 就永久阻塞。
+(unless noninteractive
+  (setq initial-buffer-choice #'self/dashboard-initial-buffer))
 
 ;; 两平台共用的插件开关：居中生效、不显示字母快捷键（改用中文 which-key
 ;; 提示）、heading 图标开启。Android 无键盘，展示快捷键字母无意义。

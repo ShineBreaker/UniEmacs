@@ -53,10 +53,11 @@ for f in "${files[@]}"; do
   n=$((n + 1))
   out_file="$(mktemp "${TMPDIR:-/tmp}/uniemacs-compile.XXXXXX")"
 
+  # stdin /dev/null：batch 交互提示（如 agenda 文件缺失询问）防阻塞。
   HOME="$(pwd)/.sandbox" UNI_EMACS_PROFILE="$profile" \
     timeout 300 emacs --batch -q -l early-init.el -l init.el \
          --eval "(byte-compile-file \"$f\")" \
-    >"$out_file" 2>&1 || true
+    </dev/null >"$out_file" 2>&1 || true
 
   w=$(grep -c "Warning:" "$out_file" || true)
   e=$(grep -c "Error:" "$out_file" || true)
