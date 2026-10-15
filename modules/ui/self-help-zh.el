@@ -208,7 +208,9 @@ cons 格，BINDING 若是子 keymap 则递归下去，PROPS 里只有 :help 的�
 
 (with-eval-after-load 'magit-section
   ;; 复用 Emacs 自己的菜单格式化入口，不去接 magit 私有 API（那套随版本改得勤）。
-  ;; 翻译函数是纯字符串替换：命中译表就换，未命中原样返回。
+  ;; :filter-return 拿到的是 format-spec 已替换完 %t/%v/%s 等占位符的最终
+  ;; 显示文本，不是模板串——翻译它就是翻显示文案。翻译函数是纯字符串替换：
+  ;; 命中译表就换，未命中原样返回。
   (advice-add 'magit-menu-format-desc :filter-return
               #'self/context-menu--translate-string))
 

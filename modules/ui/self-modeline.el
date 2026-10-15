@@ -295,9 +295,11 @@ warning 级入 WARNINGS，note/debug 级不计。Flymake 公开 API 没有
           '(0 0))))
 
 (defun self/modeline--refresh-eglot-info (&rest _)
-  "通过 Eglot 公开接口刷新连接状态缓存（仅记录是否已连接）。"
+  "通过 Eglot 公开接口刷新连接状态缓存（仅记录是否已连接）。
+`eglot-current-server' 是「无连接返回 nil」的查询 API，不需要
+错误兜底（会报错的是 `eglot--current-server-or-lose'，我们没用它）。"
   (setq self/modeline--eglot-info
-        (and (ignore-errors (eglot-current-server)) t)))
+        (and (eglot-current-server) t)))
 
 ;; ─── 状态段求值与格式化 ───────────────────────────────────────────
 ;;
