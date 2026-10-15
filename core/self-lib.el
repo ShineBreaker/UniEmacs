@@ -54,15 +54,28 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 无则回退家目录。沙箱冒烟时 HOME 被隔离，状态自动落进沙箱。")
 
 (defconst self:var-directory
-  (expand-file-name ".local/state/emacs/" self:data-home)
-  "持久化状态目录（XDG state 语义），不存在则自动创建。")
+  (if (eq system-type 'android)
+      (expand-file-name ".local/state/emacs/" self:data-home)
+    (let ((xdg (getenv "XDG_STATE_HOME")))
+      (if (and xdg (> (length xdg) 0))
+          (expand-file-name "emacs/" xdg)
+        (expand-file-name "~/.local/state/emacs/"))))
+  "持久化状态目录（XDG state 语义），不存在则自动创建。
+桌面端走 $XDG_STATE_HOME（缺省 ~/.local/state）；Android 无 XDG，
+回退 Termux 家目录下的 .local/state。")
 
 (unless (file-directory-p self:var-directory)
   (make-directory self:var-directory t))
 
 (defconst self:cache-directory
-  (expand-file-name ".cache/emacs/" self:data-home)
-  "缓存根目录：eln 与 elpaca 等放仓库外，避免污染仓库源码目录。")
+  (if (eq system-type 'android)
+      (expand-file-name ".cache/emacs/" self:data-home)
+    (let ((xdg (getenv "XDG_CACHE_HOME")))
+      (if (and xdg (> (length xdg) 0))
+          (expand-file-name "emacs/" xdg)
+        (expand-file-name "~/.cache/emacs/"))))
+  "缓存根目录（$XDG_CACHE_HOME/emacs）：eln 与 elpaca 等放仓库外，
+避免污染仓库源码目录。")
 
 (unless (file-directory-p self:cache-directory)
   (make-directory self:cache-directory t))
