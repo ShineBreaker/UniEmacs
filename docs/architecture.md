@@ -1,18 +1,21 @@
 # UniEmacs 架构设计
 
-> 版本 v0.1（2026-10-15）。改架构先改本文档与 AGENTS.md。
+> 版本 v0.2（2026-10-15）。改架构先改本文档与 AGENTS.md。
 
-## 1. 目标与三档语义
+## 1. 目标与四档语义
 
-UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。三档不是三套配置，而是同一份代码库上的三个**模块清单**：
+UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。四档不是四套配置，而是同一份代码库上的四个**模块清单**：
 
 | 档位      | 定位                       | 功能水平                                      | 第三方包          |
 | --------- | -------------------------- | --------------------------------------------- | ----------------- |
 | `minimal` | 全配置的底座，强调可调试性 | 对标 nano / 未大量配置的 nvim、helix          | **零**（纯内建）  |
 | `portable`| Android 原生 Emacs 触屏    | 触屏交互、tool-bar、移动端 Org/Roam、阅读     | elpaca 管理       |
-| `full`    | 桌面全量，对标现代 IDE     | LSP/tree-sitter、项目管理、知识库、daemon     | Guix profile 管理 |
+| `full`    | 桌面全量，可读性优先的学习档 | LSP/tree-sitter、项目管理、知识库、daemon   | Guix profile 管理 |
+| `ide`     | full 超集：Zed 对齐的深度定制 | full 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame/minimap | Guix profile 管理 |
 
-三档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
+四档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
+
+`ide` 与 `full` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 full.el 逐行同序，末端追加 `modules/ide/` 六个模块完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line）。full 档保持语法可读优先——它是学习用桌面档；ide 档允许更复杂的实现，用来承接从 Zed/现代 IDE 直接迁移的用户。
 
 ### 设计原则（按优先级）
 
@@ -35,11 +38,13 @@ UniEmacs/
 │   ├── touch/            #   触屏层：glyph / ui-touch / touch / bar / markdown / reading / misc
 │   ├── org/              #   Org 知识栈：org / roam / agenote
 │   ├── prog/             #   编程栈：compat / prog / langs / project / vcs / terminal
-│   └── desktop/          #   桌面运行环境：daemon / apps / keys-desktop
+│   ├── desktop/          #   桌面运行环境：daemon / apps / keys-desktop
+│   └── ide/              #   IDE 档层：chrome / panel / completion / blame / minimap
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
-│   └── full.el
+│   ├── full.el
+│   └── ide.el
 ├── data/                 # 静态数据：翻译表、图标资产
 ├── scripts/              # 运维脚本
 ├── docs/                 # 设计文档（本文件等）
@@ -57,7 +62,7 @@ emacs
    │                        ③ 解析 self:profile：UNI_EMACS_PROFILE → android→portable → full
    │                        ④ （Android 部署形态）user-emacs-directory 重定向到仓库
  └─ init.el
-   ├─ load-path += core/ modules/<六域>/ profiles/
+   ├─ load-path += core/ modules/<七域>/ profiles/
    ├─ (require 'self-lib)          路径常量、谓词、self/load-profile
    ├─ (require 'self-package)      检测后端；暂不安装
    └─ (self/load-profile self:profile)
@@ -83,7 +88,7 @@ self-package 检测顺序：
 
 ## 5. 模块划分方案
 
-移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫。`modules/` 按域分六个子目录归档——目录只是分类归属，`require 'self-<名>` 的语义与目录无关；**共享度优先**：同一概念只允许一处定义（变量真相源归 `core/self-lib.el` 或首个消费模块，其余文件一律不带值 `defvar` / `declare-function`），重复实现一经发现立即收敛。
+移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫。`modules/` 按域分七个子目录归档——目录只是分类归属，`require 'self-<名>` 的语义与目录无关；**共享度优先**：同一概念只允许一处定义（变量真相源归 `core/self-lib.el` 或首个消费模块，其余文件一律不带值 `defvar` / `declare-function`），重复实现一经发现立即收敛。
 
 ### 5.1 `modules/base/` —— 三档共用底座（minimal 也加载）
 
@@ -143,6 +148,17 @@ self-package 检测顺序：
 | `self-daemon`     | full            | server-mode、daemon 预热、client 帧行为 |
 | `self-apps`       | full            | agent-shell / telega / guix / newsticker 等应用集成 |
 | `self-keys-desktop` | full          | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys |
+
+### 5.7 `modules/ide/` —— ide 档专属层（full 之上的覆写/新增）
+
+| 模块                  | 档位  | 内容                                       |
+| --------------------- | ----- | ------------------------------------------ |
+| `self-ide-chrome`     | ide   | 字体分轨（Maple Mono NF CN + Sarasa UI SC）、绝对行号、面包屑 header-line、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode |
+| `self-ide-panel`      | ide   | Treemacs 左侧项目树（nerd-icons/deferred git/follow/tag-follow），接管 C-b/C-S-e/C-c w f/d/T |
+| `self-ide-slots`      | ide   | 三槽位窗口契约（左树/底面板/编辑区）：display-buffer-alist 声明层+兜底层，未声明 buffer 一律进底槽 |
+| `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview |
+| `self-ide-blame`      | ide   | 行内 Git blame（idle 防抖 + 异步 porcelain + 行尾 overlay） |
+| `self-ide-minimap`    | ide   | 右缘代码缩略图（prog/text/conf buffer）     |
 
 模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表与目录归属。
 
