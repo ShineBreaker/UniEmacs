@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: minimal, portable, full
+;; Profiles: minimal, portable, full, ide
 ;; Requires: 无（机制层是键位体系的底座，被所有用 self/bind 的模块依赖）
 ;; Packages: which-key, winner
 ;;

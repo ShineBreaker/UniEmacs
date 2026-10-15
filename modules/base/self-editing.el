@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: minimal, portable, full
+;; Profiles: minimal, portable, full, ide
 ;; Requires: self-keys（`self/bind'、`self/declare-binding-group'）、self-lib（`self:var-directory'、路径常量）
 ;; Packages: editorconfig, indent-bars, goto-chg, multiple-cursors,
 ;;           expand-region, vundo, idle-highlight-mode, tempel

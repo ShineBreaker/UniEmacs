@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-keys
 ;; Packages: agent-shell, dsh-emacs, newsticker, telega, guix
 ;;

@@ -1,7 +1,7 @@
 ;;; self-tabline.el --- 桌面标签栏：per-frame 标签跟踪 + IDE 风格渲染 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-modeline, self-theme
 ;; Packages: nerd-icons
 ;;

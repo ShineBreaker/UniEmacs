@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: 无（本模块是窗口路由的底层，被 self-vcs 等上层反向消费）
 ;; Packages: 无
 ;;

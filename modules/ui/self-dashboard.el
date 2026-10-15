@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, full
+;; Profiles: portable, full, ide
 ;; Requires: self-glyph（`self/glyph'，宽屏分支加载期也调用）、self-org
 ;;           （`self/org--ensure-directories' 等）、self-help-zh（`self/show-help'）；
 ;;           self-touch 仅在 Android 分支内调用（触屏键盘与存储权限）

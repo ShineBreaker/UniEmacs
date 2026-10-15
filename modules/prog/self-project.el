@@ -1,7 +1,7 @@
 ;;; self-project.el --- 项目管理（project.el）与左侧 Dired 面板 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-keys, self-windowing, self-tabline
 ;; Packages: dape
 ;;

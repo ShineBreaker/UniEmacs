@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, full
+;; Profiles: portable, full, ide
 ;; Requires: self-lib（路径常量）、self-keys（self/bind、self/declare-binding-group）、
 ;;           self-ui-touch + self-touch（仅 Android 分支用到：mode-line 按钮与键盘面板）
 ;; Packages: org-appear, org-modern, org-modern-indent, olivetti

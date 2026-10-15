@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-editing（`self--buffers-in-mode'）、self-windowing（`self/display-or-focus'）
 ;; Packages: ghostel
 ;;

@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: minimal, portable, full
+;; Profiles: minimal, portable, full, ide
 ;; Requires: 无（外部命令名常量由 core/self-lib.el 提供，加载顺序天然在前）
 ;; Packages: vertico, orderless, marginalia, consult, embark, embark-consult,
 ;;           corfu, cape（全部只出现在 Android 平台分支里）

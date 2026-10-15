@@ -9,7 +9,7 @@
 ;; 切换窗口时静默保存改过的本地文件，并在文件被外部改写时自动跟随磁盘。
 ;; 全部内建包，零第三方依赖。
 ;;
-;; Profiles: minimal, portable, full
+;; Profiles: minimal, portable, full, ide
 ;; Requires: self-lib（`self:var-directory' / `self:etc-directory' 决定落盘位置）
 ;; Packages: 无（recentf / savehist / saveplace 是内建库，use-package 只做配置包装）
 ;;

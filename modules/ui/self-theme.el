@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, portable
+;; Profiles: full, portable, ide
 ;; Requires: 无
 ;; Packages: modus-themes（Emacs 28+ 内建，仅声明语义归属）
 ;;

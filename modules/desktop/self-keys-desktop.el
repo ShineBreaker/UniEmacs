@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-keys（`self/bind' 与 `self--pending-wk-descs'）、self-editing、self-terminal、self-project、self-prog、self-tabline、self-completion、self-help-zh
 ;; Packages: multiple-cursors
 ;;

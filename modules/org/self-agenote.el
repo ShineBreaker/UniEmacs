@@ -10,7 +10,7 @@
 ;; 小节，经验卡目标函数与类别预取一并跟来，因为它们直接依赖 agenote 的 CLI 与
 ;; entry-types 约定）。
 ;;
-;; Profiles: full
+;; Profiles: full, ide
 ;; Requires: self-org（capture 模板装配点）、self-lib（路径常量）、
 ;;           self-keys（self/bind、self/declare-binding-group）
 ;; Packages: agenote

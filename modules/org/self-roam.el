@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, full
+;; Profiles: portable, full, ide
 ;; Requires: self-lib（路径常量）、self-keys（self/bind、self/declare-binding-group）
 ;; Packages: org-roam, emacsql, emacsql-sqlite3
 ;;

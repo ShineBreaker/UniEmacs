@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, portable
+;; Profiles: full, portable, ide
 ;; Requires: self-keys（`self/binding-help-sections'、`self--pending-wk-descs'）、self-completion（`self/isearch-forward-dwim'）
 ;;   本模块同时是 which-key 的视觉层归属地：弹窗分页按钮、触屏 tap 分发器、
 ;;   触屏专属的 which-key 取值覆盖都在这里（AGENTS.md §2：Which-key 的
