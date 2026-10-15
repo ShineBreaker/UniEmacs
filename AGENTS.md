@@ -74,7 +74,7 @@ justfile              本机命令入口（verify / compile / deploy）
 - **函数体预算 ~40 行**：超过就拆成具名辅助函数（每个可 `C-h f` 跳转、出错时栈里有名字），而不是继续堆嵌套；嵌套深度尽量 ≤3 层，更深就提前 `let`/`cond` 分派。
 - **不为少量重复引入宏或高阶封装**：2~3 处同构命令直接平铺 `defun`；禁止 `intern`/`format` 动态拼符号名。
 - **数据表可留，派生链要平铺**：plist/alist 作单一事实源保留；派生逻辑写成 `dolist` + 具名函数 + `push`/`nreverse`，禁止多层 `seq-*`/lambda/`mapcar` 混嵌成单表达式。
-- **高阶解构降级**：`cl-loop` 解构、`pcase-let` 反引号解构、`cl-flet`/`cl-labels`、`cl-remove-if-not` 等方言一律降级为 `dolist` + `let` 逐项取 + `car`/`cdr`/`nth`；`pcase` 只允许「按形状分派」的扁平 switch 用法（每条 pattern 单行字面量或简单 `,var`），禁止嵌套反引号。
+- **高阶解构降级**：`cl-loop` 解构、`pcase-let` 反引号解构、`cl-flet`/`cl-labels`、`cl-remove-if-not` 等方言一律降级为 `dolist` + `let` 逐项取 + `car`/`cdr`/`nth`；`pcase` 只允许「按形状分派」的扁平 switch 用法（每条 pattern 单行字面量或简单 `,var`），禁止嵌套反引号。**降级陷阱**：`cl-loop` 的 `collect ... into` 是尾追加（`nconc`）语义，换成 `push` 是逆序累加——改写后 `nreverse` 的条件要跟着翻转，务必用输入对照验证。
 - **必要技巧就地解释**：`advice-add`、overlay 差集、`setf (alist-get ...)`、`run-with-idle-timer` 防抖等无法平铺的机制，保留时就近补 3~8 行「为什么需要它 + 取舍」注释。
 - **命名即文档**：变量/函数名说清所存数据的形状（如 `self:binding-spec` 条目形状写进 docstring）；跨模块共享变量的唯一定义归 `core/self-lib.el` 或首个消费模块。
 - **教读者自助**：引入新机制时在注释里给 `C-h f` / `C-h v` / `M-x customize-group` / `(info ...)` 自助查询路径，克制不写教程。
@@ -83,7 +83,7 @@ justfile              本机命令入口（verify / compile / deploy）
 
 ### 精简与防御边界
 
-- 只用一次的辅助函数直接内联，禁止纯转发包装。
+- 只用一次的辅助函数直接内联，禁止纯转发包装。边界澄清：本条针对「一行调用另一个具名函数」的转发壳；为打散多层嵌套而抽出的实质逻辑函数（哪怕只被调一次）不属于本条，属于可读性公约的拆分手段。
 - `condition-case` 仅包裹文件 I/O、外部子进程或 D-Bus；对返回 nil 的查询型 API 不加包裹。
 - 存活检查（`frame-live-p`/`buffer-live-p`）仅在异步回调（Timer、D-Bus、Process Sentinel）中保留。
 
@@ -120,10 +120,10 @@ just verify    # = 三档沙箱冒烟 + 全模块 byte-compile 零警告
 
 ```bash
 HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=<minimal|portable|full> \
-  emacs --batch -q -l early-init.el -l init.el
+  emacs --batch -q -l early-init.el -l init.el </dev/null
 ```
 
-沙箱 `HOME` 隔离持久化状态，禁止污染真实 `~/`。`-q` 保留 site-start（Guix profile 的 autoloads 需要它），不用 `-Q`。
+沙箱 `HOME` 隔离持久化状态，禁止污染真实 `~/`。`-q` 保留 site-start（Guix profile 的 autoloads 需要它），不用 `-Q`。所有 batch 调用点 stdin 固定 `</dev/null`：交互提示（如 `org-agenda-files` 缺文件询问）在 batch 无可答话界面，开着的 stdin 会永久阻塞，EOF 让提示走 Abort 分支跑完——配套地，`initial-buffer-choice` 等 UI 入口安装处必须 `(unless noninteractive ...)` 守卫（`command-line-1` 在 batch 下也会求值它，实测触发过冒烟假死）。
 
 ### 5.3 Byte-compile
 
