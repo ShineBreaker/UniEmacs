@@ -96,6 +96,24 @@ while IFS= read -r hit; do
   viol "$file" "$line" "profile-self-pruning"
 done < <(grep -n '(eq self:profile' modules/*.el 2>/dev/null || true)
 
+# ─── 规则 6.5：模块 Profiles 头与 profile require 清单双向一致 ──
+# 教训来源：full.el 曾漏 require self-dashboard/self-glyph，daemon
+# 加载时才以 void-function 暴露；声明方与清单方必须互相咬合。
+for f in modules/self-*.el; do
+  [ -f "$f" ] || continue
+  m="$(basename "$f" .el)"
+  declared="$(grep -m1 '^;; Profiles:' "$f" | sed 's/.*Profiles://;s/（.*//')"
+  for p in minimal portable full; do
+    if echo "$declared" | grep -qw "$p"; then
+      grep -q "(require '$m)" "profiles/$p.el" \
+        || viol "$f" 1 "declares-profile-$p-but-not-required"
+    else
+      grep -q "(require '$m)" "profiles/$p.el" \
+        && viol "$f" 1 "required-by-$p-but-not-declared"
+    fi
+  done
+done
+
 # ─── 规则 6：git 跟踪文件不得引用本地参考资料夹 ─────────────────
 # 禁令本身要有两处合法自指：AGENTS.md 是规则的声明处，.gitignore 是
 # 把该目录排除出版本库的规则。这两处之外出现即为违规。
