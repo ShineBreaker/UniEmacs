@@ -4,8 +4,13 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, full
-;; Requires: self-ui-touch, self-touch
+;; Profiles: portable
+;; Requires: self-ui-touch（`self/mode-line--add-local-buttons' 等）、
+;;           self-touch（`self/touch-no-keyboard'）
+;;
+;; 桌面端不走本模块：markdown-mode 的 mode 注册与导出键在
+;; self-langs.el（full 档），本文件是触屏特化 UX（mode-line 按钮、
+;; view 适配、不唤键盘）。
 ;; Packages: markdown-mode
 ;;
 ;; 移植自移动端配置。markdown-mode 单包承载编辑与查看，纯 elisp 无

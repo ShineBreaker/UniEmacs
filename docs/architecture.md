@@ -107,7 +107,7 @@ self-package 检测顺序：
 | `self-org`        | full, portable  | org 基础、capture、agenda 基线         |
 | `self-roam`       | full, portable  | org-roam（Android 降额策略内守卫）     |
 | `self-agenote`    | full            | agenote 知识库适配                     |
-| `self-markdown`   | full, portable  | markdown-mode                          |
+| `self-markdown`   | portable        | 触屏 markdown UX（桌面由 self-langs 管 markdown-mode）|
 | `self-dashboard`  | full, portable  | 欢迎屏（两端合并，平台段守卫）         |
 | `self-reading`    | portable        | eww/阅读辅助                           |
 | `self-terminal`   | full            | ghostel 终端面板 + GIT_EDITOR 导出     |
