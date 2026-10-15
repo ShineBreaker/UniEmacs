@@ -19,3 +19,4 @@ auto-save-list/
 
 # agent 任务书（临时操作文档，不入库）
 .agents/tasks/
+.agents/staging/
