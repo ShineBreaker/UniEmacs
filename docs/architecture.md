@@ -110,9 +110,13 @@ self-package 检测顺序：
 | `self-markdown`   | full, portable  | markdown-mode                          |
 | `self-dashboard`  | full, portable  | 欢迎屏（两端合并，平台段守卫）         |
 | `self-reading`    | portable        | eww/阅读辅助                           |
-| `self-terminal`   | full            | 内置终端（eat/vterm 视部署）           |
-| `self-daemon`     | full            | daemon 预热、client 帧行为             |
-| `self-compat`     | 全档（按版本）  | 版本兼容 shim（emacs 29~31）           |
+| `self-terminal`   | full            | ghostel 终端面板 + GIT_EDITOR 导出     |
+| `self-daemon`     | full            | server-mode、daemon 预热、client 帧行为 |
+| `self-compat`     | full            | Emacs 31 兼容 shim（arei 兜底；唯一消费方 self-langs） |
+| `self-keys-desktop` | full          | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys |
+| `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript 等） |
+| `self-apps`       | full            | agent-shell / telega / guix / newsticker 等应用集成 |
+| `self-misc`       | portable        | Android 杂项（分享入库、agenda 提醒等） |
 
 模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表。
 
