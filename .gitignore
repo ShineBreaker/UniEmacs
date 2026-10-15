@@ -16,6 +16,7 @@ eln-cache/
 var/
 auto-save-list/
 .sandbox/
+.sandbox-gui/
 
 # agent 任务书（临时操作文档，不入库）
 .agents/tasks/

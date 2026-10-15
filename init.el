@@ -118,12 +118,13 @@ native-comp 可用：      %S
       (error "UniEmacs: 仓库根不可用（self:repo=%S）。期望结构：仓库根下含 core/、modules/、profiles/ 三个目录；桌面把 early-init.el 与 init.el 放入 Emacs 家目录（~/.config/emacs/ 或 ~/.emacs.d/），仓库本体 clone 到任意位置并用 UNI_EMACS_REPO 环境变量或家目录下 repo-location.el 指过去；Android 把两个入口文件放入 Emacs 的 ~/.emacs.d/，仓库本体放在 Termux 家目录惯例位置"
              self:repo))
 
-    ;; modules/ 按功能域分六组（base/ui/touch/org/prog/desktop，见
+    ;; modules/ 按功能域分七组（base/ui/touch/org/prog/desktop/ide，见
     ;; docs/architecture.md §5）；require 语义不变，feature 名仍是
     ;; self-<名>，目录只承担归档职责。
     (dolist (dir '("core"
                    "modules/base" "modules/ui" "modules/touch"
                    "modules/org" "modules/prog" "modules/desktop"
+                   "modules/ide"
                    "profiles"))
       (add-to-list 'load-path (expand-file-name dir self:repo)))
 

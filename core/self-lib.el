@@ -206,15 +206,16 @@ self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
 ;; ─── profile 加载器 ──────────────────────────────────────────────
 
 (defun self/load-profile (profile)
-  "加载 profiles/<PROFILE>.el，PROFILE 为 minimal、portable、full 之一。
+  "加载 profiles/<PROFILE>.el，PROFILE 为 minimal、portable、full、ide 之一。
 加载失败时报错并带上 profile 名与文件路径。成功返回 t。"
   (interactive
    (list (let ((name (completing-read
-                      "Profile (minimal/portable/full): "
-                      '("minimal" "portable" "full") nil t)))
+                      "Profile (minimal/portable/full/ide): "
+                      '("minimal" "portable" "full" "ide") nil t)))
            (cond
             ((equal name "minimal") 'minimal)
             ((equal name "portable") 'portable)
+            ((equal name "ide") 'ide)
             (t 'full)))))
   ;; load 是文件 I/O，condition-case 包裹是允许的场景。
   (let ((file (expand-file-name (format "profiles/%s.el" profile)

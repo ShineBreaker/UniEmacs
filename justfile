@@ -2,7 +2,7 @@
 
 default: verify
 
-# 三档沙箱冒烟：任一档失败即整体失败。
+# 四档沙箱冒烟：任一档失败即整体失败。
 # 注意 Guix 的 emacs wrapper 会吞掉非零退出码，这里用哨兵行做
 # fail-closed 判定：哨兵缺失即失败，不看退出码。
 verify:
@@ -16,7 +16,7 @@ verify:
     export XDG_STATE_HOME="$HOME/state"
     export XDG_CACHE_HOME="$HOME/cache"
     mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
-    for profile in minimal portable full; do
+    for profile in minimal portable full ide; do
       echo "--- smoke: $profile ---"
       out=$(UNI_EMACS_PROFILE="$profile" emacs --batch -q -l early-init.el -l init.el --eval '(message "VERIFY-SMOKE-OK")' </dev/null 2>&1)
       echo "$out" | grep -E "UniEmacs|Warning|Error" || true

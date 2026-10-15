@@ -26,7 +26,7 @@ repo-location.el → 本文件所在目录（含 core/ 时）→ Android 惯例�
 解析失败时为 nil，由 init.el 报错兜底。")
 
 (defvar self:profile nil
-  "当前 profile：minimal、portable、full 之一。
+  "当前 profile：minimal、portable、full、ide 之一。
 UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退），
 其次 Android 推断为 portable，默认 full。")
 
@@ -131,10 +131,11 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
            ((equal from-env "minimal") 'minimal)
            ((equal from-env "portable") 'portable)
            ((equal from-env "full") 'full)
+           ((equal from-env "ide") 'ide)
            ((and from-env (> (length from-env) 0))
             (display-warning
              'self
-             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/full，已按平台推断回退。"
+             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/full/ide，已按平台推断回退。"
                      from-env))
             (if (eq system-type 'android) 'portable 'full))
            ((eq system-type 'android) 'portable)
