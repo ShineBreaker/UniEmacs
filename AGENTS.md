@@ -67,15 +67,19 @@ justfile              本机命令入口（verify / compile / deploy）
 - 末尾 `(provide '<feature>)` + `;;; <名>.el ends here`
 - 所有公开函数/变量带 docstring；交互命令注明触发方式
 
-### 可读性公约（目标读者：Elisp 入门者）
+### 可读性公约（目标读者：Elisp 入门者，最高优先级）
 
-代码第一属性是**可读、可学、可改**：
+代码第一属性是**可读、可学、可改**——省几行的高阶写法若抬高阅读门槛，一律不用。读这份代码的人可能只认识 `defun`/`setq`/`let`/`dolist`/`use-package`、刚接触反引号；每处写法都按这个标准验收。
 
-- 不为少量重复引入宏：2~3 处同构命令直接平铺 `defun`。
-- 数据表（plist/alist 单一事实源）可留；派生逻辑用 `dolist` + 具名函数 + `push`/`nreverse`，禁止多层 `seq-*`/lambda 嵌套成单表达式。
-- `cl-loop` 解构、`pcase-let` 反引号、`cl-flet` 等高阶方言一律降级为 `dolist` + 具名函数；集合操作统一 `seq-*`。
-- 无法平铺的技巧（`cl-letf`、`advice-add`、overlay 操作等）保留时就近补 3~8 行「为什么需要它」注释。
+- **函数体预算 ~40 行**：超过就拆成具名辅助函数（每个可 `C-h f` 跳转、出错时栈里有名字），而不是继续堆嵌套；嵌套深度尽量 ≤3 层，更深就提前 `let`/`cond` 分派。
+- **不为少量重复引入宏或高阶封装**：2~3 处同构命令直接平铺 `defun`；禁止 `intern`/`format` 动态拼符号名。
+- **数据表可留，派生链要平铺**：plist/alist 作单一事实源保留；派生逻辑写成 `dolist` + 具名函数 + `push`/`nreverse`，禁止多层 `seq-*`/lambda/`mapcar` 混嵌成单表达式。
+- **高阶解构降级**：`cl-loop` 解构、`pcase-let` 反引号解构、`cl-flet`/`cl-labels`、`cl-remove-if-not` 等方言一律降级为 `dolist` + `let` 逐项取 + `car`/`cdr`/`nth`；`pcase` 只允许「按形状分派」的扁平 switch 用法（每条 pattern 单行字面量或简单 `,var`），禁止嵌套反引号。
+- **必要技巧就地解释**：`advice-add`、overlay 差集、`setf (alist-get ...)`、`run-with-idle-timer` 防抖等无法平铺的机制，保留时就近补 3~8 行「为什么需要它 + 取舍」注释。
+- **命名即文档**：变量/函数名说清所存数据的形状（如 `self:binding-spec` 条目形状写进 docstring）；跨模块共享变量的唯一定义归 `core/self-lib.el` 或首个消费模块。
+- **教读者自助**：引入新机制时在注释里给 `C-h f` / `C-h v` / `M-x customize-group` / `(info ...)` 自助查询路径，克制不写教程。
 - 机制解释、设计取舍写进 `;;; Commentary:` 或 `docs/`，代码块内只留 docstring 与必要的就地注释。
+- **简化不等于删功能**：按本节降级重写时行为必须等价，验收走 §5.4 等价性证据流程；发现疑似 bug 只记录上报，不顺手修。
 
 ### 精简与防御边界
 

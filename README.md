@@ -19,6 +19,8 @@
 
 ## 开发
 
+设计原则：**可读性优先**——代码按 Emacs 初学者能读懂、能写、能调的标准组织（直白平铺 > 高阶压缩，函数体 ~40 行预算，详见 `docs/architecture.md` §1 与 `AGENTS.md` §3）；**单一真相源**——同一概念只允许一处定义。
+
 ```bash
 direnv allow       # 或 denv load；环境由 manifest.scm 声明
 just verify        # 三档沙箱冒烟 + byte-compile 零警告
