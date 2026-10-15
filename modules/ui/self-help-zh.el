@@ -180,13 +180,21 @@ cons 格，BINDING 若是子 keymap 则递归下去，PROPS 里只有 :help 的�
     (map-keymap #'self/context-menu--translate-binding keymap))
   keymap)
 
+;; 下面三处 advice 的共同理由：菜单文字都是第三方在自己的词法里现写的
+;; （context-menu 把子树直接交给 minor-mode 弹出，menu-bar 由 Emacs 现场
+;; 组装），没有留「翻译层」的接口。翻译是纯字符串替换，不改变键与命令，
+;; 因此一律用 `:filter-return' 改返回值——它的作用范围比 `:override' 窄，
+;; 第三方在返回后继续做的绑定工作不受影响。
 ;; advice-add 对同一 advice 函数重复添加不会叠加执行，无需 member-p 前置。
 (advice-add 'context-menu-map :filter-return
             #'self/context-menu--translate-keymap)
 
+;; global-map 的 [menu-bar] 子树此时可能还没建（menu-bar 尚未展开过），
+;; 先翻一遍兜住已加载的部分；懒加载的条目留给 activate-menubar-hook。
 (self/context-menu--translate-keymap
  (lookup-key global-map [menu-bar]))
 
+;; 同一条子树也可能从 menu-bar-keymap 这个入口被展开，故两处都挂。
 (advice-add 'menu-bar-keymap :filter-return
             #'self/context-menu--translate-keymap)
 
@@ -199,6 +207,8 @@ cons 格，BINDING 若是子 keymap 则递归下去，PROPS 里只有 :help 的�
           #'self/context-menu--translate-menubar-on-activate)
 
 (with-eval-after-load 'magit-section
+  ;; 复用 Emacs 自己的菜单格式化入口，不去接 magit 私有 API（那套随版本改得勤）。
+  ;; 翻译函数是纯字符串替换：命中译表就换，未命中原样返回。
   (advice-add 'magit-menu-format-desc :filter-return
               #'self/context-menu--translate-string))
 

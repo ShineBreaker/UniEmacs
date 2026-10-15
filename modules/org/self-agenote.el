@@ -145,6 +145,11 @@
 (add-hook 'org-capture-after-finalize-hook
           #'self/org-capture--clear-experience-state)
 
+;; 挂在 org-capture 入口上：这里才是模板展开前最后一个可拦截点，而预取要
+;; 抢的是「用户挑模板的那几秒」——CLI 异步跑完，回填类别变量时多半已就绪。
+;; `:before' 而非 `:after'：晚一步，模板已经拿着空表求值完了。
+;; 代价是这个 advice 挂在交互命令上，直接调 `org-capture-...-internals'
+;; 绕过命令时会拿不到预取结果——那条路上类别补全退回内置列表。
 (advice-add 'org-capture :before
             #'self/org-capture--prefetch-experience-categories)
 

@@ -679,6 +679,12 @@ daemon 无键盘输入时空闲周期无限长，idle timer 实际等同失效�
   ;; 使 minibuffer-line 完全融入 echo area 背景，消除字符边框与底色色差。
   (set-face-attribute 'minibuffer-line nil :inherit nil :box nil)
   (minibuffer-line-mode 1)
+  ;; minibuffer-line 有自己那条 30 秒刷新线，若留着它，底栏与 mode-line 会
+  ;; 各画一遍：两条线共用同一套 tick 与请求级缓存变量，却从两个入口进来，
+  ;; 缓存的清理时机对不上（`self/modeline-refresh' 靠置位
+  ;; `self/modeline--rendering' 让重入直接返回）。
+  ;; `:override' 整个换掉它的更新函数，是为了让整条底栏只有一个写入口——
+  ;; 官方那个实现无参，我们这个接受可选 FRAME（resize 钩子要传）。
   (advice-add 'minibuffer-line--update :override #'self/modeline-refresh)
   (add-hook 'post-command-hook #'self/modeline-refresh)
   (add-hook 'window-size-change-functions #'self/modeline-refresh)

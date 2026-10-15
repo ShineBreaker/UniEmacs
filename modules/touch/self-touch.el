@@ -377,6 +377,12 @@ org 跳过：其「作 选」钮组由 self-org 的 org-mode-hook 一并注入
   ;; self-bar 之后执行
   (when (fboundp 'modifier-bar-mode)
     (modifier-bar-mode 1)
+    ;; 为什么 advice 而不是 setup 完就拉倒：modifier-bar-mode 是个可反复
+    ;; 开关的 minor-mode，用户从 tool-bar 首位按钮关掉再打开、或后续包
+    ;; 调它重建 tool-bar 时，修饰键按钮都要重新对齐（图标来自 self-bar 的
+    ;; 安装结果）。挂 `:after' 才不漏这些重入。
+    ;; 下方 with-eval-after-load 是首次兜底：advice 只对之后的调用生效，
+    ;; 上面那行 `(modifier-bar-mode 1)' 发生在 self-bar 加载之前。
     (advice-add 'modifier-bar-mode :after
                 (lambda (&rest _) (self/modbar--setup)))
     (with-eval-after-load 'self-bar

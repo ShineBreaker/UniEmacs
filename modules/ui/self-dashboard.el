@@ -348,6 +348,11 @@ text property line-spacing 仅 GUI frame 生效,TTY 行高固定会忽略。"
         (insert deco)))
     (insert (propertize " ────" 'face 'self/dashboard-deco))))
 
+;; 装饰线要落在官方插入的标题文本之后，但 dashboard-insert-heading 既不返回
+;; 插入位置、也不把标题起点暴露出来，只能在它返回后用 point 往回退反推——
+;; 退多少取决于官方有没有插 icon，而那个条件封在第三方里（tty 无字形）。
+;; 不走 advice 就得整份复制 dashboard-insert-heading，第三方一改就得跟一次。
+;; `prog1' 保留原函数的返回值，`:around' 是为了让装饰函数自己掌握调用时机。
 (advice-add #'dashboard-insert-heading :around
             #'self/dashboard-insert-heading-deco)
 
@@ -1012,12 +1017,19 @@ let 绑定请求级缓存变量,渲染结束自动丢弃,下次渲染重新扫�
                                  ("Recent Files:" . "最近文件")
                                  ("Projects:" . "项目"))
           dashboard-navigator-buttons (list (self/dashboard--nav-buttons)))
-    ;; 路径缩短走本文件的两级降级覆写；agenda 扫描走单次缓存；渲染入口
-    ;; 绑定请求级缓存变量。
+    ;; 下面三处都是 advice，因为改的都是插件内部行为而不是它的 API：
+    ;; 1. shorten-path 只按版心宽度截断，做不了「先压中间目录再截首」的
+    ;;    两级降级——plugin 把缩进规则写死在函数体里，没有可配的钩子。
     (advice-add 'dashboard-shorten-path :override
                 #'self/dashboard--shorten-path)
+    ;; 2. agenda 扫描由 `dashboard-insert-section' 宏在一次渲染里求值 4 次，
+    ;;    plugin 侧无从收敛，只能在这一处 memoize；细节见
+    ;;    `self/dashboard--agenda-scan-once'（C-h f）。
     (advice-add 'dashboard-get-agenda :around
                 #'self/dashboard--agenda-scan-once)
+    ;; 3. 缓存变量必须有作用域，否则会跨渲染残留；插在渲染入口上 let 绑定
+    ;;    才能保证用完即弃。渲染内部的 advice-add 见
+    ;;    `self/dashboard--insert-lists-once'（C-h f）。
     (advice-add 'dashboard-insert-startupify-lists :around
                 #'self/dashboard--insert-lists-once)
     ;; 帧就绪与 resize 的合并重绘只在宽屏平台启用：Android 的窗口尺寸由

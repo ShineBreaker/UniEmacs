@@ -121,7 +121,11 @@
 
 (when self:android-p
   (self/bar--install)
-  ;; 主题切换后重装：SVG 图标按主题重着色
+  ;; 挂在被调方而不是调用方：套主题的入口不止一处（切换命令、D-Bus 回调、
+  ;; 启动时的初始套用），逐个调用点包一层必漏。装法是整个重建 tool-bar 而
+  ;; 非改图标的 fill 属性——SVG 图标的着色信息在文件字节里，重着色等于重写
+  ;; 资源，`self/bar--install' 才能拿到新主题的那一份。
+  ;; `:after'：不关心 apply-theme 的返回值，装完就算完。
   (advice-add 'self/color-scheme-apply-theme :after
               (lambda (&rest _)
                 (when (display-graphic-p)

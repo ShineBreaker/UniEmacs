@@ -99,6 +99,12 @@
   (unless (self--warnings-benign-only-p buffer)
     (funcall orig buffer)))
 
+;; 滤在这一处而不是逐个 warning-source 打补丁：lexical-binding cookie 缺失
+;; 是本配置里最高频的假阳性（大量第三方单文件脚本如此），而
+;; warning--display-buffer 是所有警告弹窗的唯一入口，漏了它就会在启动后
+;; 弹一个盖住 dashboard 的 *Warnings*。
+;; 用 `:around' + 转发而非 `:override'：判定为非无害时要原样把 ORIG 叫回来，
+;; 未来 Emacs 给警告弹窗加的功能不会因为我们拦了一道就丢掉。
 (advice-add 'warning--display-buffer :around #'self--skip-benign-warning-display)
 
 (provide 'self-daemon)
