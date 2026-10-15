@@ -4,7 +4,7 @@
 ;;;   1. 开发/验证工具链（just / git / ripgrep / fd / sqlite / make）。
 ;;;   2. profiles/*.el 清单里的全部第三方 Emacs 包（Guix 侧登记点）。
 ;;;      登记后 `guix shell -m manifest.scm -- just verify` 能在完整包
-;;;      环境下跑三档冒烟与 byte-compile，不再是「找不到就跳过」。
+;;;      环境下跑四档冒烟与 byte-compile，不再是「找不到就跳过」。
 ;;;      用户桌面端的运行时包仍由 Guix home 提供，两处清单须保持同步；
 ;;;      便携档专用包已分组标注，桌面 home 可按需裁剪。
 ;;;
@@ -37,6 +37,7 @@
    "emacs-magit"            ; 含 magit-diff feature，无独立包
    "emacs-diff-hl"
    "emacs-forge"
+   "emacs-magit-fast"       ; 缓存 porcelain 加速 magit status（jeans channel）
    "emacs-org-appear"
    "emacs-org-modern"
    "emacs-org-modern-indent"
@@ -55,7 +56,7 @@
    "emacs-pdf-tools"
    "emacs-zig-mode"
    "emacs-agent-shell"
-   "emacs-dsh-emacs"
+   "emacs-dsh"            ; elisp 侧包名 dsh-emacs（上游 repo vritser/dsh-emacs）
    "emacs-telega"
    "emacs-guix"
    "emacs-ghostel"
@@ -63,16 +64,27 @@
    "emacs-gcmh"
    "emacs-no-littering"
 
-   ;; ─── portable 档专用（Android / elpaca 侧也按此清单安装）───────
+   ;; ─── portable / ide 档共用补全栈 ──────────────────────────────
+   ;; 便携档（Android / 触屏点选）与 ide 档（桌面命令面板式补全）共用。
    "emacs-vertico"
    "emacs-orderless"
    "emacs-marginalia"
    "emacs-consult"
-   "emacs-embark"
-   "emacs-embark-consult"
+   "emacs-embark"          ; embark-consult.el 随本包分发，无独立包
    "emacs-corfu"
    "emacs-cape"
+
+   ;; ─── ide 档专用 ──────────────────────────────────────────────
+   "emacs-kind-icon"        ; corfu 补全项类型图标
+   "emacs-eldoc-box"        ; posframe 文档/signature 浮窗
+   "emacs-treemacs"         ; 左侧项目文件树
+   "emacs-treemacs-nerd-icons"
+   "emacs-colorful-mode"    ; 颜色字面量就地渲染（Zed colorizer 对应）
+   "emacs-minimap"          ; 右侧代码缩略图
+
+   ;; ─── portable 档专用 ──────────────────────────────────────────
+   ;; emacsql-sqlite3（Android 的 org-roam sqlite CLI 后端）在 Guix 侧
+   ;; 无对应包，也不该进桌面 dev 环境——它只在 Android 上经 elpaca 安装。
    "emacs-ef-themes"
    "emacs-expreg"
-   "emacs-emacsql-sqlite3"  ; Android 的 org-roam sqlite CLI 后端
    "emacs-nov"))
