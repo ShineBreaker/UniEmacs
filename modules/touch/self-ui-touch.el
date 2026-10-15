@@ -215,7 +215,13 @@
 
 (defun self/mode-line--button (spec &optional pad)
   "按 SPEC（字形 回退 帮助 命令）构造单颗按钮，前导 PAD 列空格（默认 2）。"
-  (pcase-let ((`(,glyph ,fallback ,help ,command) spec))
+  ;; SPEC 是 `self/mode-line--right-buttons' 表里的一项，四个位置固定：
+  ;; 0 字形 / 1 tty 回退 / 2 help-echo / 3 命令。表是本文件里的字面量常量，
+  ;; 缺项时 nil 会一路传下去（回退缺失、命令缺失），故不必再判长度。
+  (let ((glyph (nth 0 spec))
+        (fallback (nth 1 spec))
+        (help (nth 2 spec))
+        (command (nth 3 spec)))
     (propertize
      (concat (make-string (or pad 2) ?\s) (self/glyph glyph fallback))
      'local-map (make-mode-line-mouse-map 'mouse-1 command)

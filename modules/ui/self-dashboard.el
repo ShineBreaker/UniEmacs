@@ -354,16 +354,25 @@ text property line-spacing 仅 GUI frame 生效,TTY 行高固定会忽略。"
 ;; ─── 窄屏条目标签截断 ───────────────────────────────────────────────
 
 (defun self/dashboard--take-width (str n &optional from-end)
-  "取 STR 列宽不超 N 的子串（FROM-END 非 nil 从尾部取）。"
-  (let ((chs (if from-end
-                 (reverse (string-to-list str))
-               (string-to-list str))))
-    (cl-loop with w = 0
-             for ch in chs
-             for cw = (string-width (string ch))
-             while (<= (+ w cw) n)
-             do (cl-incf w cw) and collect ch into acc
-             finally return (concat (if from-end (nreverse acc) acc)))))
+  "取 STR 列宽不超 N 的子串（FROM-END 非 nil 从尾部取）。
+逐字符累加显示列宽，一旦超出预算就停在这一字符之前——后面的字符
+一律不取，而不是「跳过超宽的字符继续找窄的」。"
+  (let ((taken '())            ; 已取的字符；push 出来是逆序
+        (width 0)              ; 已占的显示列宽
+        (stop nil))            ; 撞上预算上限后置位，之后不再收字符
+    ;; FROM-END 时从字符串尾部往前走，尾部字符先被 push，于是 push 顺序
+    ;; 天然与字符在字符串中的先后顺序相反。
+    (dolist (ch (if from-end
+                    (reverse (string-to-list str))
+                  (string-to-list str)))
+      (when (not stop)
+        (let ((cw (string-width (string ch))))
+          (if (> (+ width cw) n)
+              (setq stop t)
+            (setq width (+ width cw))
+            (push ch taken)))))
+    ;; 反向取的 push 顺序已经对；正向取的靠 nreverse 还原。
+    (concat (if from-end taken (nreverse taken)))))
 
 (defun self/dashboard--fit (label icon-w)
   "LABEL 超宽时中截，预留 ICON-W 与条目缩进（窄屏防折行）。"

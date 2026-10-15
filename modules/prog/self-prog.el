@@ -380,6 +380,21 @@ mode-alist 的残留映射(如 gdscript→gdformat),缺二进制的 formatter �
 
 ;; ─── Org 代码块格式化 ───────────────────────────────────────────────
 
+(defun self--src-block-region (el)
+  "EL 是可格式化的 src block 时返回 (起点 终点 MAJOR-MODE)，否则 nil。
+三种块判为不可格式化：块没有正文（:value 为 nil）；语言标成 org
+（那是元块，缩进归 org 的列表规则管，插进 formatter 会双重缩进）；
+语言查不到对应 major mode（org-src-get-lang-mode 返回 nil，或返回的
+名字背后没有命令，eg. 块里写了个没装的语言）。"
+  (when (org-element-property :value el)
+    (let ((lang (org-element-property :language el)))
+      (when (and lang (not (equal lang "org")))
+        (let ((mode (org-src-get-lang-mode lang)))
+          (when (and mode (fboundp mode))
+            (list (org-element-property :post-affiliated el)
+                  (org-element-property :end el)
+                  mode)))))))
+
 (cl-defun self--format-org-src-blocks
     (&key buffer scratch callback &allow-other-keys)
   "按各语言的 major mode 缩进 org BUFFER 中全部 src block 代码。
@@ -390,17 +405,13 @@ SCRATCH 为承载变换的临时 buffer,CALLBACK 在变换完成后调用。
   (with-current-buffer scratch
     (funcall (buffer-local-value 'major-mode buffer))
     (let (regions)
+      ;; 每个可格式化的块贡献一个 (起点 终点 模式) 三元组。REGIONS 按块在
+      ;; 文档中的先后 push，读的时候是逆序——下面的变换逐块独立，与顺序无关。
       (org-element-map (org-element-parse-buffer) 'src-block
         (lambda (el)
-          (and-let* ((value (org-element-property :value el))
-                     (lang (org-element-property :language el))
-                     (mode (and (not (equal lang "org"))
-                                (org-src-get-lang-mode lang)))
-                     ((fboundp mode)))
-            (push (list (org-element-property :post-affiliated el)
-                        (org-element-property :end el)
-                        mode)
-                  regions))))
+          (let ((region (self--src-block-region el)))
+            (when region
+              (push region regions)))))
       ;; 缩进变换对每个块独立完成，逐块按 BEG / EL-END / MODE 平铺处理。
       (dolist (region regions)
         (let ((beg (nth 0 region))

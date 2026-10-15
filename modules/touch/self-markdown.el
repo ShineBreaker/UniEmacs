@@ -155,6 +155,35 @@
        out))
     (nreverse out)))
 
+(defun self/markdown--row-cells (row ncol)
+  "ROW 补齐到 NCOL 列并逐格渲染，返回该行的 cell 文本列表。
+源码里的表允许参差（短行尾部的列直接缺失），缺的位置补空串占位，
+后面的按列取宽才有个统一的列数。"
+  (mapcar #'self/markdown--cell-render
+          (append row (make-list (- ncol (length row)) ""))))
+
+(defun self/markdown--column-widths (cells ncol)
+  "CELLS（每行一个 cell 列表）各列的自然宽：取该列所有 cell 的最大
+显示宽，下限 1 列（空 cell 也占 1 列的框线）。"
+  (let (widths)
+    (dotimes (i ncol)
+      (let ((w 1))
+        (dolist (row cells)
+          (setq w (max w (string-width (nth i row)))))
+        (push w widths)))
+    (nreverse widths)))
+
+(defun self/markdown--wrap-row (row widths ncol)
+  "ROW 的各列按 WIDTHS 折行，返回每列的折行段列表（与 WIDTHS 等长）。"
+  (let (out)
+    (dotimes (i ncol)
+      (push (self/markdown--wrap (nth i row) (nth i widths)) out))
+    (nreverse out)))
+
+(defun self/markdown--embolden-lines (lines)
+  "折行段列表 LINES 逐段加粗（表头用）。"
+  (mapcar (lambda (s) (propertize s 'face 'bold)) lines))
+
 (defun self/markdown--table-render (text budget)
   "表格源 TEXT 渲染为框线表文本（列宽总预算 BUDGET 列）。"
   (let* ((lines (split-string text "\n" t))
@@ -169,35 +198,20 @@
         text
       (setq rows (nreverse rows))
       (let* ((ncol (apply #'max (mapcar #'length rows)))
-             (idxs (number-sequence 0 (1- ncol)))
-             (cells (mapcar (lambda (r)
-                              (mapcar #'self/markdown--cell-render
-                                      (append r (make-list (- ncol (length r))
-                                                           ""))))
+             (cells (mapcar (lambda (row) (self/markdown--row-cells row ncol))
                             rows))
              (budget (max (- budget (* 3 ncol) 3) (* ncol 4)))
              (widths (self/markdown--table-widths
-                      (mapcar (lambda (i)
-                                (apply #'max 1 (mapcar
-                                                (lambda (c)
-                                                  (string-width (nth i c)))
-                                                cells)))
-                              idxs)
+                      (self/markdown--column-widths cells ncol)
                       budget))
              (aligns (markdown-table-colfmt fmtspec))
-             (cells-w (mapcar (lambda (r)
-                                (let (out)
-                                  (dotimes (i ncol)
-                                    (push (self/markdown--wrap
-                                           (nth i r) (nth i widths)) out))
-                                  (nreverse out)))
+             ;; CELLS-W：与 CELLS 同序，每项是该行各列的折行段列表
+             (cells-w (mapcar (lambda (row)
+                                (self/markdown--wrap-row row widths ncol))
                               cells))
              (body (list (self/markdown--table-rule widths))))
-        (let ((head (mapcar (lambda (lines)
-                              (mapcar (lambda (s)
-                                        (propertize s 'face 'bold))
-                                      lines))
-                            (pop cells-w))))
+        ;; 表头单独处理：POP 掉第一行折行结果，加粗后再出框线
+        (let ((head (mapcar #'self/markdown--embolden-lines (pop cells-w))))
           (setq body (append body
                              (self/markdown--table-lines head widths aligns)
                              (list (self/markdown--table-rule widths)))))
