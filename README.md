@@ -18,7 +18,9 @@
 - `modules/` — 全部功能模块（`self-*.el`，含 `ide/` 档专属层）
 - `profiles/` — 四档的模块清单与包声明
 - `data/` — 翻译表、图标资产
-- `docs/architecture.md` — 设计文档
+- `docs/architecture.md` — 设计文档；`docs/mobile/` — 手机安装指南与 Termux 重签专题
+- `scripts/` / `justfile` — 验证与运维命令（APK 重签脚本见 `docs/mobile/`）
+- `assets/` / `.github/workflows/` — Termux 重签密钥（Emacs 官方公开）与 CI 流水线
 
 ## 开发
 
@@ -26,7 +28,8 @@
 
 ```bash
 direnv allow       # 或 denv load；环境由 manifest.scm 声明
-just verify        # 四档沙箱冒烟 + byte-compile 零警告
+just verify        # 启动后路径探针 + 图标字形覆盖 + 四档沙箱冒烟
+just compile       # 全模块 byte-compile 零警告
 ```
 
 手动冒烟某档：
@@ -39,7 +42,7 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 ## 部署
 
 - 桌面：入口两文件（`early-init.el`、`init.el`）放 `~/.config/emacs/`，`user-emacs-directory` 重定向到本仓库。
-- Android：同上，入口放 Emacs 的 `~/.emacs.d`，仓库 clone 到 Termux home。
+- Android：同上，入口放 Emacs 的 `~/.emacs.d`，仓库 clone 到 Termux home；Termux 需为与 Emacs 同签名的重签版（本仓库 Releases 直接下载，或 `just termux` 自产），完整安装流程见 `docs/mobile/README.md`。
 
 详见 `docs/architecture.md` §6。
 

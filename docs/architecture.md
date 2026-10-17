@@ -46,8 +46,11 @@ UniEmacs/
 │   ├── full.el
 │   └── ide.el
 ├── data/                 # 静态数据：翻译表、图标资产
-├── scripts/              # 运维脚本
+├── scripts/              # 运维脚本（验证脚本 + Termux 重签脚本）
 ├── docs/                 # 设计文档（本文件等）
+│   └── mobile/           #   手机部署与 Termux 重签专题
+├── .github/workflows/    # CI：Termux 重签-发布流水线
+├── assets/               # Emacs 官方公开构建密钥（重签 Termux 用）
 ├── justfile              # 本机命令入口
 └── manifest.scm          # Guix 开发环境声明（direnv use guix）
 ```
@@ -165,8 +168,9 @@ self-package 检测顺序：
 ## 6. 部署模型
 
 - **桌面**：仓库 clone 到任意位置；`~/.config/emacs/`（或 `~/.emacs.d/`）放 `early-init.el` + `init.el` 两个入口副本（或软链），`early-init` 把 `user-emacs-directory` 重定向到仓库。Guix 继续管包。
-- **Android**：入口两文件复制到 Emacs 的 `~/.emacs.d`，仓库 clone 在 Termux home，重定向后全部从仓库加载——沿用在真机上已验证的转发模型。
+- **Android**：入口两文件复制到 Emacs 的 `~/.emacs.d`，仓库 clone 在 Termux home，重定向后全部从仓库加载——沿用在真机上已验证的转发模型；Termux 需为与 Emacs 同签名的重签版，完整安装流程与真机验证清单见 `docs/mobile/README.md`。
 - **状态隔离**：缓存/持久化统一进 `self:var-directory`（XDG state 语义），仓库目录保持只读源码身份。
+- **手机基建**：仓库同时承载 Termux 重签流水线——`scripts/` 两条脚本（抓取上游预览版 + 重签并断言证书指纹）、`assets/emacs.keystore`（Emacs 官方公开密钥）、`.github/workflows/resign-termux.yml`（每周检查上游并发布重签 APK 到 Releases）；`early-init.el` 的 Android 分支把 Termux bin 注入 `exec-path`/`PATH`（Emacs 才能执行 Termux 内的 git/rg/sqlite3）。机制与教程见 `docs/mobile/`。
 
 ## 7. 移植阶段规划
 
