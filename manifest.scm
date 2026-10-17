@@ -1,7 +1,9 @@
 ;;; manifest.scm --- UniEmacs 开发环境（direnv use guix）
 ;;;
 ;;; 声明两类依赖：
-;;;   1. 开发/验证工具链（just / git / ripgrep / fd / sqlite / make）。
+;;;   1. 开发/验证工具链（just / git / ripgrep / fd / sqlite / make）
+;;;      与手机基建/图标重建工具（curl / jq / unzip / openjdk / fontconfig /
+;;;      librsvg / netpbm，见「手机基建」组注释）。
 ;;;   2. profiles/*.el 清单里的全部第三方 Emacs 包（Guix 侧登记点）。
 ;;;      登记后 `guix shell -m manifest.scm -- just verify` 能在完整包
 ;;;      环境下跑四档冒烟与 byte-compile，不再是「找不到就跳过」。
@@ -20,6 +22,15 @@
    "fd"           ; 文件查找
    "sqlite"       ; org-roam CLI 后端（emacsql-sqlite3）
    "make"         ; 备用构建
+
+   ;; ─── 手机基建与图标重建（just 的 APK 构建 / 配置依赖组）─────────
+   "curl"         ; 抓取上游预览版 APK / 字体与字体图标下载
+   "jq"           ; 重签脚本解析 GitHub release API
+   "unzip"        ; build-tools、字体包解包
+   "openjdk"      ; apksigner（java -jar tools/apksigner.jar）
+   "fontconfig"   ; fc-list：字体检测（font / glyph-check）与图标重建
+   "librsvg"      ; rsvg-convert：图标重建（just icons 缺资产时）
+   "netpbm"       ; pngtopam 等：modifier-bar 徽章生成（同上）
 
    ;; ─── 两档共用 / full 档第三方包 ──────────────────────────────
    "emacs-dashboard"

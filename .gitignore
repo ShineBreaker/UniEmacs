@@ -18,6 +18,10 @@ auto-save-list/
 .sandbox/
 .sandbox-gui/
 
+# Termux 重签产物与本地工具（生成物，不入库）
+download/
+tools/
+
 # agent 任务书（临时操作文档，不入库）
 .agents/tasks/
 .agents/staging/
