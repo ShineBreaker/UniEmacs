@@ -54,8 +54,11 @@
   (interactive)
   (let* ((roam (self/perf--elapsed
                 (lambda ()
-                  (length (directory-files self:org-roam-directory t
-                                           "\\.org\\'")))))
+                  ;; 目录可能尚未建好（新设备首启）：报 0 而非 file-error
+                  (if (file-directory-p self:org-roam-directory)
+                      (length (directory-files self:org-roam-directory t
+                                               "\\.org\\'"))
+                    0))))
          (dash (self/perf--elapsed
                 (lambda () (length (self/dashboard--recent-roam-files 4)))))
          (title (self/perf--elapsed

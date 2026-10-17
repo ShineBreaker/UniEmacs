@@ -434,16 +434,18 @@ text property line-spacing 仅 GUI frame 生效,TTY 行高固定会忽略。"
   "笔记目录按 mtime 最近的 N 个 org 文件。
 `directory-files-and-attributes' 一次 stat 全表（装饰排序，比较
 纯内存）——sort 比较器内逐对 file-attributes 在 FUSE 存储上是
-n·log(n) 次 stat 风暴。"
-  (mapcar #'car
-          (seq-take
-           (sort (directory-files-and-attributes
-                  self:org-roam-directory t "\\.org\\'")
-                 (lambda (a b)
-                   (time-less-p
-                    (file-attribute-modification-time (cdr b))
-                    (file-attribute-modification-time (cdr a)))))
-           n)))
+n·log(n) 次 stat 风暴。目录尚未建好时（新设备首启、存储未授权时
+org 目录回退到私有目录）返回空表，让调用方显示「暂无文件」。"
+  (when (file-directory-p self:org-roam-directory)
+    (mapcar #'car
+            (seq-take
+             (sort (directory-files-and-attributes
+                    self:org-roam-directory t "\\.org\\'")
+                   (lambda (a b)
+                     (time-less-p
+                      (file-attribute-modification-time (cdr b))
+                      (file-attribute-modification-time (cdr a)))))
+             n))))
 
 (defun self/dashboard--icon (code)
   "GUI 返回 NF 码点 CODE 的图标串，tty 返回空串。"
