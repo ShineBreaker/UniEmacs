@@ -30,6 +30,10 @@
 
 ;; ─── 部署诊断（不依赖 modules，require 失败后仍可用） ─────────────
 
+;; Android 构建专有函数；桌面构建里不存在，故用 declare + fboundp 双层
+;; 守卫（跨构建变量/函数的合法场景）。
+(declare-function android-external-storage-available-p "androidfns.c")
+
 (defun self/deploy--conclusion ()
   "返回针对当前状态的诊断结论字符串。"
   (cond
@@ -40,6 +44,9 @@
    ((and (eq system-type 'android)
          (not (file-equal-p user-emacs-directory self:repo)))
     "仓库可达，但 user-emacs-directory 未重定向到仓库：Emacs 家目录的 early-init.el 是旧版或未复制，重新复制两个入口文件。")
+   ((and (eq system-type 'android)
+         (not (file-directory-p "/data/data/com.termux/files/home")))
+    "Emacs 无法访问 Termux home（/data/data/com.termux/files/home）：同签名重签未生效或 Termux 未安装，Emacs 将找不到 git / rg / sqlite3。按 docs/mobile/README.md §2 完成重签安装。")
    ((eq system-type 'android)
     "部署链路正常。")
    (t "桌面环境：代码从 self:repo 加载，状态落在 HOME 下的隔离目录，仓库目录保持只读。")))
@@ -68,6 +75,9 @@ core/ 在 load-path：    %s
 git 可用：              %s
 ripgrep (rg) 可用：     %s
 sqlite3 CLI 可用：      %s
+Termux home 可访问：    %s
+Termux bin 存在：       %s
+外部存储权限：          %s
 native-comp 可用：      %S
 
 结论：
@@ -93,6 +103,15 @@ native-comp 可用：      %S
         (executable-find "git")
         (executable-find "rg")
         (executable-find "sqlite3")
+        (if (eq system-type 'android)
+            (file-directory-p "/data/data/com.termux/files/home")
+          "N/A（桌面）")
+        (if (eq system-type 'android)
+            (file-directory-p "/data/data/com.termux/files/usr/bin")
+          "N/A（桌面）")
+        (if (fboundp 'android-external-storage-available-p)
+            (if (android-external-storage-available-p) "已授予" "未授予")
+          "N/A（非 Android 构建）")
         (native-comp-available-p)
         (self/deploy--conclusion)))
       (goto-char (point-min)))

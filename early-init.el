@@ -83,6 +83,17 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
 
   ;; ── 本体（仓库内运行 / 桌面入口副本 / 已重定向后的仓库版） ──
 
+  ;; Android：把 Termux 的 bin 目录前置进 exec-path 与 PATH，让 Emacs 能
+  ;; 执行 Termux 里 `pkg install` 的程序（git / rg / sqlite3——org-roam 的
+  ;; CLI 后端依赖 sqlite3 才能启用）。GNU 官方 README 建议放在
+  ;; early-init.el；未安装 Termux 或未完成同签名重签（见 docs/mobile/）
+  ;; 时目录不存在，静默跳过。
+  (when (eq system-type 'android)
+    (let ((termux-bin "/data/data/com.termux/files/usr/bin"))
+      (when (file-directory-p termux-bin)
+        (setenv "PATH" (concat termux-bin path-separator (getenv "PATH")))
+        (add-to-list 'exec-path termux-bin))))
+
   ;; 禁用 package.el 自动初始化（包由各 profile 的包清单管理）；
   ;; 跳过 site-start 与 default.el。
   (setq package-enable-at-startup nil
