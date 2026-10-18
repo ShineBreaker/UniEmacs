@@ -28,6 +28,7 @@
 ;; 看的声明，避免「自由变量 / 未知函数」警告；运行时 bootstrap 会把
 ;; 真定义加载进来。
 (defvar elpaca-directory)
+(defvar elpaca-cache-directory)
 (defvar elpaca-builds-directory)
 (defvar elpaca-sources-directory)
 (defvar elpaca-order)
