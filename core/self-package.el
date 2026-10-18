@@ -31,6 +31,7 @@
 (defvar elpaca-builds-directory)
 (defvar elpaca-sources-directory)
 (defvar elpaca-order)
+(defvar elpaca-order-defaults)
 (defvar elpaca-lock-file)
 
 ;; package.el 被禁用（见 early-init.el），不 require 它；只声明变量，
@@ -290,6 +291,11 @@ eval 拼调用，这是官方用法的动态版，不是炫技。"
   (self/package--apply-elpa-mirror)
   (self/package--bootstrap-elpaca)
   (require 'elpaca)
+  ;; 强制整仓浅克隆（--depth=1）：elpaca 默认 :depth treeless 走
+  ;; --filter=tree:0 部分克隆，Android/Termux 的 git 在此路径下源码
+  ;; 目录不落盘，主 elisp 文件找不到，包全数 failed。整仓浅克隆体积
+  ;; 略大但可靠，小仓库下也不比部分克隆慢。
+  (setq elpaca-order-defaults (plist-put elpaca-order-defaults :depth 1))
   ;; lockfile 生效前提：elpaca-menu-lock-file 必须是菜单链第一位
   ;; （见 elpaca 手册 Lock Files 一节；add-to-list 默认前置）。
   (add-to-list 'elpaca-menu-functions 'elpaca-menu-lock-file)
