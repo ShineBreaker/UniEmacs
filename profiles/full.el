@@ -1,9 +1,12 @@
 ;;; full.el --- full 档：桌面全量 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; 桌面全量学习档：功能完备、语法平铺直白，桌面默认档是 ide，本档经
-;; UNI_EMACS_PROFILE=full 显式选择。勾选全部模块，含编程栈（语言 /
-;; LSP / VCS / 工程）、终端面板、知识库适配与桌面键位表。
+;; 桌面全量学习档：目标是增强的完整 Emacs 体验，重点在于学习与掌握
+;; Emacs 独有特性。桌面默认档是 ide，本档经 UNI_EMACS_PROFILE=full
+;; 显式选择。勾选全部模块，含编程栈（语言 / LSP / VCS / 工程）、
+;; 终端面板、知识库适配、桌面键位表，以及 self-discover——把窄化、
+;; 寄存器、键盘宏、矩形、间接缓冲、Ediff、hi-lock、递归 minibuffer
+;; 等 Emacs 独门机制翻出来并中文化的那一层。
 ;;
 ;; Profiles: full
 ;; Requires: self-lib self-package
@@ -92,6 +95,7 @@
 (require 'self-dashboard)
 (require 'self-apps)
 (require 'self-daemon)
+(require 'self-discover)
 (require 'self-keys-desktop)
 
 ;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────

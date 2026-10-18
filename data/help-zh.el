@@ -7,7 +7,14 @@
 
 (setq self:help-introduction
       '("本配置按 Emacs 原生前缀组织命令；下表由实际键位声明实时生成。"
-        "C-h 保留为左移，F1 是原生帮助前缀，C-c h 提供内置 describe-* 入口。"))
+        "C-h 保留为左移，F1 是原生帮助前缀，C-c h 提供内置 describe-* 入口。"
+        ""
+        "独门技巧（无键位、在特定界面内生效）：Dired 里 C-x C-q 进入 Wdired，"
+        "把文件名当普通文本改，C-c C-c 落盘即批量重命名；Occur 结果页按 e 进入"
+        "occur-edit 直接编辑回写源 buffer；有选区时 undo 只撤销选区内的改动"
+        "（undo-in-region）；M-x proced 是 Emacs 自己的进程管理器。"
+        "导航暗器：C-u C-SPC 后连按 C-SPC 沿标记环回跳，C-x C-SPC 弹全局标记"
+        "跨缓冲回跳；C-x ESC ESC 回放最近一条复杂命令（可改参数再跑）。"))
 
 ;; Magit 状态页速查卡。键位核对自 Magit 4.7.1 的 magit-status-mode-map：
 ;; 状态页内单键不经过 self/bind 声明，故以静态数据直接供帮助页渲染。

@@ -155,6 +155,7 @@ self-package 检测顺序：
 | ----------------- | --------------- | -------------------------------------- |
 | `self-daemon`     | full            | server-mode、daemon 预热、client 帧行为 |
 | `self-apps`       | full            | agent-shell / telega / guix / newsticker 等应用集成 |
+| `self-discover`   | full, ide       | Emacs 独门特性发现层：窄化/寄存器/矩形/键盘宏/间接缓冲/Sexp/Ediff/hi-lock/递归 minibuffer 的内建键位再声明与行为开关（零三方依赖） |
 | `self-keys-desktop` | full          | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys |
 
 ### 5.7 `modules/ide/` —— ide 档专属层（full 之上的覆写/新增）

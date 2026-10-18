@@ -1,11 +1,12 @@
 ;;; ide.el --- ide 档：Zed 对齐的深度定制桌面 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; IDE 档：在 full 档全量模块之上，加一层对齐 Zed 界面与交互习惯的
-;; IDE 设施——Treemacs 项目树、命令面板式补全栈（vertico/corfu/
-;; kind-icon）、面包屑行、行内 Git blame、代码缩略图。本档是桌面默认
-;; profile（未设 UNI_EMACS_PROFILE 且非 Android 时落到这里）；显式
-;; 选择仍可用：
+;; IDE 档：完整复刻 Zed/VSCode/JetBrains 的 IDE 体验。在 full 档
+;; 全量模块之上叠加 IDE 设施——Treemacs 项目树、命令面板式补全栈
+;; （vertico/corfu/kind-icon）、面包屑行、行内 Git blame、代码缩略图，
+;; 以及鼠标平权层（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、
+;; 代码右键菜单）。本档是桌面默认 profile（未设 UNI_EMACS_PROFILE
+;; 且非 Android 时落到这里）；显式选择仍可用：
 ;;
 ;;   UNI_EMACS_PROFILE=ide
 ;;
@@ -85,6 +86,7 @@
 (require 'self-dashboard)
 (require 'self-apps)
 (require 'self-daemon)
+(require 'self-discover)
 (require 'self-keys-desktop)
 
 ;; ─── ide 专属层 ───────────────────────────────────────────────────
