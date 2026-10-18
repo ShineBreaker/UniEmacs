@@ -61,7 +61,10 @@ termux 版 Emacs 在 `https://ftp.gnu.org/gnu/emacs/android/termux/`（国内镜
 
 ## 4. 部署
 
-完整仓库 clone 在 Termux home 的 `~/.config/emacs`（git 可用），Emacs 自身的 `~/.emacs.d`（`/data/data/org.gnu.emacs/files/.emacs.d/`）只放两个入口文件的副本：
+部署是**两处位置、各放各的（缺一不可）**：
+
+- **仓库本体**：clone 到 Termux home 的 `~/.config/emacs`（= `/data/data/com.termux/files/home/.config/emacs`）——core/、modules/、profiles/ 与 git 都在这。
+- **入口两文件的副本**：放 Emacs 应用自己家目录的 `.emacs.d`（= `/data/data/org.gnu.emacs/files/.emacs.d/`）——Android 原生 Emacs 只读自己家目录下的 init，**不会**自动读 Termux 目录；副本里 `early-init.el` 的探测逻辑负责把加载位置重定向到 Termux 仓库。
 
 ```sh
 # Termux 中执行
@@ -71,7 +74,7 @@ cp ~/.config/emacs/early-init.el ~/.config/emacs/init.el \
    /data/data/org.gnu.emacs/files/.emacs.d/
 ```
 
-加载链路：Emacs home 的 `early-init.el` 探测到 Termux 仓库后重定向 `user-emacs-directory` 并加载仓库版本；`init.el` 的加载位置虽不随重定向变化（Emacs 机制，已实测），但此时 `user-emacs-directory` 已指向仓库，require 的即 Termux 仓库中的 modules。两个入口文件更新后需重新复制。
+加载链路：Emacs home 的 `early-init.el` 探测到 Termux 仓库后重定向 `user-emacs-directory` 并加载仓库版本；`init.el` 的加载位置虽不随重定向变化（Emacs 机制，已实测），但此时 `user-emacs-directory` 已指向仓库，require 的即 Termux 仓库中的 modules。两个入口文件更新后需重新复制。注意上面「Emacs home」指 Emacs 应用家目录（`/data/data/org.gnu.emacs/files/`），不是 Termux home；且 Emacs 的 XDG 规则下，若该家目录里同时存在 `.config/emacs/`，它会优先于 `.emacs.d/`——配置没生效时先检查这一点。
 
 数据均不进仓库（`self:data-home`：Android = Termux home，桌面沙箱 = HOME，见 `core/self-lib.el`）：
 

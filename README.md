@@ -42,7 +42,7 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 ## 部署
 
 - 桌面：入口两文件（`early-init.el`、`init.el`）放 `~/.config/emacs/`，`user-emacs-directory` 重定向到本仓库。
-- Android：同上，入口放 Emacs 的 `~/.emacs.d`，仓库 clone 到 Termux home；Termux 需为与 Emacs 同签名的重签版（本仓库 Releases 直接下载，或 `just termux` 自产），完整安装流程见 `docs/mobile/README.md`。
+- Android：入口两文件复制到 Emacs 应用家目录的 `.emacs.d`（`/data/data/org.gnu.emacs/files/.emacs.d/`），仓库本体 clone 到 Termux home 的 `~/.config/emacs`；Termux 需为与 Emacs 同签名的重签版（本仓库 Releases 直接下载，或 `just termux` 自产），完整安装流程见 `docs/mobile/README.md`。
 
 详见 `docs/architecture.md` §6。
 
