@@ -779,13 +779,34 @@ OV 提供标题显示文本,用于折算已占用宽度;须在
 
 ;; ─── 版心居中 ──────────────────────────────────────────────────────
 
+(defun self/dashboard--tty-width (str)
+  "STR 在终端（TTY）下的显示列数。
+Emacs 的 `char-width' 把 box-drawing（─ ═ 等，East Asian Ambiguous）
+记 2 列，而 xterm 类终端实际渲染 1 列；不校正的话含装饰线的标题行
+会偏离中心。只校正 U+2500–U+257F 这一段（块字符/盲文实测 Emacs
+本就记 1 列，不动）。"
+  (let ((w 0))
+    (dotimes (i (length str))
+      (let ((ch (aref str i)))
+        (setq w (+ w (if (and (>= ch #x2500) (<= ch #x257F))
+                         1
+                       (char-width ch))))))
+    w))
+
+(defun self/dashboard--line-width (str)
+  "STR 的显示列数：GUI 走插件的像素量法，TTY 走终端列宽校正。
+GUI 下 `dashboard-str-len' 直接量像素，与真实渲染一致；TTY 下它退
+化为 char-width 求和，含 box-drawing 的行会偏，故分开处理。"
+  (if (display-graphic-p)
+      (dashboard-str-len str)
+    (self/dashboard--tty-width str)))
+
 (defun self/dashboard--center-line (body-width)
-  "把当前行按自身行宽居中(行首加 align-to 前缀);超过 BODY-WIDTH 不加。
-行宽用插件的 dashboard-str-len 按像素量:string-width 会把 ─ ═ 这类
-ambiguous 字符按双列计、GUI 实际渲染单列,居中会偏。"
+  "把当前行按自身行宽居中（行首加 align-to 前缀）；超过 BODY-WIDTH 不加。"
   (let* ((beg (line-beginning-position))
          (end (line-end-position))
-         (w (dashboard-str-len (buffer-substring-no-properties beg end))))
+         (w (self/dashboard--line-width
+             (buffer-substring-no-properties beg end))))
     (when (and (> w 0) (<= w body-width))
       (let ((p (propertize
                 " " 'display
@@ -818,6 +839,13 @@ ambiguous 字符按双列计、GUI 实际渲染单列,居中会偏。"
       (add-text-properties sec-beg sec-end
                            `(line-prefix ,block-prefix
                                          indent-prefix ,block-prefix))
+      ;; 块前缀只把整块左缘对到版心，标题文本短就贴在块左缘（Android
+      ;; 无右侧快捷键时尤其明显）。标题行改按自身宽度单独居中，覆盖块
+      ;; 前缀；桌面标题行含右贴快捷键、宽度≈版心，覆盖后位置不变。
+      (dolist (ov ovs)
+        (save-excursion
+          (goto-char (overlay-start ov))
+          (self/dashboard--center-line body-width)))
       (goto-char sec-end)
       (while (and (< (point) (point-max))
                   (progn (forward-line 1) t))
