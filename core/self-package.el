@@ -55,6 +55,13 @@
 (MELPA名 . GUIX名) cons（两边名不一致时，如 (corfu . emacs-corfu)）。
 `self/package-ensure' 按后端消费这份清单。")
 
+(defvar self:package-recipes
+  '((org-modern-indent :host github :repo "jdtsmith/org-modern-indent"))
+  "MELPA/GNU/NonGNU 菜单里都没有的包：包名 → elpaca order 属性表。
+elpaca 找不到配方时报 \"Unable to determine recipe URL\"，在这里显式给出
+:host/:repo 即可。只作用于 elpaca 后端；Guix 后端不读本表（Guix 侧在
+manifest.scm 登记 spec 名，如 emacs-org-modern-indent）。")
+
 ;; ─── 镜像与代理 ──────────────────────────────────────────────────
 
 (defcustom self:elpa-mirror 'tuna
@@ -301,7 +308,11 @@ eval 拼调用，这是官方用法的动态版，不是炫技。"
   (add-to-list 'elpaca-menu-functions 'elpaca-menu-lock-file)
   (setq elpaca-lock-file self:elpaca-lock-file)
   (dolist (pkg pkgs)
-    (eval `(elpaca ,(car pkg)) t))
+    (let ((recipe (alist-get (car pkg) self:package-recipes)))
+      (eval (if recipe
+                `(elpaca (,(car pkg) ,@recipe))
+              `(elpaca ,(car pkg)))
+            t)))
   (elpaca-process-queues)
   (elpaca-wait))
 

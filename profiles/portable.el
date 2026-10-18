@@ -32,14 +32,14 @@
         vundo idle-highlight-mode tempel
         ef-themes expreg
         org-appear org-modern org-modern-indent olivetti
-        org-roam emacsql emacsql-sqlite3
+        org-roam emacsql
         markdown-mode
         nov))
 
-;; Android 上 org-roam 只能走 emacsql 的 sqlite3 CLI 后端，需把这两个包钉在
-;; org-roam 2.2.2 / emacsql 3.1.1（理由见 modules/self-roam.el 的 Commentary）。
-;; 版本 pin 不在这里声明——core/self-package.el 的 elpaca 后端统一走 lockfile
-;; 文件（data/elpaca-lockfile.el）。
+;; emacsql 包自带 emacsql-sqlite.el（org-roam 2.2.x 的 `sqlite' 连接器）；
+;; Emacs 29+ 的 Android 构建已内置（静态链接）sqlite3，org-roam 2.3+ 会自动
+;; 选内置后端。上游没有独立的 emacsql-sqlite3 包，故不再登记。需要固定
+;; 版本时走 elpaca lockfile（data/elpaca-lockfile.el）。
 
 (self/package-ensure)
 

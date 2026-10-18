@@ -6,7 +6,7 @@
 ;;; Commentary:
 ;; Profiles: portable, full, ide
 ;; Requires: self-lib（路径常量）、self-keys（self/bind、self/declare-binding-group）
-;; Packages: org-roam, emacsql, emacsql-sqlite3
+;; Packages: org-roam, emacsql
 ;;
 ;; 移植自桌面端配置「Org 与知识库」域之「双链笔记与专注写作」小节里属于
 ;; org-roam 的部分 + Knowledge 小节 C-c o r 前缀下的键位；移动端 self-org
@@ -35,15 +35,14 @@
 ;; 增量部分（见 `self/org-roam-update-on-save'），全量重建手动 M-x
 ;; org-roam-db-sync（有进度可预期）。
 ;;
-;; ─── 版本约束（保留理由，版本 pin 本身属 core 的包后端）────────────
+;; ─── SQLite 后端与版本（版本 pin 本身属 core 的包后端）────────────
 ;;
-;; org-roam + emacsql 在 Android 上必须降到 2.2.2 / 3.1.1：官方 APK 无内置
-;; sqlite（`(featurep 'sqlite3)' 为 nil），org-roam 2.3+ 的 emacsql 内置后端
-;; 不可用，只有 emacsql 3.x 才有 sqlite3 CLI 后端，走 Termux 的 sqlite3。
-;; 已知代价：常驻 sqlite3 CLI 子进程，每条语句经管道往返同步等待；官方将
-;; 该后端标为 BROKEN（#1927 缓存 bug）。注意这是 Android 专属的降级需求，
-;; 桌面端有内置 sqlite，可以跑新版 org-roam 的内置后端——本模块不做档位
-;; 自我裁剪，故该 pin 只应写进 portable 档的包清单。
+;; Emacs 29+ 起 Android 版（含官方 termux APK）已静态链接 sqlite3，
+;; `(sqlite-available-p)' 为 t。org-roam 2.3+ 用 emacsql-sqlite-open 自动
+;; 选内置后端；org-roam 2.2.x 读 connector 变量，指向 `sqlite'
+;;（emacsql-sqlite，走 Termux 的 sqlite3 CLI）。上游从未提供独立的
+;; emacsql-sqlite3 包（早先清单里那个名字是笔误），emacsql-sqlite.el 随
+;; emacsql 包分发，故包清单只保留 emacsql。
 
 ;;; Code:
 
@@ -63,7 +62,7 @@
 (declare-function self/declare-binding-group "self-keys" (key description))
 (declare-function org-roam-file-p "org-roam")
 (declare-function org-roam-db-update-file "org-roam")
-(defvar org-roam-database-connector) ; ':init 里按平台选 sqlite3 CLI 后端
+(defvar org-roam-database-connector) ; org-roam 2.2.x 的 connector 变量
 
 ;; ─── 保存后增量索引 ────────────────────────────────────────────────
 ;;
@@ -112,11 +111,13 @@
 ;; 退出时兜底刷完，避免待索引的文件留到下次会话
 (add-hook 'kill-emacs-hook #'self/org-roam-flush-pending)
 
-;; ─── emacsql：Android 走 sqlite3 CLI 后端 ──────────────────────────
+;; ─── emacsql：SQLite 后端选择 ─────────────────────────────────────
 ;;
-;; 桌面端没有这一层：Emacs 内置 sqlite，org-roam 用它的内置 connector。
-;; 这里只声明延迟加载（安装由 profile 清单负责），connector 的选择见下方
-;; org-roam 的 :init。
+;; emacsql 包自带 emacsql-sqlite.el（CLI 连接器）与 emacsql-sqlite-builtin.el
+;; （内置连接器）；上游从未有过独立的 emacsql-sqlite3 包。Emacs 29+ 的
+;; Android 构建静态链接了 sqlite3，org-roam 2.3+ 用 emacsql-sqlite-open
+;; 自动选内置后端；org-roam 2.2.x 则读 connector 变量，在下方 :init 里显式
+;; 指定 `sqlite'（CLI）。这里只声明延迟加载（安装由 profile 清单负责）。
 
 (use-package emacsql
   :defer t
@@ -124,15 +125,15 @@
   ;; 3s：db 被残留进程锁住时查询快速失败降级，默认 30s 在触屏上无法中断
   (setq emacsql-global-timeout 3))
 
-;; connector 是运行时选择，org-roam 声明依赖里没有 emacsql-sqlite3，
-;; 须在 profile 清单里显式声明（延迟加载，只装包即可）
-(use-package emacsql-sqlite3
+;; emacsql-sqlite.el 随 emacsql 包分发，org-roam 的 `sqlite' 连接器按需 require
+(use-package emacsql-sqlite
   :defer t)
 
 (when self:android-p
-  (unless (executable-find "sqlite3")
+  (unless (or (and (fboundp 'sqlite-available-p) (sqlite-available-p))
+              (executable-find "sqlite3"))
     (display-warning 'self-roam
-                     "sqlite3 CLI 不可用，org-roam 未启用（Termux: pkg install sqlite3）")))
+                     "SQLite 后端不可用：内置 sqlite 未启用且无 sqlite3 CLI（Termux: pkg install sqlite）")))
 
 ;; ─── org-roam ──────────────────────────────────────────────────────
 
@@ -141,9 +142,9 @@
   :commands (org-roam-node-find org-roam-node-insert org-roam-buffer-toggle)
   :init
   (when self:android-p
-    ;; Android 无内置 sqlite，只能走 emacsql 的 sqlite3 CLI 后端
-    ;; （见 Commentary 的版本约束）
-    (setq org-roam-database-connector 'sqlite3)
+    ;; org-roam 2.2.x：显式用 `sqlite'（emacsql-sqlite，CLI 连接器）；
+    ;; 2.3+ 已移除该变量，改由 emacsql-sqlite-open 自动选内置后端。
+    (setq org-roam-database-connector 'sqlite)
     ;; 清残留 sqlite3 子进程：Emacs 被系统杀掉时子进程成孤儿，独占
     ;; org-roam.db 文件锁，新连接打开同一 db 时阻塞直至 emacsql-wait
     ;; 超时（30s）。pkill -f 按 db 完整路径匹配，不影响其它 sqlite3。

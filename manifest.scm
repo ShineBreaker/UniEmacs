@@ -20,7 +20,7 @@
    "git"          ; 版本控制
    "ripgrep"      ; 模块内外部检索依赖
    "fd"           ; 文件查找
-   "sqlite"       ; org-roam CLI 后端（emacsql-sqlite3）
+   "sqlite"       ; org-roam 2.2.x 的 CLI 兜底后端（emacsql-sqlite）
    "make"         ; 备用构建
 
    ;; ─── 手机基建与图标重建（just 的 APK 构建 / 配置依赖组）─────────
@@ -94,8 +94,8 @@
    "emacs-minimap"          ; 右侧代码缩略图
 
    ;; ─── portable 档专用 ──────────────────────────────────────────
-   ;; emacsql-sqlite3（Android 的 org-roam sqlite CLI 后端）在 Guix 侧
-   ;; 无对应包，也不该进桌面 dev 环境——它只在 Android 上经 elpaca 安装。
+   ;; emacsql-sqlite（org-roam 2.2.x 的 CLI 连接器）随 emacs-emacsql 分发，
+   ;; 无需单独登记；org-roam 2.3+ 在 Android 上自动用内置 sqlite 后端。
    "emacs-ef-themes"
    "emacs-expreg"
    "emacs-nov"))
