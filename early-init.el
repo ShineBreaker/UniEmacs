@@ -130,7 +130,12 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
 
   ;; load-path 查找缓存（Emacs 31+ 才有这个变量）：require 时跳过
   ;; 不含目标的目录。boundp 守卫是跨构建变量的合法场景。
+  ;; 缓存函数内部用 `regexp-opt' 拼文件名正则，而它是 autoload：在它
+  ;; 加载前启用过滤器时，首个 require 会加载 regexp-opt.el，加载动作又
+  ;; 触发过滤器 -> 无限递归（Termux 版 Emacs 31.1 实测 "Lisp nesting
+  ;; exceeds max-lisp-eval-depth"）。先显式加载再启用。
   (when (boundp 'load-path-filter-function)
+    (require 'regexp-opt)
     (setq load-path-filter-function
           #'load-path-filter-cache-directory-files))
 
