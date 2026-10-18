@@ -165,7 +165,8 @@ self-package 检测顺序：
 | `self-ide-chrome`     | ide   | 字体分轨（Maple Mono NF CN + Sarasa UI SC）、绝对行号、面包屑 header-line、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode |
 | `self-ide-panel`      | ide   | Treemacs 左侧项目树（nerd-icons/deferred git/follow/tag-follow），接管 C-b/C-S-e/C-c w f/d/T |
 | `self-ide-slots`      | ide   | 三槽位窗口契约（左树/底面板/编辑区）：display-buffer-alist 声明层+兜底层，未声明 buffer 一律进底槽 |
-| `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview |
+| `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview；C-S-o/M-s p 接管为 consult-imenu/consult-ripgrep |
+| `self-ide-mouse`      | ide   | 鼠标平权层：Shift+滚轮横滚、gutter（行号槽/fringe）点击切换 dape 断点、prog buffer 右键「代码」子菜单；登记已就绪的 Ctrl+点击跳定义/Ctrl+滚轮缩放 |
 | `self-ide-blame`      | ide   | 行内 Git blame（idle 防抖 + 异步 porcelain + 行尾 overlay） |
 | `self-ide-minimap`    | ide   | 右缘代码缩略图（prog/text/conf buffer）     |
 

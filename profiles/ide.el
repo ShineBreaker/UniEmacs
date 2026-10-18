@@ -102,6 +102,9 @@
 ;; · self-ide-completion  vertico/corfu/kind-icon/eldoc-box 补全栈；
 ;;                        关掉 self-completion 的 completion-preview，
 ;;                        排在其后。
+;; · self-ide-mouse       鼠标平权层：Shift+滚轮横滚、gutter 断点、
+;;                        代码右键子菜单，并把已就绪的 Ctrl+点击/
+;;                        Ctrl+滚轮缩放登记进帮助速查表。
 ;; · self-ide-blame       行内 Git blame，无三方包依赖。
 ;; · self-ide-minimap     右侧代码缩略图。
 
@@ -109,6 +112,7 @@
 (require 'self-ide-panel)
 (require 'self-ide-slots)
 (require 'self-ide-completion)
+(require 'self-ide-mouse)
 (require 'self-ide-blame)
 (require 'self-ide-minimap)
 
