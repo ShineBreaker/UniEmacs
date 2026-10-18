@@ -40,6 +40,10 @@
 (declare-function vertico-mouse-mode "vertico")
 (declare-function marginalia-mode "marginalia")
 (declare-function consult-xref "consult")
+(declare-function consult-imenu "consult")
+(declare-function consult-ripgrep "consult")
+(declare-function self/ide--rebind "self-ide-panel"
+                  (key command description))
 (declare-function global-corfu-mode "corfu")
 (declare-function corfu-popupinfo-mode "corfu-popupinfo")
 (declare-function kind-icon-margin-formatter "kind-icon")
@@ -72,6 +76,15 @@
   :custom
   (xref-show-xrefs-function #'consult-xref)
   (xref-show-definitions-function #'consult-xref))
+
+;; 键位接管：符号大纲与项目搜索换 consult 预览式等价物。
+;; self-keys-desktop 已绑 C-S-o→imenu、M-s p→project-find-regexp；本档
+;; 换成与 vertico 栈同一套 UI 的 consult 命令——consult-imenu 是
+;; VSCode C-S-o 的符号大纲，consult-ripgrep 无参默认在项目根下搜
+;; （目录解析链：project.el → default-directory），是 C-S-f 全局搜索。
+;; 覆写只能走 `self/ide--rebind'：self/bind 对重复声明报错。
+(self/ide--rebind "C-S-o" #'consult-imenu "符号大纲（预览式）")
+(self/ide--rebind "M-s p" #'consult-ripgrep "项目搜索（ripgrep）")
 
 ;; embark：候选上的「右键菜单」——对文件条目做 copy/rename/delete 等动作。
 (use-package embark
