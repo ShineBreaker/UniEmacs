@@ -229,19 +229,39 @@ manifest.scm 的登记给出可粘贴的 spec 清单，方便补登。"
         (ignore-errors (delete-file tmp))))
     t))
 
+(defun self/package--clone-elpaca (repo)
+  "把 elpaca 仓库 clone 到 REPO（含代理前缀），成功返回 t。
+不经上游 installer.el：该脚本按交互式加载设计（内部 pop-to-buffer、
+-nested emacs -Q byte-recompile），在 batch 预构建里失败后会在 error
+handler 里 delete-directory，只留一个空目录，导致后续 require 逐个
+失败。这里直接 git clone，batch 下稳定。"
+  (let ((url (concat (or self:github-proxy "")
+                     "https://github.com/progfolio/elpaca.git"))
+        (default-directory (file-name-directory (directory-file-name repo))))
+    (make-directory repo t)
+    (zerop (call-process "git" nil nil nil
+                         "clone" "--depth=1" "--no-single-branch"
+                         url repo))))
+
 (defun self/package--bootstrap-elpaca ()
   "备好 elpaca 本体，目录一律在 `self:cache-directory' 下（仓库外）。
-已 clone 过直接加载；否则下载官方安装脚本并求值。求值前先用 let
-绑好目录变量：安装脚本里是 defvar，不会覆盖已有绑定。"
-  (let ((elpaca-directory (expand-file-name "elpaca/" self:cache-directory))
-        (elpaca-builds-directory (expand-file-name "elpaca/builds/"
+已 clone 过直接加载；否则 git clone（失败再退到官方安装脚本）。
+目录变量必须用 setq 全局设定，不能用 let：`elpaca-directory' 是
+defcustom，`elpaca-builds-directory' 等是由它派生的 defvar；let 绑定
+出了本函数作用域就丢，随后在作用域外 `(require \='elpaca)' 加载时
+沿用了默认的 `user-emacs-directory'/elpaca，包会被 clone 进仓库目录，
+且队列处理时目录对不上导致全部失败。"
+  (setq elpaca-directory (expand-file-name "elpaca/" self:cache-directory)
+        elpaca-cache-directory (expand-file-name "elpaca/cache/"
+                                                 self:cache-directory)
+        elpaca-builds-directory (expand-file-name "elpaca/builds/"
+                                                  self:cache-directory)
+        elpaca-sources-directory (expand-file-name "elpaca/sources/"
                                                    self:cache-directory))
-        (elpaca-sources-directory (expand-file-name "elpaca/sources/"
-                                                    self:cache-directory))
-        ;; :repo 同样拼代理前缀：弱网下安装脚本和 git clone 走同一代理，
-        ;; 脚本下完 clone 不再单独挂。脚本自带直连 order，但这里的 let
-        ;; 绑定优先（defvar 不覆盖已有绑定），所以实际 clone 走下面这个。
-        (elpaca-order `(elpaca :repo ,(concat (or self:github-proxy "")
+  ;; 下面的 `elpaca-order' let 绑定只给安装脚本回退路径用（脚本自带
+  ;; 直连 order，这里绑定优先，clone 也走代理）；直连 git clone 路径
+  ;; 的 URL 在 `self/package--clone-elpaca' 里拼代理前缀。
+  (let ((elpaca-order `(elpaca :repo ,(concat (or self:github-proxy "")
                                               "https://github.com/progfolio/elpaca.git")
                                :depth 1 :inherit ignore
                                :files (:defaults "elpaca-test.el"
@@ -251,9 +271,10 @@ manifest.scm 的登记给出可粘贴的 spec 清单，方便补登。"
           (build (expand-file-name "elpaca/" elpaca-builds-directory)))
       (add-to-list 'load-path (if (file-exists-p build) build repo))
       (unless (file-exists-p repo)
-        (make-directory repo t)
-        (self/package--download-installer
-         (concat (or self:github-proxy "") self:elpaca-installer-url)))
+        (unless (self/package--clone-elpaca repo)
+          (ignore-errors (delete-directory repo t))
+          (self/package--download-installer
+           (concat (or self:github-proxy "") self:elpaca-installer-url))))
       (unless (require 'elpaca-autoloads nil t)
         (require 'elpaca)
         (elpaca-generate-autoloads "elpaca" repo)
