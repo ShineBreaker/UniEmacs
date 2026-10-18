@@ -33,6 +33,7 @@
 (defvar elpaca-order)
 (defvar elpaca-order-defaults)
 (defvar elpaca-lock-file)
+(defvar elpaca-installer-version)
 
 ;; package.el 被禁用（见 early-init.el），不 require 它；只声明变量，
 ;; elpaca 回退装包时才实际赋值。
@@ -251,6 +252,23 @@ handler 里 delete-directory，只留一个空目录，导致后续 require 逐�
                          "clone" "--depth=1" "--no-single-branch"
                          url repo))))
 
+(defun self/package--sync-installer-version (repo)
+  "把 `elpaca-installer-version' 对齐到 REPO/doc/installer.el。
+直接 git clone 绕过了官方 installer，`elpaca-installer-version' 保持
+初值 -1；交互会话（原生 Emacs）加载 elpaca.el 时会报
+\"installer version does not match\"。版本号从同一份 clone 的
+`doc/installer.el' 解析，而不是硬编码 0.12（随上游升级失效）。"
+  (let ((installer (expand-file-name "doc/installer.el" repo)))
+    (when (file-readable-p installer)
+      (with-temp-buffer
+        (insert-file-contents installer)
+        (goto-char (point-min))
+        (when (re-search-forward
+               "elpaca-installer-version[ \t]+\\([0-9]+\\(?:\\.[0-9]+\\)*\\)"
+               nil t)
+          (setq elpaca-installer-version
+                (string-to-number (match-string 1))))))))
+
 (defun self/package--bootstrap-elpaca ()
   "备好 elpaca 本体，目录一律在 `self:cache-directory' 下（仓库外）。
 已 clone 过直接加载；否则 git clone（失败再退到官方安装脚本）。
@@ -283,6 +301,7 @@ defcustom，`elpaca-builds-directory' 等是由它派生的 defvar；let 绑定
           (ignore-errors (delete-directory repo t))
           (self/package--download-installer
            (concat (or self:github-proxy "") self:elpaca-installer-url))))
+      (self/package--sync-installer-version repo)
       (unless (require 'elpaca-autoloads nil t)
         (require 'elpaca)
         (elpaca-generate-autoloads "elpaca" repo)
