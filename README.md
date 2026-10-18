@@ -6,10 +6,10 @@
 | ---------- | ----------------------------------------------------------------------------------- | --------------------------- |
 | `minimal`  | 底座：纯内建、可调试、秒开                                                          | `UNI_EMACS_PROFILE=minimal` |
 | `portable` | Android 原生 Emacs 触屏                                                             | Android 上自动；可 env 强制 |
-| `full`     | 桌面全量：功能完备、可读性优先的学习档                                              | `UNI_EMACS_PROFILE=full`    |
-| `ide`      | full 超集：Zed 对齐的深度定制（Treemacs 树/命令面板补全/面包屑/行内 blame/minimap） | 默认档                      |
+| `full`     | 桌面全量：增强的完整 Emacs 体验，重点是掌握 Emacs 独有特性（窄化/寄存器/宏/Ediff…） | `UNI_EMACS_PROFILE=full`    |
+| `ide`      | full 超集：复刻 Zed/VSCode/JetBrains 的 IDE 体验（文件树/命令面板/面包屑/blame/minimap + 鼠标增强） | 默认档                      |
 
-> ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的直接承接层；full 档保持语法平铺直白，是学习用的完备桌面档。
+> 两个桌面档是不同目标体验：full 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的承接层，在 full 之上做 IDE 化覆写与鼠标平权。
 
 ## 结构速览
 

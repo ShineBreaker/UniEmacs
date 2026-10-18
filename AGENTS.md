@@ -4,7 +4,7 @@
 
 ## 0. 项目概述
 
-UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、四档 profile（`minimal` 底座 / `portable` 移动端 / `full` 桌面全量学习档 / `ide` Zed 对齐深度定制档），四档共享 `core/` 与 `modules/`，差异仅在各自 manifest 加载哪些模块。
+UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、四档 profile（`minimal` 底座 / `portable` 移动端 / `full` 桌面全量——增强的完整 Emacs 体验，重点是学习与掌握 Emacs 独有特性 / `ide` 完整复刻 Zed/VSCode/JetBrains 的 IDE 体验，含鼠标交互增强），四档共享 `core/` 与 `modules/`，差异仅在各自 manifest 加载哪些模块。
 
 **绝对禁令：禁止在任何受 git 跟踪的文件中提及 `reference/` 目录或以任何形式引用它的路径**——它只是本地参考资料夹，需要其中代码时直接复制进正式目录。
 

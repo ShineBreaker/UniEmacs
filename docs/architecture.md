@@ -1,6 +1,6 @@
 # UniEmacs 架构设计
 
-> 版本 v0.2（2026-10-15）。改架构先改本文档与 AGENTS.md。
+> 版本 v0.3（2026-10-19）。改架构先改本文档与 AGENTS.md。
 
 ## 1. 目标与四档语义
 
@@ -10,12 +10,17 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 | --------- | -------------------------- | --------------------------------------------- | ----------------- |
 | `minimal` | 全配置的底座，强调可调试性 | 对标 nano / 未大量配置的 nvim、helix          | **零**（纯内建）  |
 | `portable`| Android 原生 Emacs 触屏    | 触屏交互、tool-bar、移动端 Org/Roam、阅读     | elpaca 管理       |
-| `full`    | 桌面全量，可读性优先的学习档 | LSP/tree-sitter、项目管理、知识库、daemon   | Guix profile 管理 |
-| `ide`     | full 超集：Zed 对齐的深度定制 | full 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame/minimap | Guix profile 管理 |
+| `full`    | 桌面全量：增强的完整 Emacs 体验 | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
+| `ide`     | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | full 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame/minimap + **鼠标交互增强层** | Guix profile 管理 |
 
 四档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
 
-`ide` 与 `full` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 full.el 逐行同序，末端追加 `modules/ide/` 六个模块完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line）。full 档保持语法可读优先——它是学习用桌面档；ide 档允许更复杂的实现，用来承接从 Zed/现代 IDE 直接迁移的用户。
+两个桌面档的定位分野是**不同的目标体验**，不是功能强弱：
+
+- `full` 面向「把 Emacs 当 Emacs 用」：保留菜单栏供探索、用内建补全栈（flex + 幽灵文本）、Dired 文件面板，并通过 `self-discover` 模块把窄化、寄存器、矩形、kmacro、间接缓冲、Ediff、hi-lock、递归 minibuffer 这类 Emacs 独门机制显式化——默认键位原样再登记换中文提示与帮助页条目，用户在 <f1> ? 速查表和 which-key 弹窗里就能把它们学完。
+- `ide` 面向「无缝迁移自 Zed/VSCode/JetBrains」：界面结构与交互习惯对齐现代 IDE（左树/底槽/标签/面包屑/minimap/行内 blame/命令面板），并额外做鼠标平权——Ctrl+点击跳定义、Shift+滚轮横滚、行槽点击断点、代码右键菜单等，全部由 `modules/ide/` 承担。
+
+`ide` 与 `full` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 full.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义）。full 档保持语法可读优先；ide 档允许更复杂的实现。
 
 ### 设计原则（按优先级）
 
