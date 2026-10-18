@@ -40,10 +40,10 @@
   :type 'string
   :group 'self)
 
-(defvar self/color-scheme-current-mode)  ; 定义在 self-ui-touch
+(defvar self/color-scheme-current-mode)  ; 定义在 self-theme
 (defvar image-load-path)  ; image.el，未加载时 void，需先声明避免启动崩
-(declare-function self/color-scheme-apply-theme "self-ui-touch")
-(declare-function self/color-scheme-toggle "self-ui-touch")
+(declare-function self/color-scheme-apply-theme "self-theme")
+(declare-function self/color-scheme-toggle "self-theme")
 
 (defun self/bar--icon-color ()
   "当前主题对应的图标色（主题未定时按浅色）。"

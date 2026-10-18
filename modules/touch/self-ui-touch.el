@@ -6,11 +6,11 @@
 ;;; Commentary:
 ;; Profiles: portable
 ;; Requires: self-glyph, self-touch, self-completion, self-editing, self-session
-;; Packages: ef-themes
+;; Packages: （主题已统一到 self-theme，无第三方包）
 ;;
 ;; 移植自移动端配置（主题、mode-line 两段从桌面配置简化而来）：
 ;; · Maple Mono NF CN 主字体（中英等宽 + Nerd 图标字形）
-;; · ef-themes + 简化版深浅色状态机（状态文件持久化、跟随系统主题）
+;; · 主题统一由 self-theme 提供（Modus 深浅色 + 底部栏「色」钮切换）
 ;; · mode-line 极简档 + 右端按钮组——右端尾钮是对外发命令的固定出口
 ;;   （与 tool-bar、modifier-bar 构成触屏三件套），其余模块的
 ;;   buffer 局部钮表都靠 `self/mode-line--add-local-buttons' 插到它前面
@@ -46,109 +46,8 @@
     (set-face-attribute 'default nil :font spec
                         :height self/default-font-height)))
 
-;; ─── 主题：ef-themes + 简化深浅色状态机 ─────────────────────────────
-
-(defcustom self/color-scheme-light-theme 'ef-cyprus
-  "浅色模式下加载的主题。"
-  :type 'symbol
-  :group 'self)
-
-(defcustom self/color-scheme-dark-theme 'ef-owl
-  "深色模式下加载的主题。"
-  :type 'symbol
-  :group 'self)
-
-(defcustom self/color-scheme-default-mode 'light
-  "无状态文件时的默认深浅色模式。"
-  :type '(choice (const :tag "浅色" light)
-                 (const :tag "深色" dark))
-  :group 'self)
-
-(defconst self/color-scheme-state-file
-  (expand-file-name "color-scheme-state.el" self:var-directory)
-  "颜色方案状态文件路径（目录由 init-basis 定义）。")
-
-(defvar self/color-scheme-current-mode nil
-  "当前颜色方案模式（\='light 或 \='dark）。")
-
-(defun self/color-scheme-read-state ()
-  "从状态文件读取当前模式，返回 \='light 或 \='dark，不可用时返回 nil。
-读侧与 `self/color-scheme-save-state' 的写入格式对称：read 解析
-`(setq ...)' 表单，精确取第二元素，不做子串匹配。"
-  (condition-case err
-      (when (file-exists-p self/color-scheme-state-file)
-        (let ((form (with-temp-buffer
-                      (insert-file-contents self/color-scheme-state-file)
-                      (goto-char (point-min))
-                      (read (current-buffer)))))
-          ;; 写入侧（save-state）写的是变量**符号**本身，读取侧必须按
-          ;; 同一个符号匹配：反引号里的裸符号会被求值成该变量的当前值，
-          ;; 一旦 apply-theme 先跑过，两侧就再也对不上。这里把符号绑成
-          ;; ,var 再用 eq 比对，读写严格对称且不依赖求值顺序。
-          (pcase form
-            (`(setq ,var (quote ,mode))
-             (and (eq var 'self/color-scheme-current-mode) mode))
-            (_ nil))))
-    (error
-     (message "[color-scheme] 无法读取状态文件: %s" (error-message-string err))
-     nil)))
-
-(defun self/color-scheme-save-state (mode)
-  "将当前模式 MODE 持久化到状态文件。"
-  (condition-case err
-      (let ((dir (file-name-directory self/color-scheme-state-file)))
-        (unless (file-exists-p dir)
-          (make-directory dir t))
-        (with-temp-buffer
-          (insert ";; color-scheme-state.el -*- lexical-binding: t; -*-\n")
-          (insert ";; 自动生成，勿手动修改\n")
-          (insert (format "(setq self/color-scheme-current-mode '%s)\n" mode))
-          (write-region (point-min) (point-max) self/color-scheme-state-file)))
-    (error
-     (message "[color-scheme] 无法保存状态文件: %s" (error-message-string err))
-     nil)))
-
-(defun self/color-scheme-apply-theme (mode)
-  "加载 MODE（\='light 或 \='dark）对应的主题并持久化状态
-（用内置 `load-theme'，ef-themes 仅提供主题定义文件）。"
-  (setq self/color-scheme-current-mode mode)
-  (self/color-scheme-save-state mode)
-  (let ((theme (pcase mode
-                 ('light self/color-scheme-light-theme)
-                 ('dark self/color-scheme-dark-theme))))
-    (when (and theme (not (memq theme custom-enabled-themes)))
-      ;; custom-theme-p 不适用：ef-themes 加载后所有主题名都被注册
-      (mapc #'disable-theme custom-enabled-themes)
-      (load-theme theme t))))
-
-(defun self/color-scheme-toggle ()
-  "在浅色/深色主题间切换。"
-  (interactive)
-  (self/color-scheme-apply-theme
-   (if (eq self/color-scheme-current-mode 'light) 'dark 'light)))
-
-(defvar toolkit-theme)  ; 内置 frame.el（31+）
-
-;; 系统深浅色跟随（31+，Android 在列）：系统主题应用时 Emacs 设
-;; `toolkit-theme' 为 'light/'dark 并跑此 hook；触发时机真机待确认，
-;; 不触发则退化为手动 toggle，无副作用
-(add-hook 'toolkit-theme-set-functions
-          (lambda (theme)
-            (self/color-scheme-apply-theme
-             (if (eq theme 'dark) 'dark 'light))))
-
-(defun self/color-scheme-init ()
-  "初始化：系统主题已报告则跟随，否则读状态文件 → 无则取默认。"
-  (self/color-scheme-apply-theme
-   (or toolkit-theme
-       (self/color-scheme-read-state)
-       self/color-scheme-default-mode)))
-
-(use-package ef-themes
-  :defer t
-  :init
-  ;; 主题加载放启动完成后，避免拖慢 init
-  (add-hook 'after-init-hook #'self/color-scheme-init))
+;; 主题（Modus 深浅色 + 切换）已统一到 modules/ui/self-theme.el（桌面与
+;; Android 共用一套，不再依赖 ef-themes）。
 
 ;; ─── frame 标题：去除（信息由 mode-line 承担） ─────────────────────
 

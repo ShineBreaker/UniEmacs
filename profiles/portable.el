@@ -30,16 +30,16 @@
         vertico orderless marginalia consult embark embark-consult corfu cape
         indent-bars goto-chg multiple-cursors expand-region
         vundo idle-highlight-mode tempel
-        ef-themes expreg
+        expreg
         org-appear org-modern org-modern-indent olivetti
         org-roam emacsql
         markdown-mode
         nov))
 
-;; emacsql 包自带 emacsql-sqlite.el（org-roam 2.2.x 的 `sqlite' 连接器）；
-;; Emacs 29+ 的 Android 构建已内置（静态链接）sqlite3，org-roam 2.3+ 会自动
-;; 选内置后端。上游没有独立的 emacsql-sqlite3 包，故不再登记。需要固定
-;; 版本时走 elpaca lockfile（data/elpaca-lockfile.el）。
+;; 主题用 Modus（Emacs 内建，桌面/Android 共用，切档见 modules/ui/self-theme.el），
+;; 故不再装 ef-themes。emacsql 包自带 emacsql-sqlite.el（org-roam 2.2.x 的
+;; `sqlite' 连接器）；Emacs 29+ 的 Android 构建已内置 sqlite3，org-roam 2.3+
+;; 自动选内置后端。
 
 (self/package-ensure)
 

@@ -96,6 +96,6 @@
    ;; ─── portable 档专用 ──────────────────────────────────────────
    ;; emacsql-sqlite（org-roam 2.2.x 的 CLI 连接器）随 emacs-emacsql 分发，
    ;; 无需单独登记；org-roam 2.3+ 在 Android 上自动用内置 sqlite 后端。
-   "emacs-ef-themes"
+   ;; 主题走 Modus（Emacs 内建），不再登记 emacs-ef-themes。
    "emacs-expreg"
    "emacs-nov"))

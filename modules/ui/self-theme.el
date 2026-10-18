@@ -5,7 +5,7 @@
 
 ;;; Commentary:
 ;; Profiles: full, portable, ide
-;; Requires: 无
+;; Requires: self-lib（路径常量 self:var-directory、平台谓词 self:android-p）
 ;; Packages: modus-themes（Emacs 28+ 内建，仅声明语义归属）
 ;;
 ;; 移植自桌面端配置的三个部分：「Frame 生命周期与 daemon」、
@@ -37,10 +37,12 @@
 ;;   - TTY 无 alpha 通道：清掉 face 背景与反色，但不覆盖主题前景色。
 ;;
 ;; * 颜色方案状态机*
-;;   浅色用 `modus-operandi-tinted'、深色用 `modus-vivendi-tinted'。
-;;   系统若运行 Darkman 并通过 D-Bus 广播事件，Emacs 注册监听器后
-;;   深浅色自动无缝切换，GUI 与终端窗口同步刷新。D-Bus 不可用时回退
-;;   深色主题。
+;;   浅色用 `modus-operandi-tinted'、深色用 `modus-vivendi-tinted'，
+;;   桌面与 Android 共用同一套（Android 不再依赖 ef-themes）。桌面优先
+;;   跟随 Darkman 的 D-Bus 广播；Android 优先跟随系统深浅色
+;;   （`toolkit-theme'，Emacs 31+）。都不可用时读状态文件，再退到
+;;   `self:color-scheme-default-mode'。手动切换用
+;;   `self/color-scheme-toggle'（触屏底部栏「色」钮），模式写状态文件。
 ;;
 ;; 移植说明：调色板取色（`self/terminal-theme-color'）保留了源配置里对
 ;; Modus 的 `fboundp' 守卫——`self/theme--apply-frame-appearance' 在文件
@@ -74,6 +76,11 @@
 ;; 的定义顶掉，让本模块的取值反过来决定全配置）。移动端（Android）与桌面端
 ;; 的差异一律经它守卫。
 (defvar self:android-p)
+
+;; 持久化状态目录由 core/self-lib.el 定义；系统深浅色变量由内置 frame.el
+;; 定义（Emacs 31+，Android 会设）。
+(defvar self:var-directory)
+(defvar toolkit-theme)
 
 
 ;;; ─── 基础尺寸与行号策略 ──────────────────────────────────────────────
@@ -421,7 +428,17 @@ palette 取不到色时保留既有属性,不改 face。"
   :type 'symbol
   :group 'self-theme)
 
-(defvar self/color-scheme--current-mode nil
+(defcustom self:color-scheme-default-mode 'dark
+  "系统与状态文件都不可用时的默认模式。"
+  :type '(choice (const :tag "浅色" light)
+                 (const :tag "深色" dark))
+  :group 'self-theme)
+
+(defconst self:color-scheme-state-file
+  (expand-file-name "color-scheme-state.el" self:var-directory)
+  "颜色方案状态文件路径（目录由 core/self-lib.el 定义）。")
+
+(defvar self/color-scheme-current-mode nil
   "当前颜色方案模式（`light' 或 `dark'）。")
 
 (defvar self/color-scheme--initialized nil
@@ -490,15 +507,54 @@ palette 取不到色时保留既有属性,不改 face。"
     (load-theme theme t)
     (message "[color-scheme] 已同步主题: %s" theme)))
 
-(defun self/color-scheme--apply-theme (mode)
-  "根据 MODE(`light' 或 `dark')加载对应的主题。
-独立实例在 GUI 或至少 256 色的 TTY frame 中加载;daemon 无 frame 时也预载。"
-  (setq self/color-scheme--current-mode mode
+(defun self/color-scheme--read-state ()
+  "从状态文件读取模式，返回 `light'/`dark'，不可用时返回 nil。
+读侧与 `self/color-scheme--save-state' 的写入格式对称。"
+  (condition-case err
+      (when (file-exists-p self:color-scheme-state-file)
+        (let ((form (with-temp-buffer
+                      (insert-file-contents self:color-scheme-state-file)
+                      (goto-char (point-min))
+                      (read (current-buffer)))))
+          (pcase form
+            (`(setq ,var (quote ,mode))
+             (and (eq var 'self/color-scheme-current-mode) mode))
+            (_ nil))))
+    (error
+     (message "[color-scheme] 无法读取状态文件: %s" (error-message-string err))
+     nil)))
+
+(defun self/color-scheme--save-state (mode)
+  "把当前模式 MODE 持久化到状态文件。"
+  (condition-case err
+      (let ((dir (file-name-directory self:color-scheme-state-file)))
+        (unless (file-exists-p dir)
+          (make-directory dir t))
+        (with-temp-buffer
+          (insert ";; color-scheme-state.el -*- lexical-binding: t; -*-\n")
+          (insert ";; 自动生成，勿手动修改\n")
+          (insert (format "(setq self/color-scheme-current-mode '%s)\n" mode))
+          (write-region (point-min) (point-max) self:color-scheme-state-file)))
+    (error
+     (message "[color-scheme] 无法保存状态文件: %s" (error-message-string err))
+     nil)))
+
+(defun self/color-scheme-apply-theme (mode)
+  "根据 MODE（`light' 或 `dark'）加载对应主题并持久化。
+独立实例在 GUI 或至少 256 色的 TTY frame 中加载；daemon 无 frame 时也预载。"
+  (setq self/color-scheme-current-mode mode
         frame-background-mode mode)
+  (self/color-scheme--save-state mode)
   (when (or (daemonp) (self/color-scheme--supports-themes-p))
     (mapc #'frame-set-background-mode (frame-list))
     (self/color-scheme--load-theme-if-needed
      (self/color-scheme--theme-for-mode mode))))
+
+(defun self/color-scheme-toggle ()
+  "在浅色/深色主题间切换。"
+  (interactive)
+  (self/color-scheme-apply-theme
+   (if (eq self/color-scheme-current-mode 'light) 'dark 'light)))
 
 
 ;;; ─── D-Bus 监听 ──────────────────────────────────────────────────────
@@ -510,9 +566,9 @@ palette 取不到色时保留既有属性,不改 face。"
   "Darkman `ModeChanged' 信号回调：MODE 变化时应用对应主题。"
   (let ((new-mode (self/color-scheme--parse-mode mode)))
     (when (and new-mode
-               (not (eq new-mode self/color-scheme--current-mode)))
+               (not (eq new-mode self/color-scheme-current-mode)))
       (message "[color-scheme] Darkman 模式变化: %s" mode)
-      (self/color-scheme--apply-theme new-mode))))
+      (self/color-scheme-apply-theme new-mode))))
 
 (defun self/color-scheme--register-listener ()
   "注册 D-Bus 信号监听器，响应 Darkman 模式变化。"
@@ -547,16 +603,26 @@ palette 取不到色时保留既有属性,不改 face。"
              (>= (display-color-cells) 256)))))
 
 (defun self/color-scheme--init ()
-  "初始化颜色方案适配：读取 Darkman D-Bus 模式并应用主题、注册监听器。
-D-Bus 不可用时回退 `dark';后续 Darkman 模式变化经信号自动同步。
-Android 无会话 D-Bus，跳过读取与监听注册（否则每次启动打一条错误消息）。"
-  (let ((initial-mode (if self:android-p
-                          'dark
-                        (or (self/color-scheme--get-from-dbus)
-                            'dark))))
-    (self/color-scheme--apply-theme initial-mode)
+  "初始化颜色方案适配：取初始模式、应用主题、注册跟随入口。
+桌面优先 Darkman D-Bus；Android 优先系统深浅色（`toolkit-theme'）。
+都不可用时读状态文件，再退 `self:color-scheme-default-mode'。"
+  (let ((initial-mode
+         (cond
+          (self:android-p
+           (or toolkit-theme
+               (self/color-scheme--read-state)
+               self:color-scheme-default-mode))
+          (t
+           (or (self/color-scheme--get-from-dbus)
+               (self/color-scheme--read-state)
+               self:color-scheme-default-mode)))))
+    (self/color-scheme-apply-theme initial-mode)
     (setq self/color-scheme--initialized t)
-    (unless self:android-p
+    (if self:android-p
+        (add-hook 'toolkit-theme-set-functions
+                  (lambda (theme)
+                    (self/color-scheme-apply-theme
+                     (if (eq theme 'dark) 'dark 'light))))
       (self/color-scheme--register-listener))))
 
 (defun self/color-scheme--apply-for-frame (&optional frame)
@@ -569,7 +635,7 @@ Android 无会话 D-Bus，跳过读取与监听注册（否则每次启动打一
           (self/color-scheme--init)
         (self/color-scheme--load-theme-if-needed
          (self/color-scheme--theme-for-mode
-          self/color-scheme--current-mode))))))
+          self/color-scheme-current-mode))))))
 
 (self/color-scheme--init)
 (add-hook 'after-make-frame-functions #'self/color-scheme--apply-for-frame)
