@@ -62,7 +62,7 @@ emacs
  └─ early-init.el          ① 通用优化：GC 阈值拉高、file-name-handler-alist 置空、
    │                          frame 参数抑制、package-enable-at-startup=nil
    │                        ② 定义平台常量（不依赖 core）：self:android-p 等
-   │                        ③ 解析 self:profile：UNI_EMACS_PROFILE → android→portable → full
+   │                        ③ 解析 self:profile：UNI_EMACS_PROFILE → android→portable → ide
    │                        ④ （Android 部署形态）user-emacs-directory 重定向到仓库
  └─ init.el
    ├─ load-path += core/ modules/<七域>/ profiles/

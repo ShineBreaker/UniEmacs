@@ -118,10 +118,57 @@
 
 ;; ─── guix 后端：只校验 ───────────────────────────────────────────
 
+(defun self/package--spec-prefixes (name)
+  "把 \"a-b-c\" 拆成 (\"a-b-c\" \"a-b\" \"a\") 前缀候选。
+用于逐级试探 spec 名：embark-consult.el 随 emacs-embark 分发、
+idle-highlight-mode 的 spec 叫 emacs-idle-highlight，剥尾缀即命中。"
+  (let ((segs (split-string name "-"))
+        (prefixes '()))
+    (while segs
+      (push (mapconcat #'identity segs "-") prefixes)
+      (setq segs (butlast segs)))
+    prefixes))
+
+(defun self/package--spec-candidate (name manifest-text)
+  "返回库名 NAME 在 MANIFEST-TEXT 中命中的 \"emacs-…\" spec 字符串。
+逐级剥 `-` 尾缀试探；都未命中返回 nil。"
+  (catch 'found
+    (dolist (prefix (self/package--spec-prefixes name))
+      (let ((spec (concat "\"emacs-" prefix "\"")))
+        (when (string-match-p (regexp-quote spec) manifest-text)
+          (throw 'found spec))))))
+
+(defun self/package--missing-spec-lines (missing)
+  "把缺失包名表 MISSING 渲染成可粘贴的 spec 行列表。
+逐名查仓库 manifest.scm：命中用其中登记的 spec 名（处理
+embark-consult→emacs-embark 这类不规则映射），未命中按 `emacs-'
+前缀约定给猜测值并标注。"
+  (let ((manifest-file (expand-file-name "manifest.scm" self:repo))
+        (manifest-text ""))
+    (when (file-readable-p manifest-file)
+      (setq manifest-text
+            (with-temp-buffer
+              (insert-file-contents manifest-file)
+              (buffer-string))))
+    (let ((lines '()))
+      (dolist (name missing)
+        (let* ((n (symbol-name name))
+               (spec (self/package--spec-candidate n manifest-text)))
+          (push (cond
+                 ((null spec)
+                  (format "  \"emacs-%s\"  ; manifest.scm 未命中，按命名约定猜测" n))
+                 ((string-equal spec (concat "\"emacs-" n "\""))
+                  (concat "  " spec))
+                 (t
+                  (format "  %s  ; %s 的宿主包（补登后确认该包含此库）" spec n)))
+                lines)))
+      (nreverse lines))))
+
 (defun self/package--ensure-guix (pkgs)
   "guix 后端：逐个 locate-library，缺失的记入并汇总警告。
 Guix 环境的包由系统层（manifest.scm）声明安装，Emacs 侧只校验、
-不中断启动：缺包时对应功能不可用，但编辑器照常打开。"
+不中断启动：缺包时对应功能不可用，但编辑器照常打开。警告里按
+manifest.scm 的登记给出可粘贴的 spec 清单，方便补登。"
   (setq self--missing-packages '())
   (dolist (pkg pkgs)
     (unless (locate-library (symbol-name (cdr pkg)))
@@ -130,8 +177,11 @@ Guix 环境的包由系统层（manifest.scm）声明安装，Emacs 侧只校验
   (when self--missing-packages
     (display-warning
      'self
-     (format "以下包在 Guix 环境中找不到（manifest.scm 与 profile 清单可能不一致），已跳过：%s"
-             (mapconcat #'symbol-name self--missing-packages ", ")))))
+     (format "以下包在 Guix 环境中找不到（manifest.scm 与部署清单可能不一致），已跳过。\n按 manifest.scm 推测的补登清单：\n%s"
+             (mapconcat #'identity
+                        (self/package--missing-spec-lines
+                         self--missing-packages)
+                        "\n")))))
 
 ;; ─── elpaca 后端：bootstrap 与安装 ───────────────────────────────
 

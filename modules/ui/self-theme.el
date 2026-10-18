@@ -293,16 +293,17 @@ redisplay 会报「Invalid face reference」。"
 (add-hook 'after-load-functions #'self/theme--refresh-terminal-faces-after-load)
 
 ;; 状态行日志清洗。显示一段 face 属性指向未定义（或当前 frame 实现不了）
-;; 的文本时，xfaces.c 的 add_to_log 会经 message 打
-;; "Invalid face reference: %s"；状态行的 minibuffer-line 文本正是最容易
-;; 碰上的一处（daemon 启动首帧、包刚加载或 face 未实现时），配置侧的非
-;; 彩色终端归一化已把成因收窄。`inhibit-message-regexps' 只静音回显、
-;; 消息照样写进 *Messages*，所以这里按「格式串 + 参数」双重匹配丢弃；
-;; 只认 minibuffer-line 这一个 face 名，其它 Invalid face reference
-;; 照常记录。
+;; 的文本时会打 "Invalid face reference: %s"；状态行的 minibuffer-line
+;; 文本正是最容易碰上的一处（daemon 启动首帧、包刚加载或 face 未实现时），
+;; 配置侧的非彩色终端归一化已把成因收窄。这里按「格式串 + 参数」双重
+;; 匹配丢弃；只认 minibuffer-line 这一个 face 名，其它照常记录。
+;; 注意边界：C 层 xfaces.c 的 add_to_log 写 *Messages* 时走 message3、
+;; 不经 Lisp `message'，所以 daemon 启动初始终端上那批真实警告仍会落盘
+;; （实测如此）——本 advice 只挡得住 Lisp 侧用同格式串调用 `message' 的
+;; 场景，不声称能拦截 C 层源头。
 
 (defun self/theme--drop-statusline-face-log (orig fmt &rest args)
-  "丢弃状态行 face 显示期解析不出来时由 C 层打出的日志(只认 minibuffer-line)。"
+  "丢弃 Lisp 侧 \"Invalid face reference: %s\" 日志(只认 minibuffer-line)。"
   (unless (and (equal fmt "Invalid face reference: %s")
                (eq (car args) 'minibuffer-line))
     (apply orig fmt args)))

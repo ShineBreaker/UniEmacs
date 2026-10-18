@@ -309,5 +309,25 @@ self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
 
 (add-hook 'emacs-startup-hook #'self/lib--schedule-compile)
 
+;; ─── 上游 defface 修补 ────────────────────────────────────────────
+
+(defun self/defface-spec-de-nil (face &rest attrs)
+  "把 FACE 的 `face-defface-spec' 中 ATTRS 里值为 nil 的项改写成 unspecified。
+一些上游包的 `defface' 用反引号在 spec 里内联求值 face-foreground /
+face-background 之类的取色式（svg-lib 的按钮 face、treemacs 的
+fringe-indicator face 都是此类）；daemon 启动时尚无 GUI frame，
+取色式求值出 nil 并被烙进 spec。此后每个
+新 frame 的 face realization 都重放该 spec，逐个打出
+\"nil value is invalid\" 警告——`emacsclient -c' 每开一帧刷一轮。
+这里按警告自身的处方就地改写 spec 的 cons 单元（不重建 spec 结构：
+`face-spec-set' 对 entry 形状的约定与 defface 实际写出的 (DISPLAY . PLIST)
+点对形式有出入，整体回写会腐蚀 spec）。unspecified 表示「不指定、
+向上继承」，与 nil 语义等价，视觉无差；已有实色的属性不动。"
+  (dolist (entry (get face 'face-defface-spec))
+    (dolist (attr attrs)
+      (let ((cell (member attr (cdr entry))))
+        (when (and cell (null (cadr cell)))
+          (setcar (cdr cell) 'unspecified))))))
+
 (provide 'self-lib)
 ;;; self-lib.el ends here

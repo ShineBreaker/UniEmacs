@@ -39,12 +39,35 @@
   (minimap-mode (if (bound-and-true-p minimap-mode) -1 1)))
 
 (defun self/ide-minimap--startup ()
-  "GUI 启动后自动开 minimap（Zed automatic 模式语义）。"
+  "GUI 帧就绪后自动开 minimap（Zed automatic 模式语义）。
+minimap-mode 是全局 mode：只开一次，各帧的缩略图窗口由包内 idle
+timer 按当前 buffer major-mode 惰性创建。bound-and-true-p 是第三方
+延迟加载包的合法守卫——未加载时不误触 autoload 外的判断，已开启
+时不再重复执行 mode 主体（重复会重设其内部 timer）。"
   (when (and (not noninteractive)
-             (display-graphic-p))
+             (display-graphic-p)
+             (not (bound-and-true-p minimap-mode)))
     (minimap-mode 1)))
 
 (add-hook 'emacs-startup-hook #'self/ide-minimap--startup)
+;; daemon 启动时无 GUI 帧，上面的 startup-hook 判定落空；client 帧建立
+;; 后再判一次。0s timer 等 server-execute 收尾（帧内 buffer 才就位），
+;; 与 self-dashboard--on-frame-make 同一手法。两处上下文都要显式给：
+;; with-selected-frame 供 display-graphic-p 读（它只切显示选择），
+;; with-current-buffer 供 mode 主体的 minimap-major-modes 判定读——
+;; select-frame 不改 current-buffer，timer 环境留下的 *server* 会误判。
+(defun self/ide-minimap--schedule ()
+  "在新建的 client 帧上排队执行 `self/ide-minimap--startup'（0s timer）。"
+  (let ((frame (selected-frame)))
+    (run-at-time
+     0 nil
+     (lambda ()
+       (when (frame-live-p frame)
+         (with-selected-frame frame
+           (with-current-buffer (window-buffer (frame-selected-window frame))
+             (self/ide-minimap--startup))))))))
+
+(add-hook 'server-after-make-frame-hook #'self/ide-minimap--schedule)
 
 (provide 'self-ide-minimap)
 ;;; self-ide-minimap.el ends here

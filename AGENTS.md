@@ -17,7 +17,7 @@ UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、�
 ## 2. 架构契约
 
 ```
-early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_PROFILE env → 平台推断 → 默认 full）
+early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_PROFILE env → 平台推断 → 默认 ide）
 init.el          引导：定位仓库根 → 配 load-path → require self-lib → self/load-profile
 core/self-lib.el      平台谓词、路径常量、加载辅助（四档共享）
 core/self-package.el  包后端抽象（guix | elpaca）与包清单装/验（四档共享）
@@ -37,7 +37,7 @@ justfile              本机命令入口（verify / compile / APK 构建 / 配�
 
 1. 环境变量 `UNI_EMACS_PROFILE`（`minimal` / `portable` / `full` / `ide`）
 2. 平台推断：`system-type = android` → `portable`
-3. 默认 `full`
+3. 默认 `ide`
 
 ### 加载契约（硬约束）
 

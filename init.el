@@ -26,7 +26,7 @@
 (unless (and (boundp 'self:profile) self:profile)
   ;; early-init 未运行的兜底：按平台推断，与 early-init 的回退逻辑一致，
   ;; 避免 Android 入口副本缺失时误装桌面档。
-  (setq self:profile (if (eq system-type 'android) 'portable 'full)))
+  (setq self:profile (if (eq system-type 'android) 'portable 'ide)))
 
 ;; ─── 部署诊断（不依赖 modules，require 失败后仍可用） ─────────────
 

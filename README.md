@@ -2,12 +2,12 @@
 
 跨桌面与手机的统一 Emacs 配置：单一代码库，四档 profile。
 
-| 档位       | 场景                             | 选择方式                        |
-| ---------- | -------------------------------- | ------------------------------- |
-| `minimal`  | 底座：纯内建、可调试、秒开       | `UNI_EMACS_PROFILE=minimal`     |
-| `portable` | Android 原生 Emacs 触屏          | Android 上自动；可 env 强制     |
-| `full`     | 桌面全量：功能完备、可读性优先的学习档 | 默认档                    |
-| `ide`      | full 超集：Zed 对齐的深度定制（Treemacs 树/命令面板补全/面包屑/行内 blame/minimap） | `UNI_EMACS_PROFILE=ide` |
+| 档位       | 场景                                                                                | 选择方式                    |
+| ---------- | ----------------------------------------------------------------------------------- | --------------------------- |
+| `minimal`  | 底座：纯内建、可调试、秒开                                                          | `UNI_EMACS_PROFILE=minimal` |
+| `portable` | Android 原生 Emacs 触屏                                                             | Android 上自动；可 env 强制 |
+| `full`     | 桌面全量：功能完备、可读性优先的学习档                                              | `UNI_EMACS_PROFILE=full`    |
+| `ide`      | full 超集：Zed 对齐的深度定制（Treemacs 树/命令面板补全/面包屑/行内 blame/minimap） | 默认档                      |
 
 > ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的直接承接层；full 档保持语法平铺直白，是学习用的完备桌面档。
 

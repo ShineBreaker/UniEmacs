@@ -1,9 +1,9 @@
 ;;; full.el --- full 档：桌面全量 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; 桌面主力档：默认 profile（未设 UNI_EMACS_PROFILE 且非 Android 时落到
-;; 这里）。勾选全部模块，含编程栈（语言 / LSP / VCS / 工程）、终端面板、
-;; 知识库适配与桌面键位表。
+;; 桌面全量学习档：功能完备、语法平铺直白，桌面默认档是 ide，本档经
+;; UNI_EMACS_PROFILE=full 显式选择。勾选全部模块，含编程栈（语言 /
+;; LSP / VCS / 工程）、终端面板、知识库适配与桌面键位表。
 ;;
 ;; Profiles: full
 ;; Requires: self-lib self-package

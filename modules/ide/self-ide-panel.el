@@ -38,6 +38,8 @@
 (require 'self-lib)
 
 (declare-function self/open-terminal "self-terminal")
+(declare-function self--terminal-existing-buffer "self-terminal")
+(declare-function project-current "project" (&optional maybe-prompt directory))
 (declare-function treemacs "treemacs")
 (declare-function treemacs-find-file "treemacs")
 (declare-function treemacs-get-local-window "treemacs")
@@ -50,8 +52,15 @@
 ;; （customize-set-variable）正是这个语义，且不会产生 byte-compile
 ;; 自由变量告警。
 
+;; 急切加载（不写 :defer t）：:custom 里 treemacs-tag-follow-mode 这类
+;; minor-mode defcustom 经 custom 置值时就已拉起 tag-follow 的 require
+;; 链，惰性本来名存实亡；更关键的是 treemacs-persistence 只由伞特性
+;; (require 'treemacs) 顶层拉起——treemacs--maybe-load-workspaces 被
+;; define-inline 在编译期内联进 workspaces/tag-follow 的调用点，展开体
+;; 直接调 treemacs--restore，persistence 缺位即 void-function（daemon
+;; 日志里 tag-follow timer 报的正是这个）。伞特性 require 一次兜住
+;; 全部 inline 调用点，ide 档启动也本就要开树。
 (use-package treemacs
-  :defer t
   :custom
   (treemacs-width 30)                    ; Zed 侧栏 ≈ 240px，约 30 列
   (treemacs-position 'left)
@@ -59,9 +68,24 @@
   (treemacs-filewatch-mode nil)          ; inotify 实例紧张，关
   (treemacs-follow-mode t)               ; 树跟随当前文件
   (treemacs-tag-follow-mode t)           ; 树内展开当前文件符号
-  (treemacs-indent-guide-mode t)         ; 对齐 Zed indent guides
+  ;; indent guide 保持关闭（其 ┃ 参考线继承 font-lock-comment-face，本
+  ;; 主题里是一条鲑红竖线而非 Zed 的灰线）。注意不能经 :custom 显式置
+  ;; nil——customize-set-variable 走 custom-set-minor-mode 会执行 mode
+  ;; 函数体，其关闭分支把 treemacs-indentation(-string) 回写成从未初始
+  ;; 化的 saved 值 nil，之后每个 treemacs buffer 初始化时在
+  ;; treemacs--build-indentation-cache 里 (% n (length nil)) 除零抛
+  ;; arith-error，树初始化半途即挂（timer 里静默失败，树面板不显示）。
+  ;; 默认就是关，什么都不写。
+  ;; self-modeline 把全局 mode-line-format 置 nil（无窗口状态栏设计），
+  ;; 但 treemacs--setup-mode-line 在 mode 启动时 setq 了 buffer-local
+  ;; mode-line-format，默认值管不到它；官方旋钮 'none 才是正确关法。
+  (treemacs-user-mode-line-format 'none)
   (treemacs-recenter-after-file-follow 'always)
   :config
+  ;; treemacs-fringe-indicator-face 的 defface 用 `(face-background 'cursor)'
+  ;; 取色，daemon 启动无 GUI 帧时烙进 nil，每个新 client 帧 realization
+  ;; 重放即打 nil-attr 警告；就地归一化为 unspecified（语义等价）。
+  (self/defface-spec-de-nil 'treemacs-fringe-indicator-face :foreground)
   ;; nerd-icons 主题须在 treemacs 本体加载后切换。
   (require 'treemacs-nerd-icons)
   (treemacs-load-theme "nerd-icons"))
@@ -148,20 +172,111 @@ keymap-global-set 换实际绑定，plist-put 就地改写 `self:binding-spec'
 (self/ide--rebind "C-c w d" #'self/ide-panel-reveal "面板定位当前文件")
 (self/ide--rebind "C-c w T" #'self/ide-panels-toggle "双面板总开关")
 
-;; ─── 启动自开面板 ──────────────────────────────────────────────────
-;; Zed 恢复会话时项目面板常驻。只在其能被有意义地填充时自开：cwd 是一个
-;; project 根（UniEmacs 仓库本身就是 git 仓库）。Treemacs 会抢焦点，
-;; save-selected-window 把焦点还给主区。
+;; ─── 新帧自动摆布局（左树 + 底槽终端）─────────────────────────────
+;; Zed 打开文件夹/文件即进入「左树 + 编辑区 + 底面板」布局，本段覆盖
+;; 两条进入路径：
+;;
+;;   · standalone `emacs <路径>'：emacs-startup-hook 时 current-buffer
+;;     已是最后访问的目标 buffer，直接判定；
+;;   · daemon `emacsclient -c <路径>'（本机主力形态）：新 client 帧走
+;;     server-after-make-frame-hook。两个坑都在「上下文不在场」：
+;;     hook 触发点 current-buffer 还是 *server*（server-visit-files 用
+;;     save-current-buffer 包着，文件 buffer 要等 server-switch-buffer
+;;     才切换上台）；timer 触发点 select-frame 又不改 current-buffer
+;;     （它只是显示层选择，buffer 上下文仍是计时器环境的 *server* 或
+;;     上个前台 buffer）。所以只排队一个 0s timer，等 server-execute
+;;     整个收尾，再手动把帧选中窗的 buffer 设为判定上下文——与
+;;     self/dashboard--on-frame-make 同一手法。
+;;
+;; 「值得摆布局」的上下文：本次打开的是文件或目录（buffer-file-name /
+;; dired-mode），或当前目录本来就在 project 内。裸 `emacs' /
+;; `emacsclient -c' 无参数时在 project cwd 下同样带上树，对齐 Zed
+;; 恢复 workspace 面板的行为；非 project 目录不用自己解析根，
+;; treemacs-add-and-display-current-project 内部的解析链是
+;; project.el → 当前目录，直接以打开目录为根。
+;;
+;; 每帧只摆一次：frame 参数 self:ide-layout-seen 置位后不再触发，
+;; 之后手动关掉面板不会被下一次 emacsclient 调用重新顶开。
+;; Treemacs 与终端打开时都会抢焦点，save-selected-window 把焦点
+;; 还给主区。
 
-(defun self/ide--startup-panel ()
-  "GUI 启动且 cwd 属于一个 project 时自动展开 Treemacs。"
+(defun self/ide--layout-context-p ()
+  "当前 buffer 是否属于「打开了东西」的上下文：文件、目录或 project 内。"
+  (or buffer-file-name
+      (derived-mode-p 'dired-mode)
+      (project-current nil)))
+
+(defun self/ide--layout-window (frame)
+  "在 FRAME 内找「布局上下文窗口」：优先返回选中窗，其后按窗序取第一个
+buffer 满足 `self/ide--layout-context-p' 的窗口；都没有返回 nil。
+
+不能盲信 `frame-selected-window'：0s timer 会被 `(redisplay t)' 让路
+抢跑——实测首 client 帧上本 timer 恰在 `minimap-new-minimap' 的
+with-selected-window 瞬态内触发，此时帧记录的选中窗是 *MINIMAP*，
+按它判定上下文必假，布局永久跳过（seen 未置位）。扫描全部窗口
+则不受这类瞬态选中影响。"
+  (let ((sel (frame-selected-window frame))
+        (hit nil)
+        (rest (window-list frame 'no-minibuf)))
+    (if (with-current-buffer (window-buffer sel)
+          (self/ide--layout-context-p))
+        sel
+      (while (and rest (not hit))
+        (let ((w (car rest)))
+          (when (with-current-buffer (window-buffer w)
+                  (self/ide--layout-context-p))
+            (setq hit w)))
+        (setq rest (cdr rest)))
+      hit)))
+
+(defun self/ide--show-bottom-terminal ()
+  "在当前帧底槽就位一个终端 buffer。
+已有 ghostel buffer 时用 display-buffer 显示到本帧（同一终端会话
+多帧共显）；本帧已在显示则不动；没有则 `self/open-terminal' 新建。"
+  (let ((buf (self--terminal-existing-buffer)))
+    (cond ((null buf) (self/open-terminal))
+          ((get-buffer-window buf (selected-frame)) nil)
+          (t (display-buffer buf)))))
+
+(defun self/ide--startup-layout ()
+  "当前帧上下文值得时摆出 Zed 式三槽布局：左 Treemacs、底槽终端、编辑区。
+GUI 帧且 `self/ide--layout-context-p' 成立才动作；每帧最多执行一次
+（frame 参数 self:ide-layout-seen 标记）。"
   (when (and (not noninteractive)
              (display-graphic-p)
-             (project-current nil))
+             (not (frame-parameter nil 'self:ide-layout-seen))
+             (self/ide--layout-context-p))
+    (set-frame-parameter nil 'self:ide-layout-seen t)
     (save-selected-window
-      (treemacs-add-and-display-current-project))))
+      (unless (self/ide-panel-visible-p)
+        (treemacs-add-and-display-current-project))
+      (self/ide--show-bottom-terminal))))
 
-(add-hook 'emacs-startup-hook #'self/ide--startup-panel)
+(defun self/ide--layout-timer-tick (frame attempts)
+  "布局调度的 timer 体：在 FRAME 上找上下文窗口并执行 `self/ide--startup-layout'。
+找不到上下文窗口时最多重试 ATTEMPTS 次（间隔 0.15s）——0s timer
+可能被别的 timer 里的 `(redisplay t)' 让路抢跑，赶上
+server-switch-buffer 尚未把文件 buffer 摆上窗口的瞬间，稍候重试
+兜底；裸 `emacsclient -c'（只开 dashboard）重试耗尽后自然放弃。"
+  (when (frame-live-p frame)
+    (with-selected-frame frame
+      (let ((win (self/ide--layout-window frame)))
+        (if win
+            (with-selected-window win
+              (self/ide--startup-layout))
+          (when (< attempts 3)
+            (run-at-time 0.15 nil #'self/ide--layout-timer-tick
+                         frame (1+ attempts))))))))
+
+(defun self/ide--schedule-startup-layout ()
+  "在 client 帧上下文里排队执行 `self/ide--startup-layout'（0s timer）。
+捕获触发时的 selected frame：timer 触发瞬间用户可能已切到别处，
+布局必须落在刚建立的那个帧上。"
+  (let ((frame (selected-frame)))
+    (run-at-time 0 nil #'self/ide--layout-timer-tick frame 0)))
+
+(add-hook 'emacs-startup-hook #'self/ide--startup-layout)
+(add-hook 'server-after-make-frame-hook #'self/ide--schedule-startup-layout)
 
 (provide 'self-ide-panel)
 ;;; self-ide-panel.el ends here

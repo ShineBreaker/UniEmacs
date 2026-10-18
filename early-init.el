@@ -28,7 +28,7 @@ repo-location.el → 本文件所在目录（含 core/ 时）→ Android 惯例�
 (defvar self:profile nil
   "当前 profile：minimal、portable、full、ide 之一。
 UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退），
-其次 Android 推断为 portable，默认 full。")
+其次 Android 推断为 portable，默认 ide。")
 
 (defvar self--startup-file-name-handlers file-name-handler-alist
   "启动前原 file-name-handler-alist，由 self-lib 复位用。")
@@ -134,7 +134,7 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
     (setq load-path-filter-function
           #'load-path-filter-cache-directory-files))
 
-  ;; profile 解析：环境变量 → 平台推断 → 默认 full。
+  ;; profile 解析：环境变量 → 平台推断 → 默认 ide。
   ;; 非法值警告一次，并回退到平台推断（与下面两条同逻辑）。
   (setq self:profile
         (let ((from-env (getenv "UNI_EMACS_PROFILE")))
@@ -148,9 +148,9 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
              'self
              (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/full/ide，已按平台推断回退。"
                      from-env))
-            (if (eq system-type 'android) 'portable 'full))
+            (if (eq system-type 'android) 'portable 'ide))
            ((eq system-type 'android) 'portable)
-           (t 'full)))))
+           (t 'ide)))))
 
 (provide 'early-init)
 ;;; early-init.el ends here

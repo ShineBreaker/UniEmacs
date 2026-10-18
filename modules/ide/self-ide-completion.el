@@ -105,7 +105,14 @@
   :after corfu
   :config
   ;; Maple Mono NF CN 自带 NF 字形，kind-icon 的类型图标直接可用。
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
+  ;; kind-icon 拉入的 svg-lib 三个按钮 defface 用 `(face-foreground
+  ;; 'default)' 类取色式在加载期求值，daemon 启动无 GUI 帧时烙进 nil，
+  ;; 之后每个新 client 帧的 face realization 都重放警告；就地归一化为
+  ;; unspecified（与 nil 语义等价、向上继承，视觉无差）。
+  (self/defface-spec-de-nil 'svg-lib-button-active-face :foreground :background)
+  (self/defface-spec-de-nil 'svg-lib-button-hover-face :foreground :background)
+  (self/defface-spec-de-nil 'svg-lib-button-press-face :foreground :background))
 
 (use-package cape
   :after corfu

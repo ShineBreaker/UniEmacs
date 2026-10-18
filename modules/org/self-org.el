@@ -413,11 +413,11 @@ SCHEDULED: %^t
   :custom
   (org-modern-label-border 0.12)
   (org-modern-star 'replace)
-  (org-modern-replace-stars '( "" "" "󰜋" "󰜌" "" "" ""))
+  (org-modern-replace-stars '("" "" "󰜋" "󰜌" "" "" ""))
   (org-modern-list
-   '((?- . "")
-     (?* . "")
-     (?+ . "")))
+   '((?- . "")
+     (?* . "")
+     (?+ . "")))
   (org-modern-hide-stars 'leading)
   (org-modern-table t)
   (org-modern-table-vertical 2)
