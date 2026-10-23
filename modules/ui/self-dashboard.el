@@ -801,12 +801,32 @@ GUI 下 `dashboard-str-len' 直接量像素，与真实渲染一致；TTY 下它
       (dashboard-str-len str)
     (self/dashboard--tty-width str)))
 
+(defun self/dashboard--displayed-text (beg end)
+  "BEG..END 的显示文本：把 overlay `display' 的替换也算进去。
+标题行的英文原名被 heading overlay 整体替换显示（\"Agenda for
+today:\" → \"待办\"），量 buffer 原文会多算出英文长名，三栏英文名
+长度不一，各自居中前缀偏出不同值——标题行随机漂移的来源。"
+  (let ((str (buffer-substring-no-properties beg end))
+        (shift 0))
+    (dolist (ov (overlays-in beg end))
+      (let ((disp (overlay-get ov 'display)))
+        (when (stringp disp)
+          ;; 前面替换已改变 str 长度，位置要累加 shift 折算
+          (let* ((s (+ shift (max 0 (- (overlay-start ov) beg))))
+                 (e (+ shift (min (length str)
+                                  (- (overlay-end ov) beg))))
+                 (tail (substring str (min e (length str)))))
+            (setq str (concat (substring str 0 (min s (length str)))
+                              disp tail)
+                  shift (+ shift (- (length disp) (- e s))))))))
+    str))
+
 (defun self/dashboard--center-line (body-width)
   "把当前行按自身行宽居中（行首加 align-to 前缀）；超过 BODY-WIDTH 不加。"
   (let* ((beg (line-beginning-position))
          (end (line-end-position))
          (w (self/dashboard--line-width
-             (buffer-substring-no-properties beg end))))
+             (self/dashboard--displayed-text beg end))))
     (when (and (> w 0) (<= w body-width))
       (let ((p (propertize
                 " " 'display
