@@ -80,6 +80,24 @@
 (require 'battery)
 (require 'project)
 
+;; daemon 的初始 TTY 帧（F1）是 face 系统就绪前建的伪帧：
+;; `face-set-after-frame-default' 从未对它跑过，face-list 里的 face
+;; 不在其 face_hash_table 中。` *Minibuf-0*` 首次被该帧 redisplay 时
+;; merge 查表 miss，C 层对每个 named face 打一次
+;; "Invalid face reference"（走 add_to_log，Lisp 层拦不住）。
+;; startup 末对全部现存帧补跑一次该函数，完成迟到的 face 初始化。
+;; 挂在 emacs-startup-hook 而非本模块加载时跑：profile 加载期间还会
+;; 继续 defface 新 face（treemacs、svg-lib 等），补跑要等全部定义
+;; 落定才能一次补全。只影响 daemon 伪帧场景：普通启动或新 client
+;; 帧上该函数已跑过，重复调用是幂等重算。
+(defun self/modeline--init-frame-faces ()
+  "对全部现存帧补跑 `face-set-after-frame-default'。
+daemon 伪帧漏掉 face 初始化时以此补齐；正常帧上是幂等重算。"
+  (dolist (frame (frame-list))
+    (face-set-after-frame-default frame)))
+
+(add-hook 'emacs-startup-hook #'self/modeline--init-frame-faces)
+
 (declare-function nerd-icons-icon-for-file "nerd-icons")
 (declare-function nerd-icons-faicon "nerd-icons")
 (declare-function nerd-icons-mdicon "nerd-icons")

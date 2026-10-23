@@ -82,10 +82,6 @@
   (treemacs-user-mode-line-format 'none)
   (treemacs-recenter-after-file-follow 'always)
   :config
-  ;; treemacs-fringe-indicator-face 的 defface 用 `(face-background 'cursor)'
-  ;; 取色，daemon 启动无 GUI 帧时烙进 nil，每个新 client 帧 realization
-  ;; 重放即打 nil-attr 警告；就地归一化为 unspecified（语义等价）。
-  (self/defface-spec-de-nil 'treemacs-fringe-indicator-face :foreground)
   ;; nerd-icons 主题须在 treemacs 本体加载后切换。
   (require 'treemacs-nerd-icons)
   (treemacs-load-theme "nerd-icons"))
