@@ -337,15 +337,14 @@ text property line-spacing 仅 GUI frame 生效,TTY 行高固定会忽略。"
   (propertize code 'face 'self/dashboard-deco-icon))
 
 (defun self/dashboard-insert-heading-deco (fn heading &optional shortcut icon)
-  "HEADING 两侧加短装饰线（整行居中由 `dashboard-center-content' 统一做）。"
+  "HEADING 两侧加短装饰线（整行居中由 `dashboard-center-content' 统一做）。
+装饰线恒落行首，不论官方把 icon 插在 heading 前还是后——官方段（agenda /
+projects 等）icon 由插件 pcase hardcode 先插，自绘段（recents/roam）icon 作
+为参数插，两种顺序都存在；统一插行首后三行都是 `──── icon 标题 ────'。"
   (prog1 (funcall fn heading shortcut icon)
-    (let ((deco (propertize "──── " 'face 'self/dashboard-deco)))
-      (save-excursion
-        ;; icon 回退须与官方插入条件一致（tty 无字形不插入 icon）
-        (goto-char (- (point) (length heading)))
-        (when (and (dashboard-display-icons-p) dashboard-set-heading-icons icon)
-          (goto-char (- (point) (1+ (length icon)))))
-        (insert deco)))
+    (save-excursion
+      (goto-char (line-beginning-position))
+      (insert (propertize "──── " 'face 'self/dashboard-deco)))
     (insert (propertize " ────" 'face 'self/dashboard-deco))))
 
 ;; 装饰线要落在官方插入的标题文本之后，但 dashboard-insert-heading 既不返回
@@ -769,7 +768,8 @@ OV 提供标题显示文本,用于折算已占用宽度;须在
   (let* ((name (or (overlay-get ov 'display)
                    (buffer-substring-no-properties
                     (overlay-start ov) (overlay-end ov))))
-         (used (+ self:dashboard-heading-indent icon-w
+         ;; used = 缩进 + 行首 deco(─x4+空格) + icon(icon+空格) + 标题显示名
+         (used (+ self:dashboard-heading-indent 5 icon-w
                   (string-width name))))
     (goto-char (line-end-position))
     (insert (concat
