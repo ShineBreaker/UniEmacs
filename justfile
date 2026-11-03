@@ -1,7 +1,6 @@
 # UniEmacs 本机命令入口。
 #
 # 通用（桌面 + 手机）：verify / probe / glyph-check / compile / clean。
-# 手机专属：APK 构建组（Termux 重签名流水线，见 docs/mobile/）；
 # 配置依赖组（真机一键补全字体/图标/插件，桌面同样可用）。
 
 default: verify
@@ -96,71 +95,6 @@ compile:
       fi
     done
     exit $fail
-
-# ═══ APK 构建（Termux 重签名流水线，见 docs/mobile/）═══
-# 自动抓取上游预览版并用 Emacs 官方公开构建密钥重签，使 Termux 与
-# Android 原生 Emacs 共享 UID。日常使用直接到 Releases 下载
-# *-emacs-signed.apk，无需本地执行以下任何一条。
-
-# apksigner 调用命令，默认用 `just tools` 准备的 build-tools jar；
-# 已装 Android SDK 的系统可 export APKSIGNER=apksigner 覆盖
-apksigner_cmd := env_var_or_default("APKSIGNER", "java -jar tools/apksigner.jar")
-
-# 一次性准备 apksigner：下载 build-tools 34 并提取 apksigner.jar（临时下载约 60MB）
-[group('APK 构建')]
-tools:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [[ -f tools/apksigner.jar ]]; then
-        echo "tools/apksigner.jar 已存在，跳过"
-        exit 0
-    fi
-    mkdir -p tools
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    url="https://dl.google.com/android/repository/build-tools_r34-linux.zip"
-    echo "==> 下载 $url"
-    curl -fsSL --retry 3 -o "$tmp/bt.zip" "$url"
-    unzip -q "$tmp/bt.zip" 'android-14/lib/apksigner.jar' -d "$tmp"
-    mv "$tmp/android-14/lib/apksigner.jar" tools/
-    java -jar tools/apksigner.jar --version
-
-# 抓取上游预览版 APK 到 download/ 并校验 sha256（本地已有且校验通过则跳过下载）
-[group('APK 构建')]
-fetch tag="" flavor="apt-android-7" abi="universal":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    args=(-o download -f "{{flavor}}" -a "{{abi}}")
-    if [[ -n "{{tag}}" ]]; then args+=(-t "{{tag}}"); fi
-    scripts/fetch-termux-prerelease.sh "${args[@]}"
-
-# 用 Emacs 构建密钥重签 APK 并断言证书指纹（缺省自动选 download/ 下最新的未签名 APK）
-[group('APK 构建')]
-resign apk="": tools
-    #!/usr/bin/env bash
-    set -euo pipefail
-    target="{{apk}}"
-    if [[ -z "$target" ]]; then
-        target=$(ls -t download/*.apk 2>/dev/null | grep -v 'emacs-signed' | sed -n '1p' || true)
-        if [[ -z "$target" ]]; then
-            echo "download/ 下没有待签名的 APK，先运行: just fetch" >&2
-            exit 1
-        fi
-    fi
-    APKSIGNER="{{apksigner_cmd}}" scripts/resign-apk.sh "$target"
-
-# 抓取 + 重签一条龙（参数同 fetch；产物为 download/ 下 *-emacs-signed.apk）
-[group('APK 构建')]
-termux tag="" flavor="apt-android-7" abi="universal": tools
-    #!/usr/bin/env bash
-    set -euo pipefail
-    args=(-o download -f "{{flavor}}" -a "{{abi}}")
-    if [[ -n "{{tag}}" ]]; then args+=(-t "{{tag}}"); fi
-    out=$(scripts/fetch-termux-prerelease.sh "${args[@]}")
-    apk=$(sed -n 's/^apk=//p' <<<"$out")
-    APKSIGNER="{{apksigner_cmd}}" scripts/resign-apk.sh "$apk"
-    echo
-    echo "==> 产物: ${apk%.apk}-emacs-signed.apk"
 
 # ═══ 配置依赖（真机 / 桌面通用）═══
 
@@ -325,8 +259,8 @@ packages profile="portable":
 
 # ═══ 清理 ═══
 
-# 清字节码、沙箱、eln 缓存与重签名产物。
-clean: clean-emacs clean-download
+# 清字节码、沙箱与 eln 缓存。
+clean: clean-emacs
 
 # 清编译产物与本地缓存：仓库内 *.elc、eln-cache/ 与桌面沙箱 .sandbox/
 clean-emacs:
@@ -335,7 +269,3 @@ clean-emacs:
     find . -path ./.git -prune -o -name '*.elc' -type f -delete
     rm -rf .sandbox eln-cache
     echo "已清理 *.elc、eln-cache/、.sandbox/"
-
-# 清 Termux 重签名时的下载目录
-clean-download:
-    rm -rf download

@@ -24,11 +24,9 @@ core/self-package.el  包后端抽象（guix | elpaca）与包清单装/验（�
 modules/<域>/self-*.el 全部功能模块，按域归档（base/ui/touch/org/prog/desktop/ide）；一个文件一个内聚功能单元，provide 'self-<名>；跨模块共享变量唯一定义在 core/self-lib.el 或首个消费模块，其余处一律不带值 defvar 声明
 profiles/<档>.el      该档的加载契约：包清单 + 模块 require 序列 + 档内覆写
 data/                 静态数据（翻译表、图标资产）；只允许字面量 setq / defconst 与注释
-scripts/              运维脚本（验证脚本 + Termux 重签脚本）
-docs/                 设计文档；docs/mobile/ 手机部署与重签专题
-assets/               Emacs 官方公开构建密钥（重签 Termux 用）
-.github/workflows/    CI：Termux 重签-发布流水线
-justfile              本机命令入口（verify / compile / APK 构建 / 配置依赖）
+scripts/              运维脚本（验证脚本）
+docs/                 设计文档；docs/mobile/ 手机部署指南
+justfile              本机命令入口（verify / compile / 配置依赖）
 ```
 
 启动调用链：`emacs → early-init.el → init.el → self-lib → self-package → profiles/<档>.el → 按序 require modules/`。
@@ -49,7 +47,7 @@ justfile              本机命令入口（verify / compile / APK 构建 / 配�
 
 ### 手机基建（Termux 同签名重签）
 
-Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），全套基建在本仓库：`assets/emacs.keystore`（Emacs 官方公开密钥，非私密）+ `scripts/fetch-termux-prerelease.sh` / `scripts/resign-apk.sh` + `.github/workflows/resign-termux.yml`（每周检查上游预览版、重签并发布到 Releases）；`early-init.el` 的 Android 分支负责把 Termux bin 注入 `exec-path`/`PATH`。改这条链路前先读 `docs/mobile/00-workflow.md`，术语与坑见 `docs/mobile/` 四篇。`download/`、`tools/` 是重签产物与本地工具目录（不入库）。
+Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重签流水线已剥离到独立仓库 [termux-emacs](https://github.com/ShineBreaker/termux-emacs)：密钥、脚本、CI 与机制文档都在那边（覆盖主程序与官方插件）；本仓库只保留手机部署指南（`docs/mobile/README.md`）。`early-init.el` 的 Android 分支负责把 Termux bin 注入 `exec-path`/`PATH`。
 
 ## 3. 命名与代码规范
 

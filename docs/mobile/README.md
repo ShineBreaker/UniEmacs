@@ -5,9 +5,9 @@ Android 原生 Emacs（GNU Emacs 30.2+，包名 `org.gnu.emacs`）上的部署�
 同一份仓库、同一套模块（平台差异在模块内用 `self:android-p` 守卫，档位
 划分见 `docs/architecture.md`）。
 
-本仓库同时维护 **Termux 自动重签流水线**（GitHub Action + `just` +
-`scripts/`），用于产出与 Emacs 同签名的 Termux APK，机制见
-[00-workflow.md](00-workflow.md)。
+与 Emacs 同签名的 Termux 系 APK（主程序与插件）由独立仓库
+[termux-emacs](https://github.com/ShineBreaker/termux-emacs) 产出（GitHub Action 自动重签发布），
+机制见其 [docs/mechanism.md](https://github.com/ShineBreaker/termux-emacs/blob/main/docs/mechanism.md)。
 
 ## 0. 交互一览
 
@@ -26,21 +26,15 @@ termux 版 Emacs 在 `https://ftp.gnu.org/gnu/emacs/android/termux/`（国内镜
 
 ## 2. Termux 签名兼容
 
-机制：termux 版 Emacs 与 Termux 的 manifest 都声明 `sharedUserId`，Android 只给**同签名**的包分配同一 UID，Emacs 才能执行 Termux 内的程序（git 等）。F-Droid/Play/GitHub 版 Termux 签名各不相同，不能直接混用，也无法跨签名覆盖升级。详见 [01-shared-uid-mechanism.md](01-shared-uid-mechanism.md)。
+机制：termux 版 Emacs 与 Termux 的 manifest 都声明 `sharedUserId`，Android 只给**同签名**的包分配同一 UID，Emacs 才能执行 Termux 内的程序（git 等）。F-Droid/Play/GitHub 版 Termux 签名各不相同，不能直接混用，也无法跨签名覆盖升级。**Termux 插件（Termux:API/Boot/Styling/Tasker/Widget 等）同样声明该属性，必须与主程序同一把签名**。机制详解见 [termux-emacs 的 mechanism.md](https://github.com/ShineBreaker/termux-emacs/blob/main/docs/mechanism.md)。
 
-获取与 Emacs 同签名的 Termux，按省事程度：
+获取与 Emacs 同签名的 Termux 系 APK（主程序 + 插件）：
 
-1. **本仓库流水线产物（推荐）**：到 [Releases](../../releases) 下载最新 `*-emacs-signed.apk`。GitHub Action 每周自动检查 [termux/termux-app](https://github.com/termux/termux-app) 预览版，经官方 sha256 校验后用 Emacs 公开构建密钥（`assets/emacs.keystore`）重签、断言证书指纹再发布（已发布过的版本直接跳过），无需配置任何 Secrets。没有所需版本时到 Actions 页手动触发 _Resign Termux prerelease_（可选 tag/flavor/abi/force），或本地一条龙：
+1. **termux-emacs 流水线产物（推荐）**：到 [termux-emacs Releases](https://github.com/ShineBreaker/termux-emacs/releases) 下载所需的 `*-emacs-signed.apk`（release tag 形如 `termux-api-v0.53.0`）。其 GitHub Action 每周自动检查上游新版，经官方 checksums 校验后用 Emacs 公开构建密钥重签、断言证书指纹再发布（已发布过的版本直接跳过）。没有所需版本时到其 Actions 页手动触发，或本地一条龙（该仓库的 `just all`，见其 README）。
 
-   ```sh
-   just termux  # 自动准备 apksigner → 抓最新预览版 → 校验 → 重签，产物在 download/
-   ```
+2. **官方同签名版**：[SourceForge: android-ports-for-gnu-emacs](https://sourceforge.net/projects/android-ports-for-gnu-emacs/files/termux/) 的 `termux-app_apt-android-7-release_universal.apk`，无需任何签名操作，但版本较旧（不支持 Android 16），且不含插件。
 
-   细节见 [00-workflow.md](00-workflow.md) 与 [03-github-action.md](03-github-action.md)。
-
-2. **官方同签名版**：[SourceForge: android-ports-for-gnu-emacs](https://sourceforge.net/projects/android-ports-for-gnu-emacs/files/termux/) 的 `termux-app_apt-android-7-release_universal.apk`，无需任何签名操作，但版本较旧（不支持 Android 16）。
-
-3. **手动重签**：完整指南（密钥获取、签名命令参数、指纹校验、渠道选择）见 [02-manual-resign.md](02-manual-resign.md)。
+3. **手动重签**：完整指南（密钥获取、签名命令参数、指纹校验、渠道选择）见 [termux-emacs 的 manual-resign.md](https://github.com/ShineBreaker/termux-emacs/blob/main/docs/manual-resign.md)。
 
 安装（流程来自 [GNU 官方 README](https://ftp.gnu.org/gnu/emacs/android/README)）：
 
@@ -144,7 +138,7 @@ M-x org-roam-db-sync   ; 从 org 文件重建 db（db 在缓存区，不随 Sync
 
 ## 8. 常见问题
 
-- **安装报 `INSTALL_FAILED_SHARED_USER_INCOMPATIBLE`**：设备上有包占着 `com.termux` 共享用户且签名不同，最常见原因是 **Termux 插件残留**（Termux:API/Widget/Boot/Float 同样声明 `sharedUserId="com.termux"`，只卸主应用不够）。把 Termux 系应用全部卸载（必要时重启手机），再按先 Termux 后 Emacs 的顺序安装。
+- **安装报 `INSTALL_FAILED_SHARED_USER_INCOMPATIBLE`**：设备上有包占着 `com.termux` 共享用户且签名不同，最常见原因是 **Termux 插件残留**（Termux:API/Widget/Boot/Float 同样声明 `sharedUserId="com.termux"`，只卸主应用不够）。把 Termux 系应用全部卸载（必要时重启手机），再按先 Termux 后 Emacs 的顺序安装。插件请用 [termux-emacs](https://github.com/ShineBreaker/termux-emacs) 的重签版（与主程序同签名）。
 - **虚拟键盘遮挡**：tap 任意处唤出（`touch-screen-display-keyboard t`）；键盘与 magit/transient 的冲突已知，portable 档不装 magit。
 - **启动后无响应/卡死**：先看 echo area 与 `*Warnings*`（`⛔ Error (use-package <模块>/<阶段>)` 直接指明出错模块与阶段）。疑似 org-roam 库卡住时，在 Termux 里三件套取证：
   ```sh
