@@ -45,6 +45,10 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 
 详见 `docs/architecture.md` §6。
 
+## 日常操作
+
+- **在 Emacs 内改笔记目录**：`M-x self/org-relocate`（`C-c o d`），前缀 `C-u` 连同旧内容一起搬。改动写入状态目录的 `org-locations.el`（下次启动自动读回），Roam / 收件箱 / agenda / 知识库随即跟随，无需重启。机制与取舍见 `docs/architecture.md` §8。
+
 ## 规范
 
 AI agent 与贡献者工作前先读 `AGENTS.md`。
