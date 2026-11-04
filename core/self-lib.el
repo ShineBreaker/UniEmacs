@@ -10,6 +10,10 @@
 ;; 真相源**——功能模块只做 `(defvar self:org-directory)' 这类就近声明，
 ;; 不再各自 defconst，免得同一路径在三档里悄悄长出三个值。
 ;;
+;; Org 根目录是唯一的例外：`M-x self/org-relocate' 可在 Emacs 内改它，
+;; 由 `self:org-config-file' 持久化，启动时在本文件派生路径之前读回；
+;; Roam/收件箱/知识库都是它的派生值，不单独可配（见该段注释）。
+;;
 ;; Profiles: all
 ;; Requires: （无——只读 early-init 的变量，见文件头的 defvar 声明）
 
@@ -86,31 +90,136 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 
 ;; ─── Org 与笔记目录 ──────────────────────────────────────────────
 ;;
-;; 平台差异写进常量定义本身（AGENTS.md §2：平台正交于档位，用平台谓词在
+;; 平台差异写进默认值定义本身（AGENTS.md §2：平台正交于档位，用平台谓词在
 ;; 定义处分支，模块里不再重复判断）。桌面端沿用原配置的固定家目录路径，
 ;; Android 端优先用 Syncthing 同步目录，存在性检测一次，缺失则回退本地。
+;;
+;; 目录可在 Emacs 内改：`M-x self/org-relocate' 把新根目录写进
+;; `self:org-config-file'（状态目录下，不污染仓库），并在当场重算下面的
+;; 派生路径、触发 `self/org-relocate-hook'。下次启动由本文件在派生路径**之前**
+;; 读回该文件，故三档、各次启动拿到的仍是同一个值。
 
-(defconst self:org-directory
+(defconst self:org-default-directory
   (if self:android-p
       (if (file-directory-p "/storage/emulated/0/Data/Syncthing/notebook/org/")
           "/storage/emulated/0/Data/Syncthing/notebook/org/"
         (expand-file-name "org/" user-emacs-directory))
     (expand-file-name "~/Documents/Org/"))
-  "Org 文件根目录。
-桌面端固定为家目录下的 ~/Documents/Org/；Android 端优先 Syncthing 同步
-目录，检测不到时回退仓库内的 org/（保证沙箱与新设备首次启动可用）。")
+  "平台默认的 Org 根目录（未被用户覆盖时生效）。
+桌面端为家目录下的 ~/Documents/Org/；Android 端优先 Syncthing 同步目录，
+检测不到时回退仓库内的 org/（保证沙箱与新设备首次启动可用）。")
 
-(defconst self:org-roam-directory
+(defconst self:org-config-file
+  (expand-file-name "org-locations.el" self:etc-directory)
+  "用户 Org 目录覆盖文件（放 `self:etc-directory' 状态目录，不污染仓库）。
+由 `M-x self/org-relocate' 写入，也可手工编辑：只需一行
+`(setq self:org-directory \"...\")'。本文件在派生 Roam/收件箱/知识库路径
+之前加载，故改动只此一处，派生值自动跟随。")
+
+(defvar self:org-directory self:org-default-directory
+  "Org 文件根目录。默认取 `self:org-default-directory'；
+用户经 `M-x self/org-relocate'（写 `self:org-config-file'）覆盖。
+派生值见 `self--org-recompute-paths'。")
+
+;; 覆盖必须在派生路径之前应用，否则 Roam/收件箱会停在平台默认。文件被
+;; 手改坏时不静默吞掉，警示后退回默认，避免整个启动因一份数据文件失败。
+(when (file-exists-p self:org-config-file)
+  (condition-case err
+      (load self:org-config-file nil t)
+    (error
+     (display-warning 'self-lib
+                      (format "Org 目录覆盖文件加载失败（%s），改用平台默认：%s"
+                              self:org-config-file (error-message-string err))))))
+
+(defvar self:org-roam-directory
   (expand-file-name "roam" self:org-directory)
-  "Org-roam 笔记目录。")
+  "Org-roam 笔记目录（派生自 `self:org-directory'）。")
 
-(defconst self:org-inbox-file
+(defvar self:org-inbox-file
   (expand-file-name "inbox.org" self:org-directory)
-  "Org 收件箱文件。")
+  "Org 收件箱文件（派生自 `self:org-directory'）。")
 
-(defconst self:org-knowledge-directory
+(defvar self:org-knowledge-directory
   (expand-file-name "experiences" self:org-directory)
-  "知识库经验卡片目录（人类域）。")
+  "知识库经验卡片目录（派生自 `self:org-directory'，人类域）。")
+
+;; ─── Org 目录重定位（在 Emacs 内改笔记目录） ─────────────────────
+;;
+;; 机制分两半：core 改路径并广播，各 Org 模块把**已加载的第三方包变量**
+;; （org-directory / org-roam-directory / agenote-*）挂到钩子上跟着走。
+;; 这样 core 不必知道 org-roam 的内部变量，模块也不必关心持久化格式。
+
+(defvar self/org-relocate-hook nil
+  "Org 根目录被 `self/org-relocate' 改动后运行的钩子（无参数）。
+各 Org 模块在此注册刷新函数，把已加载的第三方变量同步到新的
+`self:org-directory'；核心路径由 `self--org-recompute-paths' 直接更新。")
+
+(defun self--org-recompute-paths ()
+  "按当前的 `self:org-directory' 重算全部派生路径。
+改 `self:org-directory' 后必须调用，否则 Roam/收件箱/知识库仍指旧目录。"
+  (setq self:org-roam-directory
+        (expand-file-name "roam" self:org-directory)
+        self:org-inbox-file
+        (expand-file-name "inbox.org" self:org-directory)
+        self:org-knowledge-directory
+        (expand-file-name "experiences" self:org-directory)))
+
+(defun self--org-write-config ()
+  "把当前 `self:org-directory' 写进 `self:org-config-file'。
+文件是一份最小可读的 Lisp（只有一行 setq），启动时被本文件加载即生效。"
+  (let ((dir (file-name-directory self:org-config-file)))
+    (unless (file-directory-p dir)
+      (make-directory dir t)))
+  (with-temp-file self:org-config-file
+    (insert ";;; org-locations.el --- 用户 Org 目录覆盖 -*- lexical-binding: t; -*-\n"
+            ";; 由 M-x self/org-relocate 写入，也可手工编辑；\n"
+            ";; self-lib 在派生 Roam/收件箱路径之前加载本文件。\n\n"
+            (format "(setq self:org-directory %S)\n" self:org-directory))))
+
+(defun self--org-move-contents (from to)
+  "把 FROM 下的顶层条目搬到 TO（含隐藏文件）。
+逐个 `rename-file'，单个失败只警示不中断（跨文件系统或权限不足时
+可能失败）。FROM 不存在、或两目录互相嵌套（搬进去会自我递归）时
+直接跳过。"
+  (when (and (file-directory-p from)
+             (not (file-in-directory-p to from))
+             (not (file-in-directory-p from to)))
+    (unless (file-directory-p to)
+      (make-directory to t))
+    (dolist (entry (directory-files from t "\\`\\(?:[^.]\\|\\.[^.]\\)"))
+      (let ((target (expand-file-name (file-name-nondirectory entry) to)))
+        (condition-case err
+            (rename-file entry target)
+          (error
+           (display-warning 'self-lib
+                            (format "移动 %s 到 %s 失败：%s"
+                                    entry target (error-message-string err)))))))))
+
+(defun self/org-relocate (directory &optional move)
+  "把 Org 根目录改到 DIRECTORY，持久化并让已加载的 Org 栈立刻跟随。
+交互命令：M-x self/org-relocate；前缀参数（C-u）表示把现有内容搬过去。
+
+这是「在 Emacs 内改笔记目录」的唯一入口：改完后 Roam、收件箱、agenda、
+知识库经验卡全部指向新根目录，无需重启，也无需手改仓库源码。目录可以尚
+不存在——`self/org-relocate-hook' 上的各模块会补齐自己那部分骨架。
+
+副作用：写 `self:org-config-file'（下次启动直接生效）；是否随迁旧内容由
+MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
+  (interactive
+   (list (read-directory-name "新的 Org 根目录: "
+                              (file-name-as-directory self:org-directory))
+         current-prefix-arg))
+  (let ((new (file-name-as-directory (expand-file-name directory))))
+    (unless (file-directory-p new)
+      (make-directory new t))
+    (when move
+      (self--org-move-contents self:org-directory new))
+    (setq self:org-directory new)
+    (self--org-recompute-paths)
+    (self--org-write-config)
+    (run-hooks 'self/org-relocate-hook)
+    (message "Org 根目录已改为 %s（已写入 %s）"
+             self:org-directory self:org-config-file)))
 
 ;; ─── 本地化数据目录 ──────────────────────────────────────────────
 
