@@ -21,11 +21,13 @@
 ;;
 ;; 与本地 agenote 知识库命令行工具的集成
 ;; --------------------------------------
-;; 目录对齐：agenote 的 org 根、经验卡目录、Inbox 三个常量直接指向本配置的
+;; 目录对齐：agenote 的 org 根、经验卡目录、Inbox 三个变量直接指向本配置的
 ;; Org 路径（self:org-directory / self:org-knowledge-directory /
 ;; self:org-inbox-file），因此 Emacs 里 capture 出的经验卡与 CLI 侧
-;; `agenote' 看到的是同一批文件。所有交互命令均自带 autoload，首个 C-c o k
-;; 快捷键按下时自动触发延迟加载，`:custom' 配置经 eval-after-load 应用。
+;; `agenote' 看到的是同一批文件；`M-x self/org-relocate' 改根目录时由下方的
+;; `self/agenote--sync-directories' 重指，保持两边一致。所有交互命令均自带
+;; autoload，首个 C-c o k 快捷键按下时自动触发延迟加载，`:custom' 配置经
+;; eval-after-load 应用。
 ;;
 ;; 经验三卡与 agenote entry-types 的对齐
 ;; ------------------------------------
@@ -86,6 +88,12 @@
 ;; 模板表在 self-org.el 里声明，本模块只往里赋值
 (defvar self/agenote-capture-templates)
 
+;; agenote 是第三方包，下面 `:custom' 在加载期给这三个变量设值；
+;; 重定位后由 `self/agenote--sync-directories' 重设，先声明供编译识别。
+(defvar agenote-org-directory)
+(defvar agenote-experiences-directory)
+(defvar agenote-inbox-file)
+
 ;; ─── 包配置（安装与版本 pin 是 profile manifest 的职责）─────────────
 
 (use-package agenote
@@ -94,6 +102,20 @@
   (agenote-org-directory self:org-directory)
   (agenote-experiences-directory self:org-knowledge-directory)
   (agenote-inbox-file self:org-inbox-file))
+
+;; ─── 目录重定位后的跟随 ──────────────────────────────────────────
+;;
+;; `M-x self/org-relocate'（core/self-lib.el）改的是 `self:org-directory'
+;; 一族核心变量；agenote 的三个目录变量由本函数重设，否则经验卡采集仍写
+;; 旧路径（与 self-org 的 capture 模板同步）。
+(defun self/agenote--sync-directories ()
+  "把 agenote 的目录变量同步到当前的 `self:org-directory' 一族。
+注册在 `self/org-relocate-hook'，由 `M-x self/org-relocate' 触发。"
+  (setq agenote-org-directory self:org-directory
+        agenote-experiences-directory self:org-knowledge-directory
+        agenote-inbox-file self:org-inbox-file))
+
+(add-hook 'self/org-relocate-hook #'self/agenote--sync-directories)
 
 ;; ─── Capture 临时状态与类别后台预取 ────────────────────────────────
 
