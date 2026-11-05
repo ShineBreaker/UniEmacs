@@ -87,8 +87,7 @@ major-mode 符号。SLOT 取 editor/left/bottom 之一。
 
 (defconst self:ide-slot-exempt-names
   '("\\` "                              ; 空格前缀：隐藏内部 buffer
-    "\\`\\*Ediff Control Panel\\*\\'"   ; ediff 自管窗口布局
-    "\\`\\*Minimap")                    ; minimap 自建窗口，不经路由
+    "\\`\\*Ediff Control Panel\\*\\'")   ; ediff 自管窗口布局
   "豁免路由的 buffer 名正则：这些 buffer 保持包自带弹出行为。")
 
 (defun self/ide--exempt-name-p (name)

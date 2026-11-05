@@ -39,6 +39,7 @@
         org-roam emacsql
         markdown-mode
         apheleia dape envrc rainbow-delimiters
+        jupyter
         fish-mode gdscript-mode kdl-mode nix-mode pdf-tools zig-mode
         agent-shell dsh-emacs telega guix
         ghostel
@@ -63,7 +64,9 @@
 ;;                   `self--buffers-in-mode' 与 self-windowing。
 ;; · self-org        Org 栈；self-agenote 的 capture 模板挂在它的装配点上。
 ;; · self-agenote    经验卡知识库，必须晚于 self-org。
-;; · self-prog / self-langs / self-vcs / self-project  编程栈。
+;; · self-prog / self-langs / self-jupyter / self-vcs / self-project  编程栈。
+;;   self-jupyter 排在 self-langs 之后：REPL 与 Org Babel 块要等语言
+;;   模式都注册完，才有稳定的 python-mode 等宿主 buffer 可挂。
 ;; · self-modeline   mode-line 增强，必须早于 self-tabline。
 ;; · self-glyph      字形回退原语，self-dashboard 的桌面分支在加载期
 ;;                   就调用 `self/glyph'，必须排在它前面。
@@ -87,6 +90,7 @@
 (require 'self-agenote)
 (require 'self-prog)
 (require 'self-langs)
+(require 'self-jupyter)
 (require 'self-vcs)
 (require 'self-project)
 (require 'self-modeline)

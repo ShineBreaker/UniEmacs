@@ -3,7 +3,7 @@
 ;;; Commentary:
 ;; IDE 档：完整复刻 Zed/VSCode/JetBrains 的 IDE 体验。在 full 档
 ;; 全量模块之上叠加 IDE 设施——Treemacs 项目树、命令面板式补全栈
-;; （vertico/corfu/kind-icon）、面包屑行、行内 Git blame、代码缩略图，
+;; （vertico/corfu/kind-icon）、面包屑行、行内 Git blame，
 ;; 以及鼠标平权层（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、
 ;; 代码右键菜单）。本档是桌面默认 profile（未设 UNI_EMACS_PROFILE
 ;; 且非 Android 时落到这里）；显式选择仍可用：
@@ -44,6 +44,7 @@
         org-roam emacsql
         markdown-mode
         apheleia dape envrc rainbow-delimiters
+        jupyter
         fish-mode gdscript-mode kdl-mode nix-mode pdf-tools zig-mode
         agent-shell dsh-emacs telega guix
         ghostel
@@ -53,16 +54,15 @@
         vertico orderless marginalia consult embark embark-consult
         corfu cape kind-icon eldoc-box
         treemacs treemacs-nerd-icons
-        colorful-mode minimap))
+        colorful-mode))
 
 (self/package-ensure)
 
 ;; ─── 模块 require 序列 ────────────────────────────────────────────
 ;;
 ;; 前半与 profiles/full.el 逐行同序（契约说明见该文件注释）；
-;; 末端六个 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → blame →
-;; minimap」排列，全部排在 self-keys-desktop 之后：键位覆写必须
-;; 最后落地。
+;; 末端五个 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → blame」
+;; 排列，全部排在 self-keys-desktop 之后：键位覆写必须最后落地。
 
 (require 'self-compat)
 (require 'self-session)
@@ -78,6 +78,7 @@
 (require 'self-agenote)
 (require 'self-prog)
 (require 'self-langs)
+(require 'self-jupyter)
 (require 'self-vcs)
 (require 'self-project)
 (require 'self-modeline)
@@ -106,7 +107,6 @@
 ;;                        代码右键子菜单，并把已就绪的 Ctrl+点击/
 ;;                        Ctrl+滚轮缩放登记进帮助速查表。
 ;; · self-ide-blame       行内 Git blame，无三方包依赖。
-;; · self-ide-minimap     右侧代码缩略图。
 
 (require 'self-ide-chrome)
 (require 'self-ide-panel)
@@ -114,7 +114,6 @@
 (require 'self-ide-completion)
 (require 'self-ide-mouse)
 (require 'self-ide-blame)
-(require 'self-ide-minimap)
 
 ;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────
 ;; 与 full 档同款（理由与取舍见 profiles/full.el 注释）。ide 是桌面档，

@@ -207,10 +207,10 @@ keymap-global-set 换实际绑定，plist-put 就地改写 `self:binding-spec'
 buffer 满足 `self/ide--layout-context-p' 的窗口；都没有返回 nil。
 
 不能盲信 `frame-selected-window'：0s timer 会被 `(redisplay t)' 让路
-抢跑——实测首 client 帧上本 timer 恰在 `minimap-new-minimap' 的
-with-selected-window 瞬态内触发，此时帧记录的选中窗是 *MINIMAP*，
-按它判定上下文必假，布局永久跳过（seen 未置位）。扫描全部窗口
-则不受这类瞬态选中影响。"
+抢跑——它可能在第三方包的 with-selected-window 瞬态内触发，此时帧
+记录的选中窗是那个包的内部 buffer，而不是用户正在看的文件；按它判定
+上下文必假，布局永久跳过（seen 未置位）。扫描全部窗口则不受这类
+瞬态选中影响。"
   (let ((sel (frame-selected-window frame))
         (hit nil)
         (rest (window-list frame 'no-minibuf)))

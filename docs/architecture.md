@@ -11,14 +11,14 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 | `minimal` | 全配置的底座，强调可调试性 | 对标 nano / 未大量配置的 nvim、helix          | **零**（纯内建）  |
 | `portable`| Android 原生 Emacs 触屏    | 触屏交互、tool-bar、移动端 Org/Roam、阅读     | elpaca 管理       |
 | `full`    | 桌面全量：增强的完整 Emacs 体验 | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
-| `ide`     | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | full 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame/minimap + **鼠标交互增强层** | Guix profile 管理 |
+| `ide`     | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | full 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame + **鼠标交互增强层** | Guix profile 管理 |
 
 四档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
 
 两个桌面档的定位分野是**不同的目标体验**，不是功能强弱：
 
 - `full` 面向「把 Emacs 当 Emacs 用」：保留菜单栏供探索、用内建补全栈（flex + 幽灵文本）、Dired 文件面板，并通过 `self-discover` 模块把窄化、寄存器、矩形、kmacro、间接缓冲、Ediff、hi-lock、递归 minibuffer 这类 Emacs 独门机制显式化——默认键位原样再登记换中文提示与帮助页条目，用户在 <f1> ? 速查表和 which-key 弹窗里就能把它们学完。
-- `ide` 面向「无缝迁移自 Zed/VSCode/JetBrains」：界面结构与交互习惯对齐现代 IDE（左树/底槽/标签/面包屑/minimap/行内 blame/命令面板），并额外做鼠标平权——Ctrl+点击跳定义、Shift+滚轮横滚、行槽点击断点、代码右键菜单等，全部由 `modules/ide/` 承担。
+- `ide` 面向「无缝迁移自 Zed/VSCode/JetBrains」：界面结构与交互习惯对齐现代 IDE（左树/底槽/标签/面包屑/行内 blame/命令面板），并额外做鼠标平权——Ctrl+点击跳定义、Shift+滚轮横滚、行槽点击断点、代码右键菜单等，全部由 `modules/ide/` 承担。
 
 `ide` 与 `full` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 full.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义）。full 档保持语法可读优先；ide 档允许更复杂的实现。
 
@@ -42,9 +42,9 @@ UniEmacs/
 │   ├── ui/               #   视觉层：theme / modeline / tabline / windowing / dashboard / help-zh
 │   ├── touch/            #   触屏层：glyph / ui-touch / touch / bar / markdown / reading / misc
 │   ├── org/              #   Org 知识栈：org / roam / agenote
-│   ├── prog/             #   编程栈：compat / prog / langs / project / vcs / terminal
+│   ├── prog/             #   编程栈：compat / prog / langs / jupyter / project / vcs / terminal
 │   ├── desktop/          #   桌面运行环境：daemon / apps / keys-desktop
-│   └── ide/              #   IDE 档层：chrome / panel / completion / blame / minimap
+│   └── ide/              #   IDE 档层：chrome / panel / completion / blame
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
@@ -143,6 +143,7 @@ self-package 检测顺序：
 | `self-compat`     | full            | Emacs 31 兼容 shim（arei 兜底；唯一消费方 self-langs） |
 | `self-prog`       | full            | tree-sitter、eglot、flymake、apheleia 格式化 |
 | `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等） |
+| `self-jupyter`    | full, ide       | Jupyter 内核 REPL（C-c j 前缀）与 Org Babel `jupyter-python` 源码块；全栈懒加载 |
 | `self-project`    | full            | project.el、目录树、项目导航           |
 | `self-vcs`        | full            | magit/forge/diff-hl、git 状态展示      |
 | `self-terminal`   | full            | ghostel 终端面板 + GIT_EDITOR 导出     |
@@ -166,7 +167,6 @@ self-package 检测顺序：
 | `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview；C-S-o/M-s p 接管为 consult-imenu/consult-ripgrep |
 | `self-ide-mouse`      | ide   | 鼠标平权层：Shift+滚轮横滚、gutter（行号槽/fringe）点击切换 dape 断点、prog buffer 右键「代码」子菜单；登记已就绪的 Ctrl+点击跳定义/Ctrl+滚轮缩放 |
 | `self-ide-blame`      | ide   | 行内 Git blame（idle 防抖 + 异步 porcelain + 行尾 overlay） |
-| `self-ide-minimap`    | ide   | 右缘代码缩略图（prog/text/conf buffer）     |
 
 模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表与目录归属。
 

@@ -66,6 +66,10 @@
    "emacs-nix-mode"
    "emacs-pdf-tools"
    "emacs-zig-mode"
+   "emacs-jupyter"          ; Jupyter 内核 REPL / Org Babel 源码块
+   ;; emacs-jupyter 的 Guix 包传播依赖 emacs-company；桌面档用 corfu，
+   ;; company 只被加载、不启用 mode，无冲突。
+   "jupyter"                ; 内核发现与启动（含 python3/ipykernel）
    "emacs-agent-shell"
    "emacs-dsh"            ; elisp 侧包名 dsh-emacs（上游 repo vritser/dsh-emacs）
    "emacs-telega"
@@ -91,7 +95,6 @@
    "emacs-treemacs"         ; 左侧项目文件树
    "emacs-treemacs-nerd-icons"
    "emacs-colorful-mode"    ; 颜色字面量就地渲染（Zed colorizer 对应）
-   "emacs-minimap"          ; 右侧代码缩略图
 
    ;; ─── portable 档专用 ──────────────────────────────────────────
    ;; emacsql-sqlite（org-roam 2.2.x 的 CLI 连接器）随 emacs-emacsql 分发，
