@@ -45,6 +45,10 @@ justfile              本机命令入口（verify / compile / 配置依赖）
 - 同一仓库内部的函数互调不加 `fboundp`/`boundp` 守卫；守卫仅用于第三方延迟加载包与跨构建变量。
 - 平台差异与档位差异是**两个正交维度**：平台差异用 `self:android-p` / `self:gui-p` 等谓词在模块内部守卫；档位差异只能通过 manifest 勾选模块实现，模块内禁止 `when (eq self:profile ...)` 式自我裁剪。
 
+### 用户可改路径（Org 重定位）
+
+Org 路径族里只有根目录 `self:org-directory` 允许在 Emacs 内改：`M-x self/org-relocate`（`C-c o d`）写 `self:org-config-file`（状态目录下 `org-locations.el`，启动时在派生路径之前读回），并重算 Roam/收件箱/知识库派生值、运行 `self/org-relocate-hook`。各 Org 模块（self-org / self-roam / self-agenote）在钩子上注册刷新函数，把各自持有的第三方包变量（org-directory / org-roam-directory / agenote-*）同步到新路径。派生路径不单独可配；持久化文件按机器落在状态目录，不入仓库。机制与取舍见 `docs/architecture.md` §8。
+
 ### 手机基建（Termux 同签名重签）
 
 Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重签流水线已剥离到独立仓库 [termux-emacs](https://github.com/ShineBreaker/termux-emacs)：密钥、脚本、CI 与机制文档都在那边（覆盖主程序与官方插件）；本仓库只保留手机部署指南（`docs/mobile/README.md`）。`early-init.el` 的 Android 分支负责把 Termux bin 注入 `exec-path`/`PATH`。

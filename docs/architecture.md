@@ -1,6 +1,6 @@
 # UniEmacs 架构设计
 
-> 版本 v0.3（2026-10-19）。改架构先改本文档与 AGENTS.md。
+> 版本 v0.4（2026-10-19）。改架构先改本文档与 AGENTS.md。
 
 ## 1. 目标与四档语义
 
@@ -189,3 +189,39 @@ self-package 检测顺序：
 | P5   | 验证管线硬化 + 部署脚本 + 真机/真桌面验收         | 交付                     |
 
 每阶段内的模块移植按依赖拓扑序逐个进行，一个模块一个 commit。
+
+## 8. 用户可改路径：Org 重定位
+
+Org 笔记路径族（`self:org-directory` 及其派生值 Roam / 收件箱 / 知识库）
+按 AGENTS.md §2 的单一真相源原则定义在 `core/self-lib.el`。唯一的例外是
+**根目录可在 Emacs 内改**，其余派生值跟随它，不单独可配。
+
+### 机制
+
+- **命令**：`M-x self/org-relocate`（portable/full/ide 档绑在 `C-c o d`）。
+  参数取新根目录，前缀参数 `C-u` 表示把现有内容一并搬过去；跨设备搬迁
+  失败逐个警示但不中断。命令会补齐骨架目录，无需重启，也无需改仓库源码。
+- **持久化**：写 `self:org-config-file`（`self:etc-directory` 下的
+  `org-locations.el`，XDG state 目录）。内容是单行
+  `(setq self:org-directory "...")`，可手工编辑。
+- **启动读取**：`self-lib` 在派生 Roam/收件箱/知识库路径**之前**加载
+  `self:org-config-file`，因此各档、各次启动拿到的仍是同一个值。加载失败
+  时警示后退回平台默认，不让一份数据文件拖垮启动。
+- **广播**：根目录改变后 `self-lib` 重算派生值并运行
+  `self/org-relocate-hook`；各 Org 模块在钩子上注册刷新函数，把**自己持有
+  的第三方包变量**同步到新路径（`self-org` → org-directory / agenda / capture
+  模板，`self-roam` → org-roam-directory，`self-agenote` → agenote-*）。
+  core 不感知 org-roam 等包的内部变量，模块也不必关心持久化格式。
+
+### 取舍
+
+- **为什么持久化进状态目录而非仓库**：Org 位置按机器而异（桌面家目录、
+  Android 的 Syncthing 目录、沙箱回退各不同），仓库源码保持只读且可多机
+  共享；状态目录天然按机隔离。
+- **为什么只有根目录可配**：Roam/收件箱/知识库/agenda 都是根目录下的约定
+  子目录，拆成多个独立开关会立刻产生“根与子目录不同源”的漂移；org-roam 的
+  SQLite 数据库更是明确放在 `self:cache-directory`（不随笔记走，见
+  `self-roam.el` 注释），也不受根目录变动影响。
+- **为什么不自动重建 org-roam 索引**：根目录变了，缓存区数据库里索引的旧
+  文件路径已失效，但全量 `org-roam-db-sync` 在手机 FUSE 存储上是分钟级
+  阻塞；重定位命令只提示，由用户按需 `M-x org-roam-db-sync`。

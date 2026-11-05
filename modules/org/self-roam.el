@@ -13,8 +13,10 @@
 ;; 里的 roam 段一并搬到此文件——双链笔记是独立功能域，不该寄生在 Org 基础
 ;; 模块里（同小节的 Olivetti 在 self-org.el，agenote 知识库在 self-agenote.el）。
 ;;
-;; 笔记文件本体放在 `self:org-roam-directory'（org/roam/），SQLite 数据库
-;; 与笔记分离、单独落在 `self:cache-directory'。
+;; 笔记文件本体放在 `self:org-roam-directory'（org/roam/，派生自
+;; `self:org-directory'，可用 `M-x self/org-relocate' 改，见文件末
+;; 「目录重定位后的跟随」），SQLite 数据库与笔记分离、单独落在
+;; `self:cache-directory'。
 ;;
 ;; ─── 为什么 db 不跟笔记一起同步 ────────────────────────────────────
 ;;
@@ -63,6 +65,7 @@
 (declare-function org-roam-file-p "org-roam")
 (declare-function org-roam-db-update-file "org-roam")
 (defvar org-roam-database-connector) ; org-roam 2.2.x 的 connector 变量
+(defvar org-roam-directory)         ; 重定位后由下面的 sync 函数重设
 
 ;; ─── 保存后增量索引 ────────────────────────────────────────────────
 ;;
@@ -159,6 +162,21 @@
   (unless self:android-p
     (org-roam-db-autosync-mode 1))
   (add-hook 'after-save-hook #'self/org-roam-update-on-save))
+
+;; ─── 目录重定位后的跟随 ──────────────────────────────────────────
+;;
+;; `M-x self/org-relocate'（core/self-lib.el）改的是 `self:org-directory'
+;; 一族核心变量；org-roam 的 `org-roam-directory' 由本函数重设，挂在
+;; `self/org-relocate-hook' 上。数据库落在缓存区（不随笔记走），但库内
+;; 索引的是旧文件路径，故只提示重建、不自动全量 sync——那在手机 FUSE
+;; 存储上是分钟级阻塞（见上「为什么 db 不跟笔记一起同步」）。
+(defun self/org-roam--sync-directories ()
+  "把 org-roam 指向新的 `self:org-roam-directory'。
+注册在 `self/org-relocate-hook'，由 `M-x self/org-relocate' 触发。"
+  (setq org-roam-directory self:org-roam-directory)
+  (message "org-roam 目录已切换；索引仍按旧路径，需要时 M-x org-roam-db-sync 重建"))
+
+(add-hook 'self/org-relocate-hook #'self/org-roam--sync-directories)
 
 ;; ─── 键位（C-c o r 网状笔记前缀） ──────────────────────────────────
 

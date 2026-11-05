@@ -23,7 +23,8 @@
 ;;
 ;; ─── 目录骨架 ──────────────────────────────────────────────────────
 ;;
-;; 所有笔记统一存放在 `self:org-directory' 下（常量在 core/self-lib.el）：
+;; 所有笔记统一存放在 `self:org-directory' 下（值由 core/self-lib.el 提供，
+;; 可用 `M-x self/org-relocate' 在 Emacs 内改，见该文件「Org 目录重定位」）：
 ;;   inbox.org   —— 灵感收件箱，快速记录未分类的零散想法；
 ;;   agenda/     —— 日程规划与任务清单（带具体执行日期的 TODO）；
 ;;   roam/       —— org-roam 长期双链笔记（见 self-roam.el）；
@@ -43,17 +44,20 @@
 ;; 一旦缩进，`* TODO %?` 就不再被 Org 解析为标题，capture 会写出无法折叠的
 ;; 普通段落。
 ;;
-;; ─── 目标文件的三类求值时机（读模板时先分清目标属于哪一类）──────────
+;; ─── 目标文件只在采集时求值（读模板时先分清目标传的是哪一类）──────
 ;;
-;;   · 常量路径在**定义时**展开（inbox 用反引号 `,self:org-inbox-file`）；
-;;   · agenda 与 roam 的目标传入**函数**，由 org-capture 在每次采集时调用
-;;     （`self/org-capture--agenda-file' / `self/org-capture--roam-file'）——
-;;     运行时目录可能刚被建好，且 agenda 的取值来源是 `org-agenda-files'
-;;     而非写死的路径；
-;;   · 需要人机交互的（Roam 标题、经验卡路径、经验卡类别）同样传函数，
-;;     交互答案写入 `self/org-capture--*' 变量，模板体读走，finalize 钩子
-;;     清空。三个环节闭环，缺一则属性退化为默认值（`未命名笔记` / `general`）。
-;;     改模板前先确认没删掉这些变量引用。
+;; 全部目标都**不在定义时固化路径**，分两种写法，效果一致——
+;; org-capture 采集时经 `org-capture-expand-file' 现取：
+;;
+;;   · 传**变量符号** `self:org-inbox-file'（inbox 与速存/分享模板）；
+;;   · 传**函数**，由函数返回路径，需要人机交互的交互答案写入
+;;     `self/org-capture--*' 变量、模板体读走、finalize 钩子清空
+;;     （agenda 用 `self/org-capture--agenda-file'、roam 用
+;;     `self/org-capture--roam-file'）。三个环节闭环，缺一则属性退化为
+;;     默认值（`未命名笔记` / `general`）。改模板前先确认没删掉这些引用。
+;;
+;; **不要改成反引号 `,self:org-...` 的常量展开**：那会在加载时就把当前
+;; 路径烤进模板，`M-x self/org-relocate' 改目录后旧模板仍指向老路径。
 ;;
 ;; ─── 模板装配与加载顺序 ────────────────────────────────────────────
 ;;
@@ -96,6 +100,8 @@
 (declare-function self/bind "self-keys"
                   (key target description group &rest properties))
 (declare-function self/declare-binding-group "self-keys" (key description))
+;; 重定位命令定义在 core/self-lib.el，本模块只绑键与挂跟随钩子。
+(declare-function self/org-relocate "self-lib" (directory &optional move))
 (declare-function self/touch-show-keyboard "self-touch"
                   "触屏上拉起系统软键盘。")
 (declare-function org-src-for-each-block "org-src" (function &optional lang))
@@ -213,10 +219,11 @@
   "本次 capture 的 Roam 笔记标题，由目标文件函数写入、模板体读走。")
 
 ;; ki：最小阻力收集，一句话 TODO + CREATED 时间戳，留待 inbox 分流。
-;; 目标文件是常量路径，故用反引号在定义时展开。
+;; 目标写**变量符号**（而非反引号展开的常量）：采集时现取
+;; `self:org-inbox-file'，故 `M-x self/org-relocate' 改根目录后自动跟随。
 (defconst self:org-capture-tpl-inbox
-  `("ki" "Inbox 草稿" entry
-    (file ,self:org-inbox-file)
+  '("ki" "Inbox 草稿" entry
+    (file self:org-inbox-file)
     "
 * TODO %?
 :PROPERTIES:
@@ -332,6 +339,27 @@ SCHEDULED: %^t
 
 (with-eval-after-load 'org-capture
   (self/org--install-capture-templates))
+
+;; ─── 目录重定位后的跟随 ──────────────────────────────────────────
+;;
+;; `M-x self/org-relocate'（core/self-lib.el）只改 `self:org-directory'
+;; 一族核心变量；org 包自己的变量（org-directory / org-agenda-files）与
+;; 依赖路径的 capture 模板由本函数接管，挂在 core 的
+;; `self/org-relocate-hook' 上。org 是延迟加载的第三方包，故用 `boundp'
+;; 判断是否已加载（AGENTS.md §2 允许的第三方延迟加载守卫）。
+(defun self/org--sync-directories ()
+  "把 org 包变量与 capture 模板同步到当前的 `self:org-directory'。
+注册在 `self/org-relocate-hook'，由 `M-x self/org-relocate' 触发。"
+  (self/org--ensure-directories)
+  (when (boundp 'org-directory)
+    (setq org-directory self:org-directory))
+  (when (boundp 'org-agenda-files)
+    (setq org-agenda-files
+          (list (expand-file-name "agenda" self:org-directory))))
+  (when (boundp 'org-capture-templates)
+    (self/org--install-capture-templates)))
+
+(add-hook 'self/org-relocate-hook #'self/org--sync-directories)
 
 ;; ─── 剪贴板速存：一键入库（mode-line「速」钮 / 工具栏），不弹模板面板 ──
 
@@ -500,6 +528,7 @@ self-prog 注册）；没有 Apheleia 的环境（portable 等）退回按各语
          (indent-region start end))))))
 
 (self/bind "C-c o a" #'org-agenda "议程视图" "Org 与知识库")
+(self/bind "C-c o d" #'self/org-relocate "重定位 Org 根目录" "Org 与知识库")
 (self/bind "C-c o f" #'self/format-org-src-blocks "格式化全部代码块" "Org 与知识库")
 (self/bind "C-c o i" #'org-insert-structure-template "插入代码块" "Org 与知识库")
 (self/bind "C-c o o" #'olivetti-mode "专注写作" "Org 与知识库")

@@ -18,6 +18,11 @@ auto-save-list/
 .sandbox/
 .sandbox-gui/
 
+# Org 笔记与 org-persist 缓存（运行时数据，按机器不同，不入库）。
+# 只锚定仓库根，避免误伤 modules/org/。
+/org/
+/org-persist/
+
 # Termux 重签产物与本地工具（生成物，不入库）
 download/
 tools/

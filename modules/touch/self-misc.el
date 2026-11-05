@@ -34,7 +34,7 @@
 (declare-function self/dashboard--recent-roam-files "self-dashboard")
 (declare-function self/dashboard--note-title "self-dashboard")
 (declare-function org-element-parse-buffer "org-element")
-(defvar self:org-roam-directory)  ; self-org 定义的常量，只读
+(defvar self:org-roam-directory)  ; self-lib 定义的派生路径，只读
 
 (defun self/perf--elapsed (thunk)
   "执行 THUNK，返回 (耗时 . 结果)。"
