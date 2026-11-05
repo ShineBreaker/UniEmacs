@@ -5,7 +5,7 @@
 
 ;;; Commentary:
 ;; Profiles: full, ide
-;; Requires: self-compat, self-prog
+;; Requires: self-prog
 ;; Packages: arei, fish-mode, gdscript-mode, kdl-mode, markdown-mode,
 ;;           nix-mode, pdf-tools, zig-mode
 ;;
@@ -34,19 +34,14 @@
 ;; 调用、变量与宏引用，比传统正则高亮精确得多。代价是对
 ;; dynamic-binding 老代码可能误判，故留成可关的 `setopt'。
 ;;
-;; ## Emacs 31 兼容性兜底（迁移自源配置的 noweb 片段）
+;; ## arei 启用策略
 ;;
-;; 下面两个兜底函数在源配置里以 noweb 片段（=emacs31/source-load-compat=
-;; 与 =emacs31/arei-compat=）的形式集中定义、由本节代码块展开引用，
-;; 现已就地展开到使用它们的代码旁边，并保留出处注释：
-;;
-;; - =emacs31/source-load-compat= → `self/load-library-from-source'：
-;;   Guix 的 .elc 与 Emacs 31 的宏展开不兼容，需绕过只读 store 直接从
-;;   .el 源加载。移除条件：相关包改由 Emacs 31 重编译。
-;; - =emacs31/arei-compat= → `self--maybe-enable-arei-mode'：
-;;   arei 0.9.7 的 .elc 与 Emacs 31 的 `buffer-local-set-state' 宏
-;;   不兼容（bug#80812），会在 `scheme-mode-hook' 抛异常导致 Scheme
-;;   染色失效。移除条件：升级 arei 或 Guix 用 Emacs 31 重编译。
+;; arei 的 `.elc` 现已能直接加载（Emacs 32 + 当前 Guix 包实测），原先绕
+;; store 从 .el 源加载的 Emacs 31 兼容层已不需要。仍然保留的是「跳过
+;; org src 临时 buffer」这一层：org 导出/预览会把代码块复制进
+;; ` *org-src-fontification:' 并在那里跑 major mode hook，那里没有文件名
+;; 与目录上下文，让 arei 去猜类型只会得到噪声。启用失败也不该连带掐掉
+;; font-lock，故仍包一层 condition-case。
 
 ;;; Code:
 
@@ -87,18 +82,23 @@
 (add-to-list 'auto-mode-alist '("\\.jsx\\'" . tsx-ts-mode))
 (use-package zig-mode :mode "\\.zig\\'" :defer t)
 
-;; ─── Emacs 31 兼容性兜底（原 noweb 片段 emacs31/*）────────────────────
-;;
-;; 两个 shim 的实现集中在 self-compat.el（全档加载的版本兼容层），本模块
-;; 只消费：把 `<<emacs31/source-load-compat>>' 与 `<<emacs31/arei-compat>>'
-;; 摊开的动作在那里完成，这里只负责在正确的时机挂上 scheme-mode-hook。
+;; ─── Scheme 染色（arei） ─────────────────────────────────────────────
 
-(declare-function self/load-library-from-source "self-compat")
-(declare-function self--maybe-enable-arei-mode "self-compat")
+(declare-function arei-mode "arei")
+
+(defun self/langs--enable-arei-mode ()
+  "在真实 Scheme 编辑 buffer 中启用 `arei-mode'（跳过 org src 临时 buffer）。
+启用失败只记一条消息：font-lock 初始化才是用户真正要的语法高亮，不能
+因为语义染色不可用就连普通高亮一起丢。"
+  (unless (string-prefix-p " *org-src-fontification:" (buffer-name))
+    (condition-case err
+        (arei-mode 1)
+      (error
+       (message "[ERROR] arei-mode 启用失败,Scheme 染色不受影响: %S" err)))))
 
 (use-package arei
   :defer t
-  :hook (scheme-mode . self--maybe-enable-arei-mode))
+  :hook (scheme-mode . self/langs--enable-arei-mode))
 
 ;; ─── Elisp 语义染色与 PDF 浏览 ───────────────────────────────────────
 

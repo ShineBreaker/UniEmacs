@@ -64,7 +64,6 @@
 ;; 末端五个 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → blame」
 ;; 排列，全部排在 self-keys-desktop 之后：键位覆写必须最后落地。
 
-(require 'self-compat)
 (require 'self-session)
 (require 'self-windowing)
 (require 'self-keys)

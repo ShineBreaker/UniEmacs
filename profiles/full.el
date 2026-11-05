@@ -50,9 +50,6 @@
 
 ;; ─── 模块 require 序列（即本档的依赖契约，顺序不可随意调换）────────
 ;;
-;; · self-compat     Emacs 31 版本 shim（arei 染色兜底），必须早于
-;;                   self-prog / self-langs——那两个模块在 scheme-mode-hook
-;;                   上直接调用 `self--maybe-enable-arei-mode'。
 ;; · self-session    建立 var/ etc/ 落盘位置与 custom-file。
 ;; · self-windowing  窗口路由底层，被 self-vcs / self-project /
 ;;                   self-terminal 反向消费。
@@ -76,7 +73,6 @@
 ;;                   project / prog / tabline / completion / help-zh，
 ;;                   故排在全部模块之后。
 
-(require 'self-compat)
 (require 'self-session)
 (require 'self-windowing)
 (require 'self-keys)

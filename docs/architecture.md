@@ -140,9 +140,8 @@ self-package 检测顺序：
 
 | 模块              | 档位            | 内容                                   |
 | ----------------- | --------------- | -------------------------------------- |
-| `self-compat`     | full            | Emacs 31 兼容 shim（arei 兜底；唯一消费方 self-langs） |
 | `self-prog`       | full            | tree-sitter、eglot、flymake、apheleia 格式化 |
-| `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等） |
+| `self-langs`      | full            | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等）与 arei Scheme 染色 |
 | `self-jupyter`    | full, ide       | Jupyter 内核 REPL（C-c j 前缀）与 Org Babel `jupyter-python` 源码块；全栈懒加载 |
 | `self-project`    | full            | project.el、目录树、项目导航           |
 | `self-vcs`        | full            | magit/forge/diff-hl、git 状态展示      |
