@@ -99,7 +99,12 @@ Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重
 
 - 模块体内的 `use-package` **永不写 `:ensure` / `:straight` / `:elpaca`**——装包是 profile manifest 的职责。
 - 每个 profile 文件顶部以 `self:profile-packages` 声明本档第三方包清单；`self-package` 按后端执行：Guix 环境验证 `locate-library` 缺失即警告，其余环境经 elpaca 安装（含 lockfile pin 与镜像配置）。
-- 新增第三方包须同时在 `manifest.scm`（Guix 侧）与 profile 清单登记。
+- 新增或删除第三方包须**三处同步**：
+  1. profile 清单（各档 `self:profile-packages`）；
+  2. `manifest.scm`（direnv 开发环境的 Guix 侧登记，供 `just verify` / `just compile`）；
+  3. `Guix-configs/source/config.org` 里的 emacs 包列表（Guix home 运行时包，决定 `~/.guix-home/profile` 实际装什么）。
+
+  只改前两处的典型症状：`just verify` 报「以下包在 Guix 环境中找不到」，或代码写成后 `locate-library` 永远返回 nil。`source/config.org` 在父仓库（Guix-configs），改完需 `blue home` 重新部署才生效。
 
 ### 性能硬约束
 
@@ -113,7 +118,7 @@ Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重
 
 1. **定位**：改模块先读文件头 Profiles/Requires 元信息；新增功能先判断属于哪个模块或是否该新建。
 2. **就地修改**：编辑对应模块；跨模块 API 变更要同步所有 Requires 它的文件。
-3. **登记**：新增包 → manifest.scm + profile 清单；新增模块 → 文件头元信息 + 相关 profile manifest。
+3. **登记**：新增包 → profile 清单 + `manifest.scm` + `Guix-configs/source/config.org` 三处同步；新增模块 → 文件头元信息 + 相关 profile 清单。
 4. **验证**：跑 `just verify`（见 §5）；改动部署/启动链路还须真机或沙箱端到端验证。
 
 ## 5. 验收标准
