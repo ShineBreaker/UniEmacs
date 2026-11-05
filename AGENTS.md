@@ -106,6 +106,18 @@ Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重
 
   只改前两处的典型症状：`just verify` 报「以下包在 Guix 环境中找不到」，或代码写成后 `locate-library` 永远返回 nil。`source/config.org` 在父仓库（Guix-configs），改完需 `blue home` 重新部署才生效。
 
+### 内建优先
+
+引入第三方包或自己写实现前，先确认当前 Emacs 是否已经提供同等能力——尤其是最近两个大版本新增的功能。查证顺序：
+
+1. `M-x view-emacs-news`（`C-h n`）读当前版本的 NEWS；历史版本看 `etc/NEWS.31`、`NEWS.30` 等；
+2. `C-h f` / `C-h v` 查命令与变量是否已内建；`featurep` / `locate-library` 实测比文档可靠；
+3. 只有内建（含少量 `setopt` / hook 组合）确实满足不了，才引入第三方包。
+
+反向同样成立：每次升级 Emacs 后主动复查已装包，内建已覆盖的就删包，删除仍走上面的三处同步。
+
+判据是「需求是否已被覆盖」，不是「内建是不是更好」：内建覆盖不到（如 vertico 的垂直补全 UI、magit 的交互式暂存），该装就装；内建能覆盖却另装一份，就是白养一条维护面。同理适用于手写实现——`delete-trailing-whitespace-mode`、`treesit-enabled-modes` 这类新内建已经做掉的事，不要再自己写一遍。
+
 ### 性能硬约束
 
 1. 优先级：交互延迟 > 长时运行稳定性 > 启动时间。
