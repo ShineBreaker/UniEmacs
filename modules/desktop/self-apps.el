@@ -1,4 +1,4 @@
-;;; self-apps.el --- 桌面实用应用集成：Agent Shell / DSH / RSS / Telegram / 游戏 -*- lexical-binding: t; -*-
+;;; self-apps.el --- 桌面实用应用集成：Agent Shell / DSH / 游戏 -*- lexical-binding: t; -*-
 
 ;; SPDX-FileCopyrightText: 2026 BrokenShine <xchai404@gmail.com>
 ;; SPDX-License-Identifier: MIT
@@ -6,7 +6,7 @@
 ;;; Commentary:
 ;; Profiles: full, ide
 ;; Requires: self-keys
-;; Packages: agent-shell, dsh-emacs, newsticker, telega, guix
+;; Packages: agent-shell, dsh-emacs, guix
 ;;
 ;; 移植自桌面端配置「实用应用」域。域内每个应用都是同一形状：
 ;; `use-package' 声明懒加载 → `self/declare-binding-group' 注册前缀
@@ -16,8 +16,6 @@
 ;;
 ;;   C-c a a  Agent Shell    AI Agent 交互面板，右侧 side-window
 ;;   C-c a d  DeepSeek       dsh-emacs 会话，复用本机 dsh CLI
-;;   C-c a f  Newsticker     树形 RSS 阅读器
-;;   C-c a t  Telega         Telegram 客户端（直接绑 prefix-map）
 ;;   C-c a g  内置游戏       tetris / snake / gomoku / pong
 ;;   C-c a x  Emacs-Guix     Guix 管理界面与 store 路径美化
 ;;
@@ -30,8 +28,8 @@
 ;; 已装清单，不触发任何安装动作。
 ;;
 ;; 加载策略：全部 `:defer t'（内置游戏除外，走 autoload）。Agent Shell
-;; 与 Telega 是重 IM/AI 客户端，预热会明显拖慢 daemon 启动；Guix 管理
-;; 是低频工具，同样不预热。
+;; 是重 AI 客户端，预热会明显拖慢 daemon 启动；Guix 管理是低频工具，
+;; 同样不预热。
 
 ;;; Code:
 
@@ -71,30 +69,6 @@
 (self/bind "C-c a d d" #'dsh-emacs "DSH 会话列表" "生活应用")
 (self/bind "C-c a d n" #'dsh-emacs-new-session "新建 DSH 会话" "生活应用")
 (self/bind "C-c a d w" #'dsh-emacs-open-web "DSH 网页设置" "生活应用")
-
-;; ─── RSS 阅读器（Newsticker） ───────────────────────────────────────
-;; 树形视图：左列 feed、右列条目；界面内 g 刷新、n/p 上下条目、
-;; SPC 浏览摘要、RET 用 browse-url 打开原文。
-
-(use-package newsticker
-  :defer t
-  :commands (newsticker-treeview newsticker-get-all-news))
-
-(self/declare-binding-group "C-c a f" "RSS / Newsticker (订阅)")
-(self/bind "C-c a f f" #'newsticker-treeview "打开 RSS 阅读器" "生活应用")
-(self/bind "C-c a f u" #'newsticker-get-all-news "拉取全部订阅" "生活应用")
-
-;; ─── Telegram（Telega） ─────────────────────────────────────────────
-;; Telega 自带一整套 prefix-map，所以不再声明中间分组，直接把 C-c a t
-;; 绑到它的 prefix-map 上；只在 :config 里补一个关掉当前 bot 的键。
-
-(use-package telega
-  :defer t
-  :commands (telega telega-kill)
-  :config
-  (keymap-set telega-prefix-map "k" #'telega-kill))
-
-(self/bind "C-c a t" telega-prefix-map "Telegram (电报)" "生活应用")
 
 ;; ─── 内置游戏（Emacs 自带，autoload 即用） ──────────────────────────
 

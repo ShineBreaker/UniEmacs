@@ -73,9 +73,7 @@
     (mode org-agenda-mode      editor)   ; agenda 是主视图
     (mode eww-mode             editor)   ; 网页阅读 = 内容
     (mode Info-mode            editor)   ; 手册阅读 = 内容
-    (mode telega-root-mode     editor)   ; telega 主界面
-    (name "\\`\\*Org Src "     editor)   ; org-src 编辑块
-    (name "\\`\\*Newsticker"   editor))  ; newsticker 视图
+    (name "\\`\\*Org Src "     editor))  ; org-src 编辑块
   "槽位声明表：每条 (KIND MATCH SLOT)。
 KIND = name 时 MATCH 是 buffer 名正则；KIND = mode 时 MATCH 是
 major-mode 符号。SLOT 取 editor/left/bottom 之一。

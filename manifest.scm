@@ -72,7 +72,6 @@
    "jupyter"                ; 内核发现与启动（含 python3/ipykernel）
    "emacs-agent-shell"
    "emacs-dsh"            ; elisp 侧包名 dsh-emacs（上游 repo vritser/dsh-emacs）
-   "emacs-telega"
    "emacs-guix"
    "emacs-ghostel"
    "emacs-agenote"

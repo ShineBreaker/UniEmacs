@@ -46,7 +46,7 @@
         apheleia dape envrc rainbow-delimiters
         jupyter
         fish-mode gdscript-mode kdl-mode nix-mode pdf-tools zig-mode
-        agent-shell dsh-emacs telega guix
+        agent-shell dsh-emacs guix
         ghostel
         agenote
         gcmh no-littering

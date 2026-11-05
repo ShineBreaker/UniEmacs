@@ -25,7 +25,7 @@
 ;; gcmh / no-littering 两段 profile 私有配置所需的包。
 ;; 注意新增第三方包须同时在 manifest.scm（Guix 侧）登记。
 ;; 只列第三方包。内建（which-key / winner / editorconfig / eglot /
-;; flymake / project / newsticker / context-menu / modus-themes）不登记；
+;; flymake / project / context-menu / modus-themes）不登记；
 ;; vertico 栈只出现在 self-completion 的 Android 分支，桌面不装；
 ;; magit-diff 是 magit 包内部 feature，无独立包；
 ;; emacsql-sqlite（CLI 连接器）随 emacsql 包分发，桌面与新版 Android 用内置 sqlite。
@@ -41,7 +41,7 @@
         apheleia dape envrc rainbow-delimiters
         jupyter
         fish-mode gdscript-mode kdl-mode nix-mode pdf-tools zig-mode
-        agent-shell dsh-emacs telega guix
+        agent-shell dsh-emacs guix
         ghostel
         agenote
         gcmh no-littering))
