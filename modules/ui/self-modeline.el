@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: 无
 ;; Packages: minibuffer-line, nerd-icons, eglot
 ;;

@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, portable, ide
+;; Profiles: desktop, portable, ide
 ;; Requires: self-keys（`self/binding-help-sections'、`self--pending-wk-descs'）、self-completion（`self/isearch-forward-dwim'）
 ;;   本模块同时是 which-key 的视觉层归属地：弹窗分页按钮、触屏 tap 分发器、
 ;;   触屏专属的 which-key 取值覆盖都在这里（AGENTS.md §2：Which-key 的
@@ -63,7 +63,7 @@
 ;;   which-key 本体与其中文描述的注册机制在 self-keys；本模块负责它在屏幕上
 ;;   怎么呈现：触屏没有 C-h，故自绘一页「[ 上一页 ] [ 下一页 ]」胶囊按钮，
 ;;   并把 tap 事件按前缀+mouse 的组合序列分发过去。桌面端用 C-h 翻页，
-;;   不依赖这层，但它无平台副作用，故按档位（portable / full）而非平台归属。
+;;   不依赖这层，但它无平台副作用，故按档位（portable / desktop）而非平台归属。
 
 ;;; Code:
 
@@ -424,7 +424,7 @@ docs/architecture.md——它是「想知道某个模块为什么这么切」的
 ;;   裁掉。
 ;;
 ;; 桌面端不需要这层（鼠标有 C-h、有滚轮），但代码本身无平台副作用，故按
-;; 档位归属（portable/full）而非平台分支：触屏之外的场景多注册几个
+;; 档位归属（portable/desktop）而非平台分支：触屏之外的场景多注册几个
 ;; global 组合键不影响任何既有行为。
 
 (defvar which-key--buffer)          ; which-key.el 弹窗缓冲区

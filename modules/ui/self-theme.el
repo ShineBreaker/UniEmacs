@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, portable, ide
+;; Profiles: desktop, portable, ide
 ;; Requires: self-lib（路径常量 self:var-directory、平台谓词 self:android-p）
 ;; Packages: modus-themes（Emacs 28+ 内建，仅声明语义归属）
 ;;

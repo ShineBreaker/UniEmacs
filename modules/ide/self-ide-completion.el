@@ -24,7 +24,7 @@
 ;; 互斥不会同时生效，故允许并存而不抽公共模块——抽了反而要在调用处加
 ;; 守卫，违背「档位差异只走 manifest」的约定。
 ;;
-;; 与 full 档行为的差分：
+;; 与 desktop 档行为的差分：
 ;;   · completion-preview-mode 的行内幽灵文本在本档关闭——Zed 没有 ghost
 ;;     text，corfu 弹窗已覆盖同一触发场景，双 UI 只会打架；
 ;;   · completion-styles 从 flex 换 orderless：命令面板里多词乱序匹配

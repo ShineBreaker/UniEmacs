@@ -26,9 +26,10 @@ repo-location.el → 本文件所在目录（含 core/ 时）→ Android 惯例�
 解析失败时为 nil，由 init.el 报错兜底。")
 
 (defvar self:profile nil
-  "当前 profile：minimal、portable、full、ide 之一。
-UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退），
-其次 Android 推断为 portable，默认 ide。")
+  "当前 profile：minimal、portable、desktop、ide 之一。
+解析顺序：UNI_EMACS_PROFILE 环境变量（非法值警告并按平台推断回退）→
+家目录 profile.el（由 `M-x self/set-profile' 写入）→ Android 推断为
+portable → 默认 ide。")
 
 (defvar self--startup-file-name-handlers file-name-handler-alist
   "启动前原 file-name-handler-alist，由 self-lib 复位用。")
@@ -139,21 +140,50 @@ UNI_EMACS_PROFILE 环境变量优先（非法值警告并按平台推断回退�
     (setq load-path-filter-function
           #'load-path-filter-cache-directory-files))
 
-  ;; profile 解析：环境变量 → 平台推断 → 默认 ide。
+  ;; ─── profile 解析：环境变量 → 家目录 profile.el → 平台推断 ──────
+
+  ;; 家目录 profile.el 是「用户在 Emacs 内切换档位」的落点：daemon 从
+  ;; shepherd 继承的环境变量改起来要重建 Guix home，所以档位选择另存
+  ;; 一个状态文件，由 `M-x self/set-profile'（core/self-lib.el）写入。
+  (defun self--profile-from-file ()
+    "读家目录 profile.el 里用户选择的档位，没有或非法则返回 nil。
+文件内容形如 `(setq self:profile \='desktop)'，缺失时由调用方走平台默认值。"
+    (let ((file (expand-file-name "profile.el" user-emacs-directory)))
+      (when (file-readable-p file)
+        (let ((self:profile nil))
+          ;; 手写的文件可能语法不完整，读失败按「未设置」处理。
+          (condition-case err
+              (load file nil t)
+            (error
+             (display-warning
+              'self
+              (format "profile.el 读取失败（%s），已忽略。"
+                      (error-message-string err)))))
+          (cond
+           ((memq self:profile '(minimal portable desktop ide))
+            self:profile)
+           ((null self:profile) nil)
+           (t
+            (display-warning
+             'self
+             (format "profile.el 里的档位非法（%S），已忽略。" self:profile))
+            nil))))))
+
   ;; 非法值警告一次，并回退到平台推断（与下面两条同逻辑）。
   (setq self:profile
         (let ((from-env (getenv "UNI_EMACS_PROFILE")))
           (cond
            ((equal from-env "minimal") 'minimal)
            ((equal from-env "portable") 'portable)
-           ((equal from-env "full") 'full)
+           ((equal from-env "desktop") 'desktop)
            ((equal from-env "ide") 'ide)
            ((and from-env (> (length from-env) 0))
             (display-warning
              'self
-             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/full/ide，已按平台推断回退。"
+             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/desktop/ide，已按平台推断回退。"
                      from-env))
             (if (eq system-type 'android) 'portable 'ide))
+           ((self--profile-from-file))
            ((eq system-type 'android) 'portable)
            (t 'ide)))))
 

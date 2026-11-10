@@ -1,7 +1,7 @@
 ;;; ide.el --- ide 档：Zed 对齐的深度定制桌面 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; IDE 档：完整复刻 Zed/VSCode/JetBrains 的 IDE 体验。在 full 档
+;; IDE 档：完整复刻 Zed/VSCode/JetBrains 的 IDE 体验。在 desktop 档
 ;; 全量模块之上叠加 IDE 设施——Treemacs 项目树、命令面板式补全栈
 ;; （vertico/corfu/kind-icon）、面包屑行、行内 Git blame，
 ;; 以及鼠标平权层（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、
@@ -16,12 +16,12 @@
 ;; 定位与关系：
 ;;   · minimal   纯内建底座；
 ;;   · portable  移动端触屏；
-;;   · full      桌面全量、语法可读优先，定位「学习用完备配置」；
-;;   · ide       本档。模块清单是 full 的超集：同一批模块按相同顺序
+;;   · desktop   桌面全量、语法可读优先，定位「学习用完备配置」；
+;;   · ide       本档。模块清单是 desktop 的超集：同一批模块按相同顺序
 ;;               require（差异只在 manifest 勾选与模块选择，符合
 ;;               AGENTS.md §2 加载契约），末端追加 modules/ide/ 六个
-;;               覆写/新增模块。full 档刻意保留为可读性版本，不要为
-;;               「避免重复」把 ide 的实现塞回 full。
+;;               覆写/新增模块。desktop 档刻意保留为可读性版本，不要为
+;;               「避免重复」把 ide 的实现塞回 desktop。
 ;;
 ;; 覆写发生在 ide 模块内部（面包屑接管 header-line、Treemacs 接管
 ;; C-b 等键位、corfu 接管行内补全），不在本文件；本文件只负责
@@ -30,11 +30,11 @@
 ;;; Code:
 
 ;; ─── 本档第三方包清单 ─────────────────────────────────────────────
-;; full 档清单原样保留，尾部追加 ide 专属包。新增第三方包须同时在
+;; desktop 档清单原样保留，尾部追加 ide 专属包。新增第三方包须同时在
 ;; manifest.scm（Guix 侧）登记。vertico 栈在本档是桌面组件而非
 ;; Android 专属（与 portable 档共用同一批包）。
 (setq self:profile-packages
-      '(;; full 档清单（与 profiles/full.el 保持一致，勿增删其一忘其二）
+      '(;; desktop 档清单（与 profiles/desktop.el 保持一致，勿增删其一忘其二）
         dashboard nerd-icons minibuffer-line
         indent-bars goto-chg multiple-cursors expand-region
         vundo idle-highlight-mode tempel
@@ -60,7 +60,7 @@
 
 ;; ─── 模块 require 序列 ────────────────────────────────────────────
 ;;
-;; 前半与 profiles/full.el 逐行同序（契约说明见该文件注释）；
+;; 前半与 profiles/desktop.el 逐行同序（契约说明见该文件注释）；
 ;; 末端五个 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → blame」
 ;; 排列，全部排在 self-keys-desktop 之后：键位覆写必须最后落地。
 
@@ -115,7 +115,7 @@
 (require 'self-ide-blame)
 
 ;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────
-;; 与 full 档同款（理由与取舍见 profiles/full.el 注释）。ide 是桌面档，
+;; 与 desktop 档同款（理由与取舍见 profiles/desktop.el 注释）。ide 是桌面档，
 ;; 同样需要 GC 空闲回收与 var/ 目录隔离。
 
 (use-package gcmh

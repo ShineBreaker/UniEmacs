@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: 无
 ;; Packages: 无
 ;;
@@ -25,7 +25,7 @@
 ;;    「展示」。
 ;;
 ;; 接入点：`self/daemon-warmup' 必须在本档所有模块 require 完之后调用
-;; （原配置是在 main.el 末尾），因此调用点放在 profiles/full.el 的
+;; （原配置是在 main.el 末尾），因此调用点放在 profiles/desktop.el 的
 ;; daemon 分支里，不在本文件自动执行——提前调用只会预热到一个半截的
 ;; 配置。警告 advice 则是加载即生效，无需额外接线。
 ;;

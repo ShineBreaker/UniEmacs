@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, full, ide
+;; Profiles: portable, desktop, ide
 ;; Requires: self-lib（路径常量）、self-keys（self/bind、self/declare-binding-group）、
 ;;           self-ui-touch + self-touch（仅 Android 分支用到：mode-line 按钮与键盘面板）
 ;; Packages: org-appear, org-modern, org-modern-indent, olivetti
@@ -108,7 +108,7 @@
 
 ;; Android 分支（org 操作面板 + appt 提醒）的定义整段包在
 ;; `(when self:android-p …)' 里：面板的父模式 self/touch-confirm-mode 与
-;; self-touch 的键盘面板只在 portable 档加载，full 档引用它们是 void。
+;; self-touch 的键盘面板只在 portable 档加载，desktop 档引用它们是 void。
 ;; 代价是 byte-compile 时这一块被跳过（加载期条件为假），编译器看不到里面
 ;; 的定义，块内的交叉引用会误报「函数未定义」——故在此逐个显式声明。
 (declare-function self/org-actions-mode "self-org")
@@ -514,7 +514,7 @@ TTY 退回 ASCII 表格与 Unicode 子弹；GUI 保留像素细线与 Nerd 子�
 
 (defun self/format-org-src-blocks ()
   "重新格式化当前 buffer 里全部 Org 代码块。
-full 档走 Apheleia 的异步格式化协议（`org-src-blocks' formatter 由
+desktop 档走 Apheleia 的异步格式化协议（`org-src-blocks' formatter 由
 self-prog 注册）；没有 Apheleia 的环境（portable 等）退回按各语言
 缩进规则 `indent-region'。`org-src-for-each-block' 跳过 begin/end
 标记行、只遍历块体，故缩进不会污染结构行。

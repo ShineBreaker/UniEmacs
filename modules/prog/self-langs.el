@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-prog
 ;; Packages: arei, fish-mode, gdscript-mode, kdl-mode, markdown-mode,
 ;;           nix-mode, pdf-tools, zig-mode

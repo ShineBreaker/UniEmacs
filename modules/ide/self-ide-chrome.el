@@ -16,7 +16,7 @@
 ;;
 ;;   1. 字体分轨：编辑区用等宽编程字体（Zed buffer font），框架 UI 元素
 ;;      ——标签、面包屑、状态行——用界面字体（Zed ui font）并稍加重字重。
-;;   2. 绝对行号：full 档用相对行号服务 Evil 习惯，ide 档面向非 Vim 用户，
+;;   2. 绝对行号：desktop 档用相对行号服务 Evil 习惯，ide 档面向非 Vim 用户，
 ;;      回到绝对行号。
 ;;   3. 面包屑行：header-line 显示「项目相对路径 › 当前函数名」，由
 ;;      `which-function-mode' 提供符号部分。
@@ -34,7 +34,7 @@
 (require 'self-lib)
 
 (defgroup self-ide nil
-  "IDE 档：full 之上的 Zed 对齐界面与行为层。"
+  "IDE 档：desktop 之上的 Zed 对齐界面与行为层。"
   :group 'self)
 
 (defvar which-func-table)
@@ -83,12 +83,12 @@ family，无需特判。self-theme 的 `self/restore-theme-presentation' 只覆�
 
 ;; ─── 行号 / 帧标题 / 顶部 chrome / 子进程 EDITOR ────────────────────
 
-;; Zed 的 absolute 行号：ide 档不要求 Evil，回退 full 档的 relative。
+;; Zed 的 absolute 行号：ide 档不要求 Evil，回退 desktop 档的 relative。
 (setq display-line-numbers-type t)
 
 ;; Zed 窗口顶部没有菜单栏与工具栏：ide 档把这两条 GTK chrome 裁掉，
 ;; 让 tab-line（标签栏）直接顶到窗口上缘，空间利用与观感对齐。
-;; minimal/full 档保留菜单栏（学习档需要可探索的菜单）。
+;; minimal/desktop 档保留菜单栏（学习档需要可探索的菜单）。
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 

@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-editing（`self--buffers-in-mode'）、self-windowing（`self/display-or-focus'）
 ;; Packages: ghostel
 ;;
@@ -12,7 +12,7 @@
 ;; 按模块边界从 self-editing 拆出来——终端面板有自己的主题、自己的按键
 ;; 修正、自己的进程启动策略，混在编辑模块里既不该也无法被 portable 档复用。
 ;;
-;; 只挂 full 档：minimal 禁止第三方包；portable 跑在 Android 上，
+;; 只挂 desktop 档：minimal 禁止第三方包；portable 跑在 Android 上，
 ;; libghostty-vt 通常不可用。
 ;;
 ;; 基于 Ghostty 的虚拟终端引擎（libghostty-vt）构建的 Emacs 内置终端面板，

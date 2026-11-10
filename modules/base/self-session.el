@@ -9,7 +9,7 @@
 ;; 切换窗口时静默保存改过的本地文件，并在文件被外部改写时自动跟随磁盘。
 ;; 全部内建包，零第三方依赖。
 ;;
-;; Profiles: minimal, portable, full, ide
+;; Profiles: minimal, portable, desktop, ide
 ;; Requires: self-lib（`self:var-directory' / `self:etc-directory' 决定落盘位置）
 ;; Packages: 无（recentf / savehist / saveplace 是内建库，use-package 只做配置包装）
 ;;
@@ -19,8 +19,8 @@
 ;; · 垃圾回收节律与进程级环境（read-process-output-max 等）——描述的是
 ;;   进程而非会话，属 core/self-lib.el。
 ;; · gcmh 与 no-littering——第三方包，与「minimal 档不得声明任何第三方包」
-;;   冲突，故写在 profiles/full.el 尾部作档内配置。本文件因此用纯 setq
-;;   手工完成同样的目录隔离，三档都拿得到，full 档的 no-littering 只是把
+;;   冲突，故写在 profiles/desktop.el 尾部作档内配置。本文件因此用纯 setq
+;;   手工完成同样的目录隔离，三档都拿得到，desktop 档的 no-littering 只是把
 ;;   同一组目录再声明一遍（两边取值同源，不会打架）。
 ;; · `server-mode'——属 daemon 启动路径，在 self-daemon.el。
 ;;

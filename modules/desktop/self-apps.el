@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-keys
 ;; Packages: agent-shell, dsh-emacs, guix
 ;;

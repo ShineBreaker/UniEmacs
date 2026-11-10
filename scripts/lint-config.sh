@@ -97,13 +97,13 @@ while IFS= read -r hit; do
 done < <(grep -n '(eq self:profile' modules/*/*.el 2>/dev/null || true)
 
 # ─── 规则 6.5：模块 Profiles 头与 profile require 清单双向一致 ──
-# 教训来源：full.el 曾漏 require self-dashboard/self-glyph，daemon
+# 教训来源：desktop.el 曾漏 require self-dashboard/self-glyph，daemon
 # 加载时才以 void-function 暴露；声明方与清单方必须互相咬合。
 for f in modules/*/self-*.el; do
   [ -f "$f" ] || continue
   m="$(basename "$f" .el)"
   declared="$(grep -m1 '^;; Profiles:' "$f" | sed 's/.*Profiles://;s/（.*//')"
-  for p in minimal portable full; do
+  for p in minimal portable desktop; do
     if echo "$declared" | grep -qw "$p"; then
       grep -q "(require '$m)" "profiles/$p.el" \
         || viol "$f" 1 "declares-profile-$p-but-not-required"

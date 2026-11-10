@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-keys, self-theme
 ;; Packages: apheleia, dape, eglot, envrc, flymake, rainbow-delimiters
 ;;

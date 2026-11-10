@@ -4,7 +4,7 @@
 
 ## 0. 项目概述
 
-UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、四档 profile（`minimal` 底座 / `portable` 移动端 / `full` 桌面全量——增强的完整 Emacs 体验，重点是学习与掌握 Emacs 独有特性 / `ide` 完整复刻 Zed/VSCode/JetBrains 的 IDE 体验，含鼠标交互增强），四档共享 `core/` 与 `modules/`，差异仅在各自 manifest 加载哪些模块。
+UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、四档 profile（`minimal` 底座 / `portable` 移动端 / `desktop` 桌面全量——增强的完整 Emacs 体验，重点是学习与掌握 Emacs 独有特性 / `ide` 完整复刻 Zed/VSCode/JetBrains 的 IDE 体验，含鼠标交互增强），四档共享 `core/` 与 `modules/`，差异仅在各自 manifest 加载哪些模块。
 
 **绝对禁令：禁止在任何受 git 跟踪的文件中提及 `reference/` 目录或以任何形式引用它的路径**——它只是本地参考资料夹，需要其中代码时直接复制进正式目录。
 
@@ -17,7 +17,7 @@ UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、�
 ## 2. 架构契约
 
 ```
-early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_PROFILE env → 平台推断 → 默认 ide）
+early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_PROFILE env → profile.el → 平台推断 → 默认 ide）
 init.el          引导：定位仓库根 → 配 load-path → require self-lib → self/load-profile
 core/self-lib.el      平台谓词、路径常量、加载辅助（四档共享）
 core/self-package.el  包后端抽象（guix | elpaca）与包清单装/验（四档共享）
@@ -33,9 +33,10 @@ justfile              本机命令入口（verify / compile / 配置依赖）
 
 ### Profile 解析（优先级从高到低）
 
-1. 环境变量 `UNI_EMACS_PROFILE`（`minimal` / `portable` / `full` / `ide`）
-2. 平台推断：`system-type = android` → `portable`
-3. 默认 `ide`
+1. 环境变量 `UNI_EMACS_PROFILE`（`minimal` / `portable` / `desktop` / `ide`）
+2. 家目录 `profile.el`：`M-x self/set-profile` 写入，下次启动生效
+3. 平台推断：`system-type = android` → `portable`
+4. 默认 `ide`
 
 ### 加载契约（硬约束）
 
@@ -145,7 +146,7 @@ just compile   # = 全模块 byte-compile 零警告（单独目标）
 ### 5.2 沙箱冒烟（每档）
 
 ```bash
-HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=<minimal|portable|full|ide> \
+HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=<minimal|portable|desktop|ide> \
   emacs --batch -q -l early-init.el -l init.el </dev/null
 ```
 

@@ -4,11 +4,11 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-keys（`self/bind'、`self/declare-binding-group'）
 ;; Packages: 无（本模块只做内建机制的显式化，零第三方依赖）
 ;;
-;; full 档的目标体验是「把 Emacs 当 Emacs 用」：让用户学到并掌握其它
+;; desktop 档的目标体验是「把 Emacs 当 Emacs 用」：让用户学到并掌握其它
 ;; 编辑器里没有同构物的机制——窄化（Narrowing）、寄存器、矩形编辑、
 ;; 键盘宏、间接缓冲、Sexp 结构化编辑、Ediff、hi-lock、递归
 ;; minibuffer……这些命令大多有内建键位，但入口深埋且无中文提示，
@@ -29,7 +29,7 @@
 ;;
 ;; self-editing 是三档共用底座（minimal 也加载），它的内容是「编辑就该
 ;; 有的基础体感」；本模块是「按 Emacs 语义重学一遍」的选修面，只被
-;; full / ide 勾选。合进去会让 minimal 背上它不需要的键位面。
+;; desktop / ide 勾选。合进去会让 minimal 背上它不需要的键位面。
 ;;
 ;; ─── 使用指引 ────────────────────────────────────────────────────────
 ;;

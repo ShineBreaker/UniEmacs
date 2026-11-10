@@ -4,12 +4,12 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: minimal, portable, full, ide
+;; Profiles: minimal, portable, desktop, ide
 ;; Requires: 无（机制层是键位体系的底座，被所有用 self/bind 的模块依赖）
 ;; Packages: which-key, winner
 ;;
 ;; 移植自桌面端配置的「键位声明」域的机制部分。本文件只提供**机制**与
-;; **顶层分类导航**，具体功能的键位清单在各自的模块里（full 档的跨域
+;; **顶层分类导航**，具体功能的键位清单在各自的模块里（desktop 档的跨域
 ;; 公共键清单见 self-keys-desktop）。
 ;;
 ;; ─── 为什么统一走 self/bind 而不是 keymap-global-set ──────────────────
@@ -51,7 +51,7 @@
 ;; use-package 会因找不到库而报一次警告，不影响其余功能。
 ;;
 ;; Which-key：按下前缀键后停顿 0.3 秒，自动在屏幕下方弹出三列等宽排版的
-;; 中文候选提示。Winner Mode：窗口布局历史记录（撤销/重做由 full 档的
+;; 中文候选提示。Winner Mode：窗口布局历史记录（撤销/重做由 desktop 档的
 ;; self-keys-desktop 绑到 C-c w u / C-c w r），撤销不小心打乱的分屏。
 ;;
 ;; ─── 与其它模块的接口约定 ────────────────────────────────────────────

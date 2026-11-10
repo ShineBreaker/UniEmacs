@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # startup-time.sh <profile> — 启动耗时中位数
 #
-# 用法: scripts/startup-time.sh <minimal|portable|full>
+# 用法: scripts/startup-time.sh <minimal|portable|desktop>
 #
 # 沙箱内跑 3 次 `emacs --batch -q -l early-init.el -l init.el'，每次以
 # --eval 打印 (emacs-init-time)，抓 INIT-TIME 行取中位数。
@@ -11,15 +11,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 usage() {
-  echo "usage: $(basename "$0") <minimal|portable|full>" >&2
+  echo "usage: $(basename "$0") <minimal|portable|desktop>" >&2
   exit 2
 }
 
 [ $# -eq 1 ] || usage
 profile="$1"
 case "$profile" in
-  minimal | portable | full) ;;
-  *) echo "error: 非法 profile '$profile'（可选 minimal/portable/full）" >&2
+  minimal | portable | desktop) ;;
+  *) echo "error: 非法 profile '$profile'（可选 minimal/portable/desktop）" >&2
      usage ;;
 esac
 

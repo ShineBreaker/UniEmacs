@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: full, ide
+;; Profiles: desktop, ide
 ;; Requires: self-keys（`self/bind' 与 `self--pending-wk-descs'）、self-editing、self-terminal、self-project、self-prog、self-tabline、self-completion、self-help-zh
 ;; Packages: multiple-cursors
 ;;
@@ -12,7 +12,7 @@
 ;; 全局直达键（对齐 VSCode 的 C-S-* 家族）、C-c t/C-c q 开关退出系列、
 ;; C-c w 窗口面板体系。本文件不提供机制，`self/bind' 由 self-keys 提供。
 ;;
-;; 为什么清单只在 full 档：这些键位是为「鼠标 + 键盘 + 图形窗口」的工作站
+;; 为什么清单只在 desktop 档：这些键位是为「鼠标 + 键盘 + 图形窗口」的工作站
 ;; 场景设计的（<f12> 跳转、C-\ 分屏、面板停靠）。minimal 档对标 nano 的
 ;; 功能水平，不需要这层导航；portable 档是触屏，没有物理功能键与 Ctrl-Alt
 ;; 组合。真正跨平台的那部分（14 个顶层前缀）已经放在 self-keys。
@@ -97,7 +97,7 @@
 
 ;; multiple-cursors 只在本文件被绑键（C-d / C-S-l），故由本文件声明延迟
 ;; 加载：`:commands' 让 use-package 生成 autoload，用户按下键位那一刻才
-;; 真正加载包——minimal 档根本不 require 本文件，full 档也只在用时才付代价。
+;; 真正加载包——minimal 档根本不 require 本文件，desktop 档也只在用时才付代价。
 (use-package multiple-cursors
   :commands (mc/mark-next-like-this-word mc/mark-all-like-this))
 

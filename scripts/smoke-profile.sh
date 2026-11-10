@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # smoke-profile.sh <profile> — 单档沙箱冒烟
 #
-# 用法: scripts/smoke-profile.sh <minimal|portable|full>
+# 用法: scripts/smoke-profile.sh <minimal|portable|desktop>
 #
 # 判定（不看退出码）：Guix 的 emacs 是 guile wrapper，会吞掉子进程退出码
 # （kill-emacs 7 → rc=0），所以唯一可靠依据是输出里的 SMOKE-DONE 哨兵行。
@@ -12,15 +12,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 usage() {
-  echo "usage: $(basename "$0") <minimal|portable|full>" >&2
+  echo "usage: $(basename "$0") <minimal|portable|desktop>" >&2
   exit 2
 }
 
 [ $# -eq 1 ] || usage
 profile="$1"
 case "$profile" in
-  minimal | portable | full) ;;
-  *) echo "error: 非法 profile '$profile'（可选 minimal/portable/full）" >&2
+  minimal | portable | desktop) ;;
+  *) echo "error: 非法 profile '$profile'（可选 minimal/portable/desktop）" >&2
      usage ;;
 esac
 
