@@ -26,7 +26,7 @@
 (unless (and (boundp 'self:profile) self:profile)
   ;; early-init 未运行的兜底：按平台推断，与 early-init 的回退逻辑一致，
   ;; 避免 Android 入口副本缺失时误装桌面档。
-  (setq self:profile (if (eq system-type 'android) 'portable 'desktop)))
+  (setq self:profile (if (eq system-type 'android) 'portable 'standard)))
 
 ;; ─── 部署诊断（不依赖 modules，require 失败后仍可用） ─────────────
 
@@ -140,14 +140,11 @@ native-comp 可用：      %S
     ;; modules/ 按功能域分七组（base/ui/touch/org/prog/desktop/ide，见
     ;; docs/architecture.md §5）；require 语义不变，feature 名仍是
     ;; self-<名>，目录只承担归档职责。
-    ;; profiles/ 有意不进 load-path：档文件由 `self/load-profile' 以
-    ;; 绝对路径 load，不需要查找；而 profiles/desktop.el 与内建库
-    ;; desktop 同名，进了 load-path 就会让 `(require 'desktop)' 加载到
-    ;; 档文件。
     (dolist (dir '("core"
                    "modules/base" "modules/ui" "modules/touch"
                    "modules/org" "modules/prog" "modules/desktop"
-                   "modules/ide"))
+                   "modules/ide"
+                   "profiles"))
       (add-to-list 'load-path (expand-file-name dir self:repo)))
 
     (require 'self-lib)

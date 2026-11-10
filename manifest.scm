@@ -32,7 +32,7 @@
    "librsvg"      ; rsvg-convert：图标重建（just icons 缺资产时）
    "netpbm"       ; pngtopam 等：modifier-bar 徽章生成（同上）
 
-   ;; ─── 两档共用 / desktop 档第三方包 ──────────────────────────────
+   ;; ─── 两档共用 / standard 档第三方包 ──────────────────────────────
    "emacs-dashboard"
    "emacs-nerd-icons"
    "emacs-minibuffer-line"

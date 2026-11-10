@@ -2,14 +2,14 @@
 
 跨桌面与手机的统一 Emacs 配置：单一代码库，四档 profile。
 
-| 档位       | 场景                                                                                           | 选择方式                    |
-| ---------- | ---------------------------------------------------------------------------------------------- | --------------------------- |
-| `minimal`  | 底座：纯内建、可调试、秒开                                                                     | `UNI_EMACS_PROFILE=minimal` |
-| `portable` | Android 原生 Emacs 触屏                                                                        | Android 上自动；可 env 强制 |
-| `desktop`  | 桌面全量：增强的完整 Emacs 体验，重点是掌握 Emacs 独有特性（窄化/寄存器/宏/Ediff…）            | `UNI_EMACS_PROFILE=desktop` |
-| `ide`      | desktop 超集：复刻 Zed/VSCode/JetBrains 的 IDE 体验（文件树/命令面板/面包屑/blame + 鼠标增强） | 默认档                      |
+| 档位       | 场景                                                                                            | 选择方式                    |
+| ---------- | ----------------------------------------------------------------------------------------------- | --------------------------- |
+| `minimal`  | 底座：纯内建、可调试、秒开                                                                      | `UNI_EMACS_PROFILE=minimal` |
+| `portable` | Android 原生 Emacs 触屏                                                                         | Android 上自动；可 env 强制 |
+| `standard` | 桌面全量：增强的完整 Emacs 体验，重点是掌握 Emacs 独有特性（窄化/寄存器/宏/Ediff…）             | 默认档                      |
+| `ide`      | standard 超集：复刻 Zed/VSCode/JetBrains 的 IDE 体验（文件树/命令面板/面包屑/blame + 鼠标增强） | `UNI_EMACS_PROFILE=ide`     |
 
-> 两个桌面档是不同目标体验：desktop 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的承接层，在 desktop 之上做 IDE 化覆写与鼠标平权。
+> 两个桌面档是不同目标体验：standard 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的承接层，在 standard 之上做 IDE 化覆写与鼠标平权。
 
 ## 结构速览
 
@@ -47,7 +47,7 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 
 ## 日常操作
 
-- **切换档位**：`M-x self/set-profile` 选档，写入家目录 `profile.el`，重启 Emacs 生效（daemon 用 `herd restart emacs-daemon`）。环境变量 `UNI_EMACS_PROFILE` 优先级更高，设了会盖过它；删掉文件即回默认档 `ide`。
+- **切换档位**：`M-x self/set-profile` 选档，写入家目录 `profile.el`，重启 Emacs 生效（daemon 用 `herd restart emacs-daemon`）。环境变量 `UNI_EMACS_PROFILE` 优先级更高，设了会盖过它；删掉文件即回默认档 `standard`。
 - **在 Emacs 内改笔记目录**：`M-x self/org-relocate`（`C-c o d`），前缀 `C-u` 连同旧内容一起搬。改动写入状态目录的 `org-locations.el`（下次启动自动读回），Roam / 收件箱 / agenda / 知识库随即跟随，无需重启。机制与取舍见 `docs/architecture.md` §8。
 
 ## 规范

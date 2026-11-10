@@ -10,17 +10,17 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 | ---------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | `minimal`  | 全配置的底座，强调可调试性                     | 对标 nano / 未大量配置的 nvim、helix                                                                                                         | **零**（纯内建）  |
 | `portable` | Android 原生 Emacs 触屏                        | 触屏交互、tool-bar、移动端 Org/Roam、阅读                                                                                                    | elpaca 管理       |
-| `desktop`  | 桌面全量：增强的完整 Emacs 体验                | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
-| `ide`      | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | desktop 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame + **鼠标交互增强层**                                                       | Guix profile 管理 |
+| `standard` | 桌面全量：增强的完整 Emacs 体验                | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
+| `ide`      | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | standard 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame + **鼠标交互增强层**                                                      | Guix profile 管理 |
 
 四档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
 
 两个桌面档的定位分野是**不同的目标体验**，不是功能强弱：
 
-- `desktop` 面向「把 Emacs 当 Emacs 用」：保留菜单栏供探索、用内建补全栈（flex + 幽灵文本）、Dired 文件面板，并通过 `self-discover` 模块把窄化、寄存器、矩形、kmacro、间接缓冲、Ediff、hi-lock、递归 minibuffer 这类 Emacs 独门机制显式化——默认键位原样再登记换中文提示与帮助页条目，用户在 <f1> ? 速查表和 which-key 弹窗里就能把它们学完。
+- `standard` 面向「把 Emacs 当 Emacs 用」：保留菜单栏供探索、用内建补全栈（flex + 幽灵文本）、Dired 文件面板，并通过 `self-discover` 模块把窄化、寄存器、矩形、kmacro、间接缓冲、Ediff、hi-lock、递归 minibuffer 这类 Emacs 独门机制显式化——默认键位原样再登记换中文提示与帮助页条目，用户在 <f1> ? 速查表和 which-key 弹窗里就能把它们学完。
 - `ide` 面向「无缝迁移自 Zed/VSCode/JetBrains」：界面结构与交互习惯对齐现代 IDE（左树/底槽/标签/面包屑/行内 blame/命令面板），并额外做鼠标平权——Ctrl+点击跳定义、Shift+滚轮横滚、行槽点击断点、代码右键菜单等，全部由 `modules/ide/` 承担。
 
-`ide` 与 `desktop` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 desktop.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义）。desktop 档保持语法可读优先；ide 档允许更复杂的实现。
+`ide` 与 `standard` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 standard.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义）。standard 档保持语法可读优先；ide 档允许更复杂的实现。
 
 ### 设计原则（按优先级）
 
@@ -48,7 +48,7 @@ UniEmacs/
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
-│   ├── desktop.el
+│   ├── standard.el
 │   └── ide.el
 ├── data/                 # 静态数据：翻译表、图标资产
 ├── scripts/              # 运维脚本（验证脚本）
@@ -69,8 +69,7 @@ emacs
    │                           → android→portable → ide
    │                        ④ （Android 部署形态）user-emacs-directory 重定向到仓库
  └─ init.el
-   ├─ load-path += core/ modules/<七域>/（profiles/ 不入：desktop.el 与内建
-   │                          desktop 库同名，且档文件由 self/load-profile 绝对路径加载）
+   ├─ load-path += core/ modules/<七域>/ profiles/
    ├─ (require 'self-lib)          路径常量、谓词、self/load-profile
    ├─ (require 'self-package)      检测后端；暂不安装
    └─ (self/load-profile self:profile)
@@ -109,56 +108,56 @@ self-package 检测顺序：
 
 ### 5.2 `modules/ui/` —— 视觉层
 
-| 模块             | 档位              | 内容                                             |
-| ---------------- | ----------------- | ------------------------------------------------ |
-| `self-theme`     | desktop, portable | modus 主题 + D-Bus 深浅色 + 字体                 |
-| `self-modeline`  | desktop           | 桌面自研 modeline（缓存/分段/调度）              |
-| `self-tabline`   | desktop           | per-frame buffer 标签                            |
-| `self-windowing` | desktop           | display-buffer 路由、窗口面板布局                |
-| `self-dashboard` | desktop, portable | 欢迎屏（两端合并，平台段守卫）                   |
-| `self-help-zh`   | desktop, portable | 帮助系统/右键菜单/which-key 中文化（含触屏分页） |
+| 模块             | 档位               | 内容                                             |
+| ---------------- | ------------------ | ------------------------------------------------ |
+| `self-theme`     | standard, portable | modus 主题 + D-Bus 深浅色 + 字体                 |
+| `self-modeline`  | standard           | 桌面自研 modeline（缓存/分段/调度）              |
+| `self-tabline`   | standard           | per-frame buffer 标签                            |
+| `self-windowing` | standard           | display-buffer 路由、窗口面板布局                |
+| `self-dashboard` | standard, portable | 欢迎屏（两端合并，平台段守卫）                   |
+| `self-help-zh`   | standard, portable | 帮助系统/右键菜单/which-key 中文化（含触屏分页） |
 
 ### 5.3 `modules/touch/` —— 触屏层（portable 为主）
 
-| 模块            | 档位              | 内容                                                    |
-| --------------- | ----------------- | ------------------------------------------------------- |
-| `self-glyph`    | portable, desktop | 图标资产加载、NF 字形降级唯一入口                       |
-| `self-ui-touch` | portable          | 移动端 UI（mode-line 按钮、配色状态、Android 落盘兜底） |
-| `self-touch`    | portable          | 触屏交互（tap/选择/键盘联动、存储权限）                 |
-| `self-bar`      | portable          | tool-bar / modifier-bar 按钮管线                        |
-| `self-markdown` | portable          | 触屏 markdown UX（桌面由 self-langs 管 markdown-mode）  |
-| `self-reading`  | portable          | nov/阅读辅助                                            |
-| `self-misc`     | portable          | Android 杂项（分享入库、agenda 提醒等）                 |
+| 模块            | 档位               | 内容                                                    |
+| --------------- | ------------------ | ------------------------------------------------------- |
+| `self-glyph`    | portable, standard | 图标资产加载、NF 字形降级唯一入口                       |
+| `self-ui-touch` | portable           | 移动端 UI（mode-line 按钮、配色状态、Android 落盘兜底） |
+| `self-touch`    | portable           | 触屏交互（tap/选择/键盘联动、存储权限）                 |
+| `self-bar`      | portable           | tool-bar / modifier-bar 按钮管线                        |
+| `self-markdown` | portable           | 触屏 markdown UX（桌面由 self-langs 管 markdown-mode）  |
+| `self-reading`  | portable           | nov/阅读辅助                                            |
+| `self-misc`     | portable           | Android 杂项（分享入库、agenda 提醒等）                 |
 
 ### 5.4 `modules/org/` —— Org 知识栈
 
-| 模块           | 档位              | 内容                                    |
-| -------------- | ----------------- | --------------------------------------- |
-| `self-org`     | desktop, portable | org 基础、capture 模板装配、agenda 基线 |
-| `self-roam`    | desktop, portable | org-roam（Android 降额策略内守卫）      |
-| `self-agenote` | desktop           | agenote 知识库适配                      |
+| 模块           | 档位               | 内容                                    |
+| -------------- | ------------------ | --------------------------------------- |
+| `self-org`     | standard, portable | org 基础、capture 模板装配、agenda 基线 |
+| `self-roam`    | standard, portable | org-roam（Android 降额策略内守卫）      |
+| `self-agenote` | standard           | agenote 知识库适配                      |
 
-### 5.5 `modules/prog/` —— 编程与项目栈（desktop 为主）
+### 5.5 `modules/prog/` —— 编程与项目栈（standard 为主）
 
-| 模块            | 档位         | 内容                                                                            |
-| --------------- | ------------ | ------------------------------------------------------------------------------- |
-| `self-prog`     | desktop      | tree-sitter、eglot、flymake、apheleia 格式化                                    |
-| `self-langs`    | desktop      | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等）与 arei Scheme 染色    |
-| `self-jupyter`  | desktop, ide | Jupyter 内核 REPL（C-c j 前缀）与 Org Babel `jupyter-python` 源码块；全栈懒加载 |
-| `self-project`  | desktop      | project.el、目录树、项目导航                                                    |
-| `self-vcs`      | desktop      | magit/forge/diff-hl、git 状态展示                                               |
-| `self-terminal` | desktop      | ghostel 终端面板 + GIT_EDITOR 导出                                              |
+| 模块            | 档位          | 内容                                                                            |
+| --------------- | ------------- | ------------------------------------------------------------------------------- |
+| `self-prog`     | standard      | tree-sitter、eglot、flymake、apheleia 格式化                                    |
+| `self-langs`    | standard      | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等）与 arei Scheme 染色    |
+| `self-jupyter`  | standard, ide | Jupyter 内核 REPL（C-c j 前缀）与 Org Babel `jupyter-python` 源码块；全栈懒加载 |
+| `self-project`  | standard      | project.el、目录树、项目导航                                                    |
+| `self-vcs`      | standard      | magit/forge/diff-hl、git 状态展示                                               |
+| `self-terminal` | standard      | ghostel 终端面板 + GIT_EDITOR 导出                                              |
 
-### 5.6 `modules/desktop/` —— 桌面运行环境（desktop 为主）
+### 5.6 `modules/desktop/` —— 桌面运行环境（standard 为主）
 
-| 模块                | 档位         | 内容                                                                                                                               |
-| ------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `self-daemon`       | desktop      | server-mode、daemon 预热、client 帧行为                                                                                            |
-| `self-apps`         | desktop      | agent-shell / telega / guix / newsticker 等应用集成                                                                                |
-| `self-discover`     | desktop, ide | Emacs 独门特性发现层：窄化/寄存器/矩形/键盘宏/间接缓冲/Sexp/Ediff/hi-lock/递归 minibuffer 的内建键位再声明与行为开关（零三方依赖） |
-| `self-keys-desktop` | desktop      | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys                                                                |
+| 模块                | 档位          | 内容                                                                                                                               |
+| ------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `self-daemon`       | standard      | server-mode、daemon 预热、client 帧行为                                                                                            |
+| `self-apps`         | standard      | agent-shell / telega / guix / newsticker 等应用集成                                                                                |
+| `self-discover`     | standard, ide | Emacs 独门特性发现层：窄化/寄存器/矩形/键盘宏/间接缓冲/Sexp/Ediff/hi-lock/递归 minibuffer 的内建键位再声明与行为开关（零三方依赖） |
+| `self-keys-desktop` | standard      | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys                                                                |
 
-### 5.7 `modules/ide/` —— ide 档专属层（desktop 之上的覆写/新增）
+### 5.7 `modules/ide/` —— ide 档专属层（standard 之上的覆写/新增）
 
 | 模块                  | 档位  | 内容                                       |
 | --------------------- | ----- | ------------------------------------------ |
@@ -186,7 +185,7 @@ self-package 检测顺序：
 | P1   | core 脚手架（early-init/init/self-lib/self-package）+ 三 profile 骨架           | minimal 档冒烟可启动 |
 | P2   | 底座模块移植（session/editing/keys/completion）                                 | minimal 档功能完整   |
 | P3   | 移动端模块移植（glyph/ui-touch/touch/bar/org/roam/dashboard/reading/markdown）  | portable 档全绿      |
-| P4   | 桌面模块抽取（appearance/programming/projects/org-knowledge/system-tools 8 域） | desktop 档全绿       |
+| P4   | 桌面模块抽取（appearance/programming/projects/org-knowledge/system-tools 8 域） | standard 档全绿      |
 | P5   | 验证管线硬化 + 部署脚本 + 真机/真桌面验收                                       | 交付                 |
 
 每阶段内的模块移植按依赖拓扑序逐个进行，一个模块一个 commit。

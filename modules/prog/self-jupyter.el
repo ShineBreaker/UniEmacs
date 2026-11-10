@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: desktop, ide
+;; Profiles: standard, ide
 ;; Requires: self-lib（`self:var-directory'）、self-keys（`self/bind'、`self/declare-binding-group'）
 ;; Packages: jupyter
 ;;

@@ -4,7 +4,7 @@
 # 用法: scripts/compile-check.sh
 #
 # 每个文件起一个独立 emacs 进程：先 -l early-init.el -l init.el 加载
-# 完整配置（UNI_EMACS_PROFILE=desktop，用最全档兜底，否则误报未定义符号），
+# 完整配置（UNI_EMACS_PROFILE=standard，用最全档兜底，否则误报未定义符号），
 # 再 byte-compile 单文件。AGENTS.md §5.3 要求的就是这个顺序。
 #
 # 为什么不能单进程批量编译：同进程内先编译的文件会把 defvar/defun
@@ -19,7 +19,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-profile="${UNI_EMACS_PROFILE:-desktop}"
+profile="${UNI_EMACS_PROFILE:-standard}"
 
 for entry in early-init.el init.el; do
   if [ ! -f "$entry" ]; then

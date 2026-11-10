@@ -26,10 +26,10 @@ repo-location.el → 本文件所在目录（含 core/ 时）→ Android 惯例�
 解析失败时为 nil，由 init.el 报错兜底。")
 
 (defvar self:profile nil
-  "当前 profile：minimal、portable、desktop、ide 之一。
+  "当前 profile：minimal、portable、standard、ide 之一。
 解析顺序：UNI_EMACS_PROFILE 环境变量（非法值警告并按平台推断回退）→
 家目录 profile.el（由 `M-x self/set-profile' 写入）→ Android 推断为
-portable → 默认 ide。")
+portable → 默认 standard。")
 
 (defvar self--startup-file-name-handlers file-name-handler-alist
   "启动前原 file-name-handler-alist，由 self-lib 复位用。")
@@ -147,7 +147,7 @@ portable → 默认 ide。")
   ;; 一个状态文件，由 `M-x self/set-profile'（core/self-lib.el）写入。
   (defun self--profile-from-file ()
     "读家目录 profile.el 里用户选择的档位，没有或非法则返回 nil。
-文件内容形如 `(setq self:profile \='desktop)'，缺失时由调用方走平台默认值。"
+文件内容形如 `(setq self:profile \='standard)'，缺失时由调用方走平台默认值。"
     (let ((file (expand-file-name "profile.el" user-emacs-directory)))
       (when (file-readable-p file)
         (let ((self:profile nil))
@@ -160,7 +160,7 @@ portable → 默认 ide。")
               (format "profile.el 读取失败（%s），已忽略。"
                       (error-message-string err)))))
           (cond
-           ((memq self:profile '(minimal portable desktop ide))
+           ((memq self:profile '(minimal portable standard ide))
             self:profile)
            ((null self:profile) nil)
            (t
@@ -175,7 +175,7 @@ portable → 默认 ide。")
           (cond
            ((equal from-env "minimal") 'minimal)
            ((equal from-env "portable") 'portable)
-           ((equal from-env "desktop") 'desktop)
+           ((equal from-env "standard") 'standard)
            ((equal from-env "ide") 'ide)
            ((and from-env (> (length from-env) 0))
             (display-warning
@@ -185,7 +185,7 @@ portable → 默认 ide。")
             (if (eq system-type 'android) 'portable 'ide))
            ((self--profile-from-file))
            ((eq system-type 'android) 'portable)
-           (t 'ide)))))
+           (t 'standard)))))
 
 (provide 'early-init)
 ;;; early-init.el ends here

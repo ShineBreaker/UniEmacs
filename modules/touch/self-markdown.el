@@ -9,7 +9,7 @@
 ;;           self-touch（`self/touch-no-keyboard'）
 ;;
 ;; 桌面端不走本模块：markdown-mode 的 mode 注册与导出键在
-;; self-langs.el（desktop 档），本文件是触屏特化 UX（mode-line 按钮、
+;; self-langs.el（standard 档），本文件是触屏特化 UX（mode-line 按钮、
 ;; view 适配、不唤键盘）。
 ;; Packages: markdown-mode
 ;;

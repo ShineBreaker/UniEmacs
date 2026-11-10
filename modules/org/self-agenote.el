@@ -10,12 +10,12 @@
 ;; 小节，经验卡目标函数与类别预取一并跟来，因为它们直接依赖 agenote 的 CLI 与
 ;; entry-types 约定）。
 ;;
-;; Profiles: desktop, ide
+;; Profiles: standard, ide
 ;; Requires: self-org（capture 模板装配点）、self-lib（路径常量）、
 ;;           self-keys（self/bind、self/declare-binding-group）
 ;; Packages: agenote
 ;;
-;; 挂 desktop 档、不挂 portable：Android 上没有 agenote 这个 CLI，经验卡类别预取
+;; 挂 standard 档、不挂 portable：Android 上没有 agenote 这个 CLI，经验卡类别预取
 ;; 必然落回内置列表，18 个 C-c o k 命令也全部是 shell-out。按 AGENTS.md §2，
 ;; 档位差异只经 manifest 表达，模块内不做自我裁剪。
 ;;

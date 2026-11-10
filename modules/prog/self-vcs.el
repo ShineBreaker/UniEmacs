@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: desktop, ide
+;; Profiles: standard, ide
 ;; Requires: self-keys, self-windowing
 ;; Packages: magit, magit-diff, diff-hl, forge, magit-fast
 ;;

@@ -86,7 +86,7 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 
 (defconst self:etc-directory
   (expand-file-name "config/emacs/" self:var-directory)
-  "用户自定义文件目录：custom.el 的落点。desktop 档的 no-littering 配置读它。")
+  "用户自定义文件目录：custom.el 的落点。standard 档的 no-littering 配置读它。")
 
 ;; ─── Org 与笔记目录 ──────────────────────────────────────────────
 ;;
@@ -274,7 +274,7 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 ;; 描述的是 Emacs **进程**而非「用户会话」的行为：任何模块被 require 之前
 ;; 就该生效，且不随某档的模块清单增减而反复重设。全部是内建变量，三档共用。
 ;; （垃圾回收节律另见 `self/restore-startup-perf'；gcmh 属第三方包，
-;; 因此留在 profiles/desktop.el 档内配置。）
+;; 因此留在 profiles/standard.el 档内配置。）
 
 ;; 子进程与输入吞吐：抬高 read-process-output-max 提升 LSP 与终端的输出
 ;; 吞吐；关掉自适应读缓冲以降低单次读取延迟；允许滚动时跳过像素级精确。
@@ -310,17 +310,17 @@ self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
 ;; ─── profile 加载器 ──────────────────────────────────────────────
 
 (defun self/load-profile (profile)
-  "加载 profiles/<PROFILE>.el，PROFILE 为 minimal、portable、desktop、ide 之一。
+  "加载 profiles/<PROFILE>.el，PROFILE 为 minimal、portable、standard、ide 之一。
 加载失败时报错并带上 profile 名与文件路径。成功返回 t。"
   (interactive
    (list (let ((name (completing-read
-                      "Profile (minimal/portable/desktop/ide): "
-                      '("minimal" "portable" "desktop" "ide") nil t)))
+                      "Profile (minimal/portable/standard/ide): "
+                      '("minimal" "portable" "standard" "ide") nil t)))
            (cond
             ((equal name "minimal") 'minimal)
             ((equal name "portable") 'portable)
             ((equal name "ide") 'ide)
-            (t 'desktop)))))
+            (t 'standard)))))
   ;; load 是文件 I/O，condition-case 包裹是允许的场景。
   (let ((file (expand-file-name (format "profiles/%s.el" profile)
                                 self:repo)))
@@ -335,14 +335,14 @@ self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
 
 (defun self/set-profile (profile)
   "把 PROFILE 写入家目录 profile.el，下次启动生效。
-PROFILE 为 minimal、portable、desktop、ide 之一。优先级方面
+PROFILE 为 minimal、portable、standard、ide 之一。优先级方面
 UNI_EMACS_PROFILE 环境变量更高，存在时本文件被忽略；删除
 profile.el 即回到平台默认档（桌面 ide）。本命令不改当前会话
 已加载的模块，切换后需重启 Emacs，daemon 用
 `herd restart emacs-daemon'。"
   (interactive
    (list (intern (completing-read "Profile: "
-                                  '("minimal" "portable" "desktop" "ide")
+                                  '("minimal" "portable" "standard" "ide")
                                   nil t))))
   (let ((file (expand-file-name "profile.el" user-emacs-directory)))
     (with-temp-file file

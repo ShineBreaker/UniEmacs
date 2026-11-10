@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; Profiles: portable, desktop, ide
+;; Profiles: portable, standard, ide
 ;; Requires: self-lib（路径常量）、self-keys（self/bind、self/declare-binding-group）
 ;; Packages: org-roam, emacsql
 ;;

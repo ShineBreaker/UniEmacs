@@ -10,7 +10,7 @@
 ;; Packages: treemacs, treemacs-nerd-icons
 ;;
 ;; Zed 左侧 dock 的常驻面板是 Project Panel：一棵带文件图标、Git 状态色、
-;; 缩进参考线的项目文件树。desktop 档的同位设施是 self-project 的 Dired 面板
+;; 缩进参考线的项目文件树。standard 档的同位设施是 self-project 的 Dired 面板
 ;; ——目录平铺、无树形折叠、无图标，教育意义大于 IDE 体验。ide 档改用
 ;; Treemacs：
 ;;
@@ -24,7 +24,7 @@
 ;;   · treemacs-tag-follow-mode：树内直接展开当前文件的 imenu 符号列表，
 ;;     近似 Zed 左侧 Outline Panel。
 ;;
-;; 键位接管：self-keys-desktop 已为 desktop 档绑好 C-b / C-S-e / C-c w f/d/T
+;; 键位接管：self-keys-desktop 已为 standard 档绑好 C-b / C-S-e / C-c w f/d/T
 ;; 指向 Dired 面板；本模块用 `self/ide--rebind' 把它们改绑到 Treemacs 等价物，
 ;; 并同步改写 `self:binding-spec' 与 Which-key 描述，让帮助页与提示不漂移。
 ;; `self/bind' 对重复声明直接报错，档内覆写只能绕过它——这是刻意的档私有
@@ -117,7 +117,7 @@
 
 ;; ─── 双面板总开关（左 Treemacs / 底部槽）─────────────────────────────
 ;; 结构照搬 self-keys-desktop 的 self/panels-toggle：任一开着则全关、
-;; 全关则全开、焦点回主区。desktop 档的「右 Agent」在 ide 档不是面板——
+;; 全关则全开、焦点回主区。standard 档的「右 Agent」在 ide 档不是面板——
 ;; self-ide-slots 的槽位契约把 agent-shell 声明为编辑区内容 tab，
 ;; 底槽用 window-side=bottom 判定（槽内换过内容也算开着）。
 

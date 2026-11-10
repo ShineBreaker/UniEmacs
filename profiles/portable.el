@@ -7,7 +7,7 @@
 ;; Profiles: portable
 ;; Requires: self-lib self-package
 ;;
-;; 本档与 desktop 档共享 core/ 与 modules/ 里标 Profiles: portable 的模块，
+;; 本档与 standard 档共享 core/ 与 modules/ 里标 Profiles: portable 的模块，
 ;; 差异只在清单勾选：桌面专属的编程栈（self-prog / self-langs / self-vcs /
 ;; self-project / self-apps）、终端面板（self-terminal）、agenote 知识库
 ;; （self-agenote）与桌面键位表（self-keys-desktop）都不在本档加载。
