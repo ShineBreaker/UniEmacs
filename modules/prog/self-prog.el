@@ -50,6 +50,8 @@
 ;; 在 GNU Guix 环境下，Tree-sitter 语法解析库统一由系统 profile 提供，
 ;; 不需要用户手动拉源码编译：Guix 把 profile 里的 lib/tree-sitter 注入
 ;; `TREE_SITTER_GRAMMAR_PATH'，Emacs 启动时自动加进 `treesit-extra-load-path'。
+;; 非 Guix 环境（Windows / 普通 Linux）没有这条注入，改由 `just grammars'
+;; 下载预编译库落进缓存区 tree-sitter/，本文件把该目录注册进查找路径。
 ;; 本文件做三件事：关掉运行时下载询问（保持环境可复现）、登记语言名与
 ;; `*-ts-mode' 命名不一致的覆盖表、按 grammar 就绪情况把传统 major-mode
 ;; 升级映射进 `major-mode-remap-alist'。
@@ -78,6 +80,7 @@
 ;; `self:large-file-size-threshold' 的唯一定义在 core/self-lib.el
 ;;（self-theme 与本模块共用），此处只声明不赋值。
 (defvar self:large-file-size-threshold)
+(defvar self:cache-directory) ; Tree-sitter 预编译语法库的落盘根目录
 
 ;; 外部命令名常量（self:executable-* 族）统一在 core/self-lib.el 定义，
 ;; 这里只声明不赋值：带值声明会把那里的 defconst 顶掉（defvar 不会覆盖已绑
@@ -328,6 +331,9 @@ mode-alist 的残留映射(如 gdscript→gdformat),缺二进制的 formatter �
 
 (setq treesit-auto-install-grammar nil)
 
+;; Guix 把 c-sharp 语法库命名为 libtree-sitter-c_sharp（下划线），
+;; 与默认查找名 libtree-sitter-c-sharp 不同，故覆盖。非 Guix 环境的
+;; 预编译库（just grammars）也必须按这个下划线名落盘才能被找到。
 (add-to-list 'treesit-load-name-override-list
              '(c-sharp "libtree-sitter-c_sharp" "tree_sitter_c_sharp"))
 
@@ -336,6 +342,14 @@ mode-alist 的残留映射(如 gdscript→gdformat),缺二进制的 formatter �
   "Tree-sitter 语言名与 `*-ts-mode' 命名不一致的覆盖表。")
 
 (require 'treesit)
+
+;; 非 Guix 环境（Windows / 普通 Linux）的语法库由 `just grammars' 预编译
+;; 落进缓存区，这里把该目录注册进查找路径；目录不存在即跳过（Guix 环境
+;; 走 TREE_SITTER_GRAMMAR_PATH 注入，不经这里）。
+(let ((dir (expand-file-name "tree-sitter/" self:cache-directory)))
+  (when (file-directory-p dir)
+    (add-to-list 'treesit-extra-load-path dir)))
+
 (dolist (mapping self:language-treesit-remaps)
   (let ((ts-mode (cdr mapping)))
     ;; `fboundp' 守的是「这个 ts mode 的包在本档有没有装」——第三方包

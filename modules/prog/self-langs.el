@@ -61,10 +61,19 @@
 
 ;; 这几条 auto-mode-alist 覆盖把内置模式直接换成 ts 版本：能力表里
 ;; json / rust / typescript / tsx / csharp 都已登记 ts-mode，剩下只差
-;; 后缀到模式的登记。
-(add-to-list 'auto-mode-alist '("\\.json\\'" . json-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
+;; 后缀到模式的登记。只在语法库就绪时覆盖：Emacs 31 对这些后缀的默认
+;; 映射是传统 mode 或自带 *-ts-mode-maybe（自查语法库、缺则降级），
+;; 硬 ts 版本在缺库的环境（未跑 just grammars 的非 Guix 机器）会报错。
+(declare-function treesit-ready-p "treesit" (language &optional quiet))
+
+(defun self/langs--ts-mode-when-ready (regexp mode lang)
+  "LANG 语法库就绪才把 REGEXP 覆盖到 MODE，否则保留内建兜底映射。"
+  (when (treesit-ready-p lang t)
+    (add-to-list 'auto-mode-alist (cons regexp mode))))
+
+(self/langs--ts-mode-when-ready "\\.json\\'" 'json-ts-mode 'json)
+(self/langs--ts-mode-when-ready "\\.rs\\'" 'rust-ts-mode 'rust)
+(self/langs--ts-mode-when-ready "\\.ts\\'" 'typescript-ts-mode 'typescript)
 (use-package kdl-mode :mode "\\.kdl\\'" :defer t)
 (declare-function markdown-export "markdown-mode")
 (defvar markdown-mode-map) ; keymap-set 的目标键图，markdown-mode 加载后才有
@@ -78,8 +87,8 @@
     'markdown-mode "C-c p" "导出 Markdown"))
 (use-package nix-mode :mode "\\.nix\\'" :defer t)
 (add-to-list 'auto-mode-alist '("\\.yml\\.dist\\'" . yaml-ts-mode-maybe))
-(add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.jsx\\'" . tsx-ts-mode))
+(self/langs--ts-mode-when-ready "\\.tsx\\'" 'tsx-ts-mode 'tsx)
+(self/langs--ts-mode-when-ready "\\.jsx\\'" 'tsx-ts-mode 'tsx)
 (use-package zig-mode :mode "\\.zig\\'" :defer t)
 
 ;; ─── Scheme 染色（arei） ─────────────────────────────────────────────
@@ -104,7 +113,7 @@
 
 (setopt elisp-fontify-semantically t)
 
-(add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-ts-mode))
+(self/langs--ts-mode-when-ready "\\.cs\\'" 'csharp-ts-mode 'c-sharp)
 
 ;; pdf-tools 不走 use-package：elpaca 后端下，配置加载后再对该文件
 ;; byte-compile 时，use-package 对本块的展开会截断编译产物（.elc 缺
