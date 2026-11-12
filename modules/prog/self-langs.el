@@ -106,11 +106,14 @@
 
 (add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-ts-mode))
 
-(use-package pdf-tools
-  :defer t
-  :mode ("\\.pdf\\'" . pdf-view-mode)
-  :magic ("%PDF" . pdf-view-mode)
-  :config
+;; pdf-tools 不走 use-package：elpaca 后端下，配置加载后再对该文件
+;; byte-compile 时，use-package 对本块的展开会截断编译产物（.elc 缺
+;; provide，load-prefer-newer 选中它毒化启动链）。改写为等价的普通
+;; 延迟加载形式，行为不变：打开 PDF 文件才加载、挂 auto-mode 与
+;; magic 检测、加载后装服务器。
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+(add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
+(with-eval-after-load 'pdf-tools
   (pdf-tools-install t t))
 
 (provide 'self-langs)

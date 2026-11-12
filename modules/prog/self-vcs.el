@@ -352,11 +352,14 @@ Dired 的 `..'/`.' 行显式拒绝（等价暂存整个仓库，超出意图）�
 ;; Git 调用；大仓库下状态页刷新差异非常明显。:after magit 保证它 patch
 ;; magit-status-sections-hook 时 magit 已加载；Magit 不被唤起则整段
 ;; 不生效。
-(use-package magit-fast
-  :demand t
-  :after magit
-  :config
-  (magit-fast-mode 1))
+;; magit-fast 不走 use-package：elpaca 后端下配置加载后再 byte-compile
+;; 时，:after 展开（eval-after-load magit + :catch 包裹）会截断编译产物
+;; （.elc 缺 provide，毒化启动链；compile 循环里还报 "Cannot load
+;; magit-fast"）。改写为等价的普通形式：magit 加载后才开加速模式。
+(with-eval-after-load 'magit
+  (require 'magit-fast nil t)
+  (when (fboundp 'magit-fast-mode)
+    (magit-fast-mode 1)))
 
 (provide 'self-vcs)
 ;;; self-vcs.el ends here
