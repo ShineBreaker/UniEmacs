@@ -51,6 +51,8 @@
 ;; ─── 模块 require 序列（即本档的依赖契约，顺序不可随意调换）────────
 ;;
 ;; · self-session    建立 var/ etc/ 落盘位置与 custom-file。
+;; · self-bootstrap  首次启动后台补全字体/语法库，只依赖 self-lib 与
+;;                   self-package，紧跟 session 即可。
 ;; · self-windowing  窗口路由底层，被 self-vcs / self-project /
 ;;                   self-terminal 反向消费。
 ;; · self-keys       键位机制层底座，必须早于任何用 self/bind 的模块。
@@ -74,6 +76,7 @@
 ;;                   故排在全部模块之后。
 
 (require 'self-session)
+(require 'self-bootstrap)
 (require 'self-windowing)
 (require 'self-keys)
 (require 'self-completion)

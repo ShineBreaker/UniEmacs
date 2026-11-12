@@ -48,6 +48,8 @@
 ;; · self-glyph       图标字形回退表，被 self-ui-touch / self-touch /
 ;;                     self-dashboard / self-bar 引用。
 ;; · self-session     建立 var/ etc/ 落盘位置与 custom-file。
+;; · self-bootstrap   首次启动后台补全字体（Android 落应用 fonts/），
+;;                     只依赖 self-lib 与 self-package。
 ;; · self-keys        键位机制层底座，必须早于任何用 self/bind 的模块。
 ;; · self-theme       主题与菜单中文化，早于按主题面构造视觉的 UI 模块。
 ;; · self-editing     依赖 self-keys 与 self-lib 路径常量。
@@ -69,6 +71,7 @@
 
 (require 'self-glyph)
 (require 'self-session)
+(require 'self-bootstrap)
 (require 'self-keys)
 (require 'self-theme)
 (require 'self-editing)

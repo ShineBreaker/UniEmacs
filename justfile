@@ -2,6 +2,8 @@
 #
 # 通用（桌面 + 手机）：verify / probe / glyph-check / compile / clean。
 # 配置依赖组（真机一键补全字体/图标/插件，桌面同样可用）。
+# font / grammars 的实现已迁入 modules/base/self-bootstrap.el——
+# Emacs 首次启动会自动后台补全这两项，下面的目标只是 batch 薄包装。
 
 default: verify
 
@@ -120,9 +122,8 @@ compile:
 
 # ═══ 配置依赖（真机 / 桌面通用）═══
 
-maple-font-url := "https://github.com/subframe7536/maple-font/releases/download/v7.9/MapleMono-NF-CN.zip"
-
 # 一键补全配置侧依赖：Termux 包 → 字体 → 图标 → 语法库 → 插件预构建
+# （font / grammars 在 Emacs 首次启动时也会自动跑，这里供手动补全）
 [group('配置依赖')]
 emacs: termux-deps font icons grammars packages
 
@@ -233,88 +234,30 @@ icons:
     mk_badge esc      Esc 64 32 26
     echo "已生成 10 枚 Papirus symbolic .svg + PNG 兜底 + 8 枚 modifier-bar 徽章（PBM/Cozette）"
 
-# 下载 Maple Mono NF CN（中英等宽 + Nerd 图标）并安装。
-# Android → Emacs home 的 fonts/（sfnt-android 枚举）；桌面 → fontconfig 用户目录。
-# 安装后需重启 Emacs 生效。
+# 安装 Maple Mono NF CN（中英等宽 + Nerd 图标）：仓库自带 data/fonts/
+# TTF 时离线安装，否则下载。
+# 实现在 modules/base/self-bootstrap.el（首次启动自动跑，URL/版本
+# 号只在那边定义）：Windows 落 per-user 字体目录并注册 HKCU，Linux 落
+# fontconfig 用户目录，Android 落应用 fonts/。安装后需重启 Emacs 生效。
 [group('配置依赖')]
 font:
     #!/usr/bin/env bash
     set -euo pipefail
-    # 只认配置实际使用的家族名：普通版 Maple Mono（无 NF 字形）装过也
-    # 不能跳过，否则 glyph-check 会拿它当目标字体误报缺字形。
-    # 不用 grep -q：-q 命中即退出会让 fc-list 吃 EPIPE，pipefail 下
-    # 整条判定恒假（跳不过、每次重新下载）。grep 读全输入才安全。
-    if command -v fc-list >/dev/null && fc-list :family 2>/dev/null | grep -i "Maple Mono NF CN" >/dev/null; then
-        echo "Maple Mono NF CN 已安装（系统/用户字体），跳过"
-        exit 0
-    fi
-    # Guix 环境（判定口径与 Emacs 侧 self/package--guix-emacs-p 对齐）：
-    # 字体归 Guix 声明管理（系统 fonts 或 guix home 的
-    # font-maple-mono-nf-cn），不在此下载——下载到 ~/.local/share/fonts
-    # 会绕过声明式管理，违背"有 Guix 就用 Guix 装的东西"。
-    # 确需绕过（如临时验证）用 UNI_EMACS_FONT_DOWNLOAD=1 强制下载。
-    if [ "${UNI_EMACS_FONT_DOWNLOAD:-0}" != "1" ] \
-       && { [ -n "${EMACSLOADPATH:-}" ] || [ -n "${GUIX_PROFILE:-}" ] \
-            || [ -n "${GUIX_ENVIRONMENT:-}" ] || command -v guix >/dev/null 2>&1 \
-            || [ -d "${HOME}/.guix-home" ] || [ -d /run/current-system ]; }; then
-        echo "检测到 Guix：字体应先由 Guix 声明（系统 fonts / guix home 的 font-maple-mono-nf-cn）。"
-        echo "跳过下载。若确实缺字体，把 font-maple-mono-nf-cn 加进系统或 home 配置后重建；"
-        echo "临时验证可用 UNI_EMACS_FONT_DOWNLOAD=1 just font 强制下载。"
-        exit 0
-    fi
-    command -v curl >/dev/null || { echo "需要 curl"; exit 1; }
-    command -v unzip >/dev/null || { echo "需要 unzip"; exit 1; }
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    curl -fsSL --retry 3 --max-time 300 -o "$tmp/maple.zip" "{{maple-font-url}}"
-    unzip -o -q "$tmp/maple.zip" -d "$tmp/font"
-    if [[ -d /data/data/org.gnu.emacs ]]; then
-        dest="/data/data/org.gnu.emacs/files/fonts"
-    else
-        dest="${HOME}/.local/share/fonts"
-    fi
-    mkdir -p "$dest"
-    cp "$tmp"/font/MapleMono-NF-CN-Regular.ttf \
-       "$tmp"/font/MapleMono-NF-CN-Italic.ttf \
-       "$tmp"/font/MapleMono-NF-CN-Bold.ttf "$dest"/
-    fc-cache -f >/dev/null 2>&1 || true
-    echo "字体已安装到 $dest（重启 Emacs 生效）"
+    emacs --batch -q -l early-init.el -l core/self-lib.el -l core/self-package.el \
+      -l modules/base/self-bootstrap.el --eval '(self/bootstrap-fonts)' </dev/null
 
 # Tree-sitter 预编译语法库（仅 Windows）。
-# Guix 环境的语法库由 profile 提供（TREE_SITTER_GRAMMAR_PATH 注入），
-# 其它 Linux 可用发行版包或 M-x treesit-install-language-grammar 自行编译；
-# Windows 无 cc 编译器，下载 tree-sitter-langs release 的预编译 bundle，
-# 重命名为 libtree-sitter-<lang>.dll 落缓存区（self-prog 注册该目录）。
-# c-sharp 按配置覆盖表用下划线名 libtree-sitter-c_sharp.dll（与 Guix 一致）。
-ts-grammars-version := "0.13.75"
+# 实现同在 self-bootstrap.el：Guix 环境的语法库由 profile 提供
+# （TREE_SITTER_GRAMMAR_PATH 注入），其它 Linux 用发行版包或
+# M-x treesit-install-language-grammar 自行编译；Windows 无 cc 编译器，
+# 下载 tree-sitter-langs release 的预编译 bundle，重命名为
+# libtree-sitter-<lang>.dll 落缓存区（self-prog 注册该目录）。
 [group('配置依赖')]
 grammars:
     #!/usr/bin/env bash
     set -euo pipefail
-    case "$(uname -s)" in
-        MINGW*|MSYS*|CYGWIN*) ;;
-        *) echo "非 Windows：Guix 用 profile 语法库，其它 Linux 自行编译，跳过"; exit 0 ;;
-    esac
-    dest="${XDG_CACHE_HOME:-$HOME/.cache}/emacs/tree-sitter"
-    if [[ -f "$dest/libtree-sitter-json.dll" ]]; then
-        echo "语法库已在 $dest，跳过"
-        exit 0
-    fi
-    command -v curl >/dev/null || { echo "需要 curl"; exit 1; }
-    command -v tar >/dev/null || { echo "需要 tar"; exit 1; }
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    curl -fsSL --retry 3 --max-time 600 -o "$tmp/grammars.tar.gz" \
-        "https://github.com/emacs-tree-sitter/tree-sitter-langs/releases/download/{{ts-grammars-version}}/tree-sitter-grammars-windows-{{ts-grammars-version}}.tar.gz"
-    # bundle 为平铺结构（<lang>.dll 直接在根），解到临时目录再逐个改名
-    tar xzf "$tmp/grammars.tar.gz" -C "$tmp"
-    mkdir -p "$dest"
-    for f in "$tmp"/*.dll; do
-        name=$(basename "$f" .dll)
-        [[ "$name" == "c-sharp" ]] && name="c_sharp"
-        mv "$f" "$dest/libtree-sitter-$name.dll"
-    done
-    echo "语法库已安装到 $dest（重启 Emacs 生效）"
+    emacs --batch -q -l early-init.el -l core/self-lib.el -l core/self-package.el \
+      -l modules/base/self-bootstrap.el --eval '(self/bootstrap-grammars)' </dev/null
 
 # 预构建某档全部 Emacs 插件（跑一遍完整 init，包后端装齐并 byte-compile）。
 # 真机默认 portable 档、缓存进真实 HOME；桌面进 .sandbox 隔离，档位可传参。

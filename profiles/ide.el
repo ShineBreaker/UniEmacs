@@ -64,6 +64,7 @@
 ;; 排列，全部排在 self-keys-desktop 之后：键位覆写必须最后落地。
 
 (require 'self-session)
+(require 'self-bootstrap)
 (require 'self-windowing)
 (require 'self-keys)
 (require 'self-completion)

@@ -63,7 +63,7 @@
 ;; json / rust / typescript / tsx / csharp 都已登记 ts-mode，剩下只差
 ;; 后缀到模式的登记。只在语法库就绪时覆盖：Emacs 31 对这些后缀的默认
 ;; 映射是传统 mode 或自带 *-ts-mode-maybe（自查语法库、缺则降级），
-;; 硬 ts 版本在缺库的环境（未跑 just grammars 的非 Guix 机器）会报错。
+;; 硬 ts 版本在缺库的环境（语法库尚未就绪的非 Guix 机器）会报错。
 (declare-function treesit-ready-p "treesit" (language &optional quiet))
 
 (defun self/langs--ts-mode-when-ready (regexp mode lang)
