@@ -32,15 +32,57 @@
 ;; 另有一处从桌面端「启动与基础设施」域并入：非 daemon 的交互式启动顺便
 ;; 开 server-mode，让 emacsclient 能连上。daemon 启动时 server 已被 Emacs
 ;; 自己拉起（`daemon' 参数即以 server 模式运行），batch 与非交互场景根本
-;; 不该监听 TCP，所以三处都要挡掉。
+;; 不该监听 TCP，所以三处都要挡掉。server-mode 经 `self/daemon--enable-server-mode'
+;; 包一层：Windows 便携包先自愈认证目录所有权（管理员身份跑过启动器会把
+;; 目录落成 Administrators 组 RID 544，普通账户被 `server-ensure-safe-dir'
+;; 拒绝），且启动失败只警告不中断——server 是可选便利，不该拖垮整份配置。
 
 ;;; Code:
+
+(defvar server-auth-dir)
+(declare-function server-running-p "server")
+(declare-function server-mode "server")
 
 ;; ─── server-mode：让 emacsclient 能连上交互式启动的实例 ─────────────
 ;; 非 daemon 的交互式启动顺手开 server-mode；已经是 daemon 的、或根本不是
 ;; 交互式的（batch 冒烟、脚本化调用）都不必监听 TCP 端口。
+
+;; Platform: windows
+(defun self/daemon--heal-server-auth-dir ()
+  "Windows 便携包自愈：server 认证目录被 Administrators 组持有时重建。
+Emacs 的 `server-ensure-safe-dir' 只在当前用户是内置 Administrator
+（RID 500）时才接受 Administrators 组（RID 544）的所有权；普通管理员
+账户（RID≠500）会被拒。以管理员身份跑过一次启动器，认证目录就会落成
+544，此后普通启动必报错。目录里只有上一实例的认证文件，确认无存活
+server 后删掉，让 `server-start' 以当前用户重建（实测重建即归当前用户）。
+机制见 server.el 的 `server-ensure-safe-dir'。"
+  (let* ((dir (directory-file-name (expand-file-name server-auth-dir)))
+         (attrs (file-attributes dir 'integer)))
+    (when (and attrs
+               (/= (file-attribute-user-id attrs) (user-uid))
+               (not (server-running-p)))
+      (delete-directory dir t))))
+
+(defun self/daemon--enable-server-mode ()
+  "交互式启动开 server-mode；失败只警告，不中断配置加载。
+server 是 emacsclient 的便利入口，属可选能力：认证目录权限一类环境
+问题不该让整份配置加载失败（与配置对可选工具缺席一律降级的口径一致）。
+server-mode 内部建目录、写认证文件属文件 I/O，condition-case 是允许场景。"
+  (require 'server)
+  (condition-case err
+      (progn
+        ;; Platform: windows
+        (when (eq system-type 'windows-nt)
+          (self/daemon--heal-server-auth-dir))
+        (server-mode 1))
+    (error
+     (display-warning
+      'self-daemon
+      (format "server-mode 启动失败（emacsclient 不可用）：%s"
+              (error-message-string err))))))
+
 (unless (or (daemonp) noninteractive)
-  (server-mode 1))
+  (self/daemon--enable-server-mode))
 
 ;; ─── daemon 预热 ────────────────────────────────────────────────────
 ;; 预加载白名单：这些库都在交互路径上被高频首次触碰（Magit 的 status、
