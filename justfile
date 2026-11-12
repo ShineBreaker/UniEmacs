@@ -122,9 +122,9 @@ compile:
 
 maple-font-url := "https://github.com/subframe7536/maple-font/releases/download/v7.9/MapleMono-NF-CN.zip"
 
-# 一键补全配置侧依赖：Termux 包 → 字体 → 图标 → 插件预构建
+# 一键补全配置侧依赖：Termux 包 → 字体 → 图标 → 语法库 → 插件预构建
 [group('配置依赖')]
-emacs: termux-deps font icons packages
+emacs: termux-deps font icons grammars packages
 
 # Termux 环境一键安装配置侧依赖包（桌面自动跳过）。
 # 包名经 termux-packages 源核实：curl/sqlite 为 libcurl/libsqlite 子包，sqlite3 无独立包
@@ -279,6 +279,42 @@ font:
        "$tmp"/font/MapleMono-NF-CN-Bold.ttf "$dest"/
     fc-cache -f >/dev/null 2>&1 || true
     echo "字体已安装到 $dest（重启 Emacs 生效）"
+
+# Tree-sitter 预编译语法库（仅 Windows）。
+# Guix 环境的语法库由 profile 提供（TREE_SITTER_GRAMMAR_PATH 注入），
+# 其它 Linux 可用发行版包或 M-x treesit-install-language-grammar 自行编译；
+# Windows 无 cc 编译器，下载 tree-sitter-langs release 的预编译 bundle，
+# 重命名为 libtree-sitter-<lang>.dll 落缓存区（self-prog 注册该目录）。
+# c-sharp 按配置覆盖表用下划线名 libtree-sitter-c_sharp.dll（与 Guix 一致）。
+ts-grammars-version := "0.13.75"
+[group('配置依赖')]
+grammars:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*) ;;
+        *) echo "非 Windows：Guix 用 profile 语法库，其它 Linux 自行编译，跳过"; exit 0 ;;
+    esac
+    dest="${XDG_CACHE_HOME:-$HOME/.cache}/emacs/tree-sitter"
+    if [[ -f "$dest/libtree-sitter-json.dll" ]]; then
+        echo "语法库已在 $dest，跳过"
+        exit 0
+    fi
+    command -v curl >/dev/null || { echo "需要 curl"; exit 1; }
+    command -v tar >/dev/null || { echo "需要 tar"; exit 1; }
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    curl -fsSL --retry 3 --max-time 600 -o "$tmp/grammars.tar.gz" \
+        "https://github.com/emacs-tree-sitter/tree-sitter-langs/releases/download/{{ts-grammars-version}}/tree-sitter-grammars-windows-{{ts-grammars-version}}.tar.gz"
+    # bundle 为平铺结构（<lang>.dll 直接在根），解到临时目录再逐个改名
+    tar xzf "$tmp/grammars.tar.gz" -C "$tmp"
+    mkdir -p "$dest"
+    for f in "$tmp"/*.dll; do
+        name=$(basename "$f" .dll)
+        [[ "$name" == "c-sharp" ]] && name="c_sharp"
+        mv "$f" "$dest/libtree-sitter-$name.dll"
+    done
+    echo "语法库已安装到 $dest（重启 Emacs 生效）"
 
 # 预构建某档全部 Emacs 插件（跑一遍完整 init，包后端装齐并 byte-compile）。
 # 真机默认 portable 档、缓存进真实 HOME；桌面进 .sandbox 隔离，档位可传参。
