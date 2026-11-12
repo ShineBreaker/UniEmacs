@@ -98,21 +98,26 @@ manifest.scm 登记 spec 名，如 emacs-org-modern-indent）。")
 
 ;; ─── 后端检测 ────────────────────────────────────────────────────
 
+(defun self/package--guix-emacs-p ()
+  "判断当前 Emacs 是否来自 Guix 安装。决定包后端。
+强信号（任一）：可执行文件真实路径在 /gnu/store 下（Guix 包装脚本、
+guix home/profile 链均如此）；或 guix-emacs 库可 locate（Guix 给每个
+Emacs profile 生成一份）。
+弱信号：EMACSLOADPATH 非空——Guix 的 emacs wrapper 会设它；但它被
+别的工具设上的场景也存在，故仅作兜底。
+不认「load-path 里目录名带 guix」：~/guix-notes 这类普通目录会误判，
+反而把非 Guix 环境拖进校验模式、装不上包。"
+  (or (let ((exe (ignore-errors
+                   (file-truename (expand-file-name invocation-name
+                                                    invocation-directory)))))
+        (and exe (string-prefix-p "/gnu/store/" exe)))
+      (locate-library "guix-emacs")
+      (let ((ep (getenv "EMACSLOADPATH")))
+        (and ep (> (length ep) 0) t))))
+
 (defun self/package-backend ()
-  "返回包后端符号：guix 或 elpaca。
-判定依据（命中任一即 guix）：EMACSLOADPATH 环境变量非空说明 Guix
-在管 load-path；或 guix-emacs 库能被 locate；或 load-path 里有目录
-名带 guix 气息。Guix 用户环境三者通常全中；其余全部环境走 elpaca。"
-  (if (or (let ((ep (getenv "EMACSLOADPATH")))
-            (and ep (> (length ep) 0)))
-          (locate-library "guix-emacs")
-          (let ((found nil))
-            (dolist (dir load-path)
-              (when (and (stringp dir) (string-match-p "guix" dir))
-                (setq found t)))
-            found))
-      'guix
-    'elpaca))
+  "返回包后端符号：guix 或 elpaca。判定见 `self/package--guix-emacs-p'。"
+  (if (self/package--guix-emacs-p) 'guix 'elpaca))
 
 ;; ─── 清单归一化 ──────────────────────────────────────────────────
 
@@ -394,14 +399,20 @@ eval 拼调用，这是官方用法的动态版，不是炫技。"
 
 (defun self/package-ensure ()
   "按 `self:profile-packages' 把本档第三方包备好。
-guix 后端只校验（缺失警告、不中断启动）；elpaca 后端安装缺失的包。
+guix 后端只校验（缺失警告、不中断启动，装包交给 Guix/系统层）；
+elpaca 后端自动安装缺失的包（仅限无 Guix 的环境）。
 清单为空时直接返回：本阶段零外部包，不碰网络。交互调用可重跑。"
   (interactive)
-  (let ((pkgs (self/package--normalize-list self:profile-packages)))
+  (let* ((pkgs (self/package--normalize-list self:profile-packages))
+         (backend (self/package-backend)))
+    (message "UniEmacs: 包后端 %s（%s）"
+             backend
+             (if (eq backend 'guix)
+                 "Guix 环境，跳过 elpaca 自动安装，只做校验"
+               "无 Guix，由 elpaca 自动安装"))
     (if (null pkgs)
-        (message "UniEmacs: 包清单为空，跳过包管理（后端 %s）"
-                 (self/package-backend))
-      (if (eq (self/package-backend) 'guix)
+        (message "UniEmacs: 包清单为空，跳过包管理（后端 %s）" backend)
+      (if (eq backend 'guix)
           (self/package--ensure-guix pkgs)
         (self/package--ensure-elpaca pkgs)))))
 
