@@ -64,7 +64,14 @@
     ;; C-c o k 键位全是死键。Guix 后端走 manifest.scm 的 emacs-agenote，
     ;; 不读本表。
     (agenote :host github :repo "ShineBreaker/agenote" :branch "main"
-             :files ("packages/agenote-el/*.el")))
+             :files ("packages/agenote-el/*.el"))
+    ;; 以下三个 Guix 侧来自 channel（manifest.scm 有对应 spec），
+    ;; MELPA/ELPA 菜单同样没有，elpaca 后端需显式给上游地址：
+    ;; arei 上游在 sourcehut，elisp 全在 lisp/ 下（docs/ 里的不算）；
+    ;; 依赖 eros/sesman/queue 由 elpaca 按包头自动解析。
+    (arei :host sourcehut :repo "abcdw/emacs-arei" :files ("lisp/*.el"))
+    (dsh-emacs :host github :repo "vritser/dsh-emacs")
+    (magit-fast :host github :repo "zHaOdANiuu/magit-fast"))
   "MELPA/GNU/NonGNU 菜单里都没有的包：包名 → elpaca order 属性表。
 elpaca 找不到配方时报 \"Unable to determine recipe URL\"，在这里显式给出
 :host/:repo 即可。只作用于 elpaca 后端；Guix 后端不读本表（Guix 侧在
