@@ -167,8 +167,8 @@ icons:
     fi
     command -v rsvg-convert >/dev/null || { echo "需要 rsvg-convert (librsvg)"; exit 1; }
     # 不用 grep -q：-q 命中即退出会让 fc-list 吃 EPIPE，pipefail 下误报
-    command -v fc-list >/dev/null && fc-list :family | grep -i maple >/dev/null \
-        || echo "提示：本机无 Maple 字体，徽章文字将用 fallback 字体渲染（建议先 just font）"
+    command -v fc-list >/dev/null && fc-list :family 2>/dev/null | grep -i "Maple Mono NF CN" >/dev/null \
+        || echo "提示：本机无 Maple Mono NF CN 字体，徽章文字将用 fallback 字体渲染（建议先 just font）"
     mkdir -p data/icons
     tmp=$(mktemp -d)
     trap 'rm -rf "$tmp"' EXIT
@@ -242,8 +242,24 @@ font:
     set -euo pipefail
     # 只认配置实际使用的家族名：普通版 Maple Mono（无 NF 字形）装过也
     # 不能跳过，否则 glyph-check 会拿它当目标字体误报缺字形。
-    if command -v fc-list >/dev/null && fc-list :family | grep -qi "Maple Mono NF CN"; then
-        echo "Maple Mono NF CN 已安装，跳过"
+    # 不用 grep -q：-q 命中即退出会让 fc-list 吃 EPIPE，pipefail 下
+    # 整条判定恒假（跳不过、每次重新下载）。grep 读全输入才安全。
+    if command -v fc-list >/dev/null && fc-list :family 2>/dev/null | grep -i "Maple Mono NF CN" >/dev/null; then
+        echo "Maple Mono NF CN 已安装（系统/用户字体），跳过"
+        exit 0
+    fi
+    # Guix 环境（判定口径与 Emacs 侧 self/package--guix-emacs-p 对齐）：
+    # 字体归 Guix 声明管理（系统 fonts 或 guix home 的
+    # font-maple-mono-nf-cn），不在此下载——下载到 ~/.local/share/fonts
+    # 会绕过声明式管理，违背"有 Guix 就用 Guix 装的东西"。
+    # 确需绕过（如临时验证）用 UNI_EMACS_FONT_DOWNLOAD=1 强制下载。
+    if [ "${UNI_EMACS_FONT_DOWNLOAD:-0}" != "1" ] \
+       && { [ -n "${EMACSLOADPATH:-}" ] || [ -n "${GUIX_PROFILE:-}" ] \
+            || [ -n "${GUIX_ENVIRONMENT:-}" ] || command -v guix >/dev/null 2>&1 \
+            || [ -d "${HOME}/.guix-home" ] || [ -d /run/current-system ]; }; then
+        echo "检测到 Guix：字体应先由 Guix 声明（系统 fonts / guix home 的 font-maple-mono-nf-cn）。"
+        echo "跳过下载。若确实缺字体，把 font-maple-mono-nf-cn 加进系统或 home 配置后重建；"
+        echo "临时验证可用 UNI_EMACS_FONT_DOWNLOAD=1 just font 强制下载。"
         exit 0
     fi
     command -v curl >/dev/null || { echo "需要 curl"; exit 1; }

@@ -45,6 +45,8 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 
 首次启动说明：桌面档（standard/ide）首次启动会经 elpaca 从 MELPA/GNU ELPA 安装约 60 个包并逐包 byte-compile，实测约 15–20 分钟（机器与网络而异），期间无输出属正常；包装完落在状态目录，之后启动秒开。中途断网/断电不怕——重跑启动会接着装。
 
+依赖由谁提供（包与字体同一原则）：**有 Guix 就交给 Guix**——Emacs 包走 Guix profile（`just` 只校验不安装），字体走系统/guix home 声明（`font-maple-mono-nf-cn`），`just font` 在 Guix 环境只提示不下载；**没有 Guix** 时由 `just font` / elpaca 自动安装补齐。
+
 详见 `docs/architecture.md` §6。
 
 ## 日常操作
