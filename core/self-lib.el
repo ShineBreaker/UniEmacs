@@ -1,14 +1,14 @@
 ;;; self-lib.el --- 平台谓词、路径常量、进程环境与加载辅助 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; 三档 profile 共享的基础设施：平台判断、目录常量、外部命令名、进程级
+;; 四档 profile 共享的基础设施：平台判断、目录常量、外部命令名、进程级
 ;; 环境设置、profile 加载器、模块耗时记录、启动优化复位、后台补编译。
 ;; 只读 early-init.el 定义的 `self:repo'、`self:profile' 与
 ;; `self--startup-file-name-handlers'，不做防御性改写。
 ;;
 ;; 路径常量（含 Org 笔记目录与 data/ 本地化数据目录）在本文件里是**唯一
 ;; 真相源**——功能模块只做 `(defvar self:org-directory)' 这类就近声明，
-;; 不再各自 defconst，免得同一路径在三档里悄悄长出三个值。
+;; 不再各自 defconst，免得同一路径在四档里悄悄长出四个值。
 ;;
 ;; Org 根目录是唯一的例外：`M-x self/org-relocate' 可在 Emacs 内改它，
 ;; 由 `self:org-config-file' 持久化，启动时在本文件派生路径之前读回；
@@ -30,6 +30,7 @@
 (defvar self--startup-file-name-handlers)
 
 ;; ─── 平台谓词 ────────────────────────────────────────────────────
+;; Platform: android, gui, tty
 
 (defconst self:android-p (eq system-type 'android)
   "是否运行在 Android 原生 Emacs 上。")
@@ -46,6 +47,7 @@
 
 ;; ─── 路径常量 ────────────────────────────────────────────────────
 
+;; Platform: android
 (defconst self:data-home
   (if (eq system-type 'android)
       "/data/data/com.termux/files/home/"
@@ -57,6 +59,7 @@
 Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未设置），
 无则回退家目录。沙箱冒烟时 HOME 被隔离，状态自动落进沙箱。")
 
+;; Platform: android
 (defconst self:var-directory
   (if (eq system-type 'android)
       (expand-file-name ".local/state/emacs/" self:data-home)
@@ -71,6 +74,7 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 (unless (file-directory-p self:var-directory)
   (make-directory self:var-directory t))
 
+;; Platform: android
 (defconst self:cache-directory
   (if (eq system-type 'android)
       (expand-file-name ".cache/emacs/" self:data-home)
@@ -97,8 +101,9 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 ;; 目录可在 Emacs 内改：`M-x self/org-relocate' 把新根目录写进
 ;; `self:org-config-file'（状态目录下，不污染仓库），并在当场重算下面的
 ;; 派生路径、触发 `self/org-relocate-hook'。下次启动由本文件在派生路径**之前**
-;; 读回该文件，故三档、各次启动拿到的仍是同一个值。
+;; 读回该文件，故四档、各次启动拿到的仍是同一个值。
 
+;; Platform: android
 (defconst self:org-default-directory
   (if self:android-p
       (if (file-directory-p "/storage/emulated/0/Data/Syncthing/notebook/org/")
@@ -237,6 +242,7 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 ;; 配置，升级后旧路径立即失效。这里只记录命令名（如 "git"），由 Emacs 运行时
 ;; 通过 `exec-path' 动态查找——即便后台守护进程跨代系升级，也能拿到最新工具。
 
+;; Platform: guix
 (let* ((guix-profile (or (getenv "GUIX_PROFILE")
                          (expand-file-name "~/.guix-profile")))
        (guix-bin (expand-file-name "bin" guix-profile))
@@ -272,7 +278,7 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 ;; ─── 进程运行环境 ────────────────────────────────────────────────
 ;;
 ;; 描述的是 Emacs **进程**而非「用户会话」的行为：任何模块被 require 之前
-;; 就该生效，且不随某档的模块清单增减而反复重设。全部是内建变量，三档共用。
+;; 就该生效，且不随某档的模块清单增减而反复重设。全部是内建变量，四档共用。
 ;; （垃圾回收节律另见 `self/restore-startup-perf'；gcmh 属第三方包，
 ;; 因此留在 profiles/standard.el 档内配置。）
 
@@ -295,6 +301,12 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 ;; ─── 跨模块共享的能力与阈值（唯一真相源） ─────────────────────────
 ;;
 ;; 曾被多个模块各自重复声明的变量归并于此；模块侧只写不带值的 defvar。
+
+(defconst self:font-family "Maple Mono NF CN"
+  "主字体家族名（中英等宽 + Nerd 图标字形），全配置唯一真相源。
+self-theme 的外观应用、self-ui-touch 触屏档、ide-chrome 的编辑区字体
+与 self-bootstrap 的安装判定都读它。普通版 Maple Mono 无 NF 图标
+字形，装了也不算数（判定只认这个全名）。")
 
 (defvar self:nerd-icons-available (require 'nerd-icons nil t)
   "nerd-icons 包是否已加载；图标渲染的统一守卫变量。
@@ -337,7 +349,7 @@ self-theme 的行号开关与 self-prog 的大文件降级共用同一阈值。"
   "把 PROFILE 写入家目录 profile.el，下次启动生效。
 PROFILE 为 minimal、portable、standard、ide 之一。优先级方面
 UNI_EMACS_PROFILE 环境变量更高，存在时本文件被忽略；删除
-profile.el 即回到平台默认档（桌面 ide）。本命令不改当前会话
+profile.el 即回到平台默认档（桌面 standard）。本命令不改当前会话
 已加载的模块，切换后需重启 Emacs，daemon 用
 `herd restart emacs-daemon'。"
   (interactive
@@ -346,7 +358,7 @@ profile.el 即回到平台默认档（桌面 ide）。本命令不改当前会�
                                   nil t))))
   (let ((file (expand-file-name "profile.el" user-emacs-directory)))
     (with-temp-file file
-      (insert ";; 由 M-x self/set-profile 生成；删除本文件即回到默认档（ide）。\n"
+      (insert ";; 由 M-x self/set-profile 生成；删除本文件即回到默认档（standard）。\n"
               (format "(setq self:profile '%s)\n" profile)))
     (message "已写入 %s：下次启动加载 %s 档（当前会话不变）。" file profile)))
 

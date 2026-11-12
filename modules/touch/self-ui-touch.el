@@ -32,16 +32,20 @@
 
 ;;; Code:
 
+(defvar self:font-family)
+
 ;; ─── 主字体：Maple Mono NF CN（中英等宽 + Nerd 图标字形） ──────────
-;; Android 装到 Emacs home 的 fonts/（sfnt-android 枚举），桌面走
-;; fontconfig；未装时 find-font 返回 nil，自动跳过。
+;; 家族名唯一真相源在 self-lib 的 `self:font-family'；安装落点见
+;; self-bootstrap（Windows per-user 目录 + HKCU，Linux fontconfig，
+;; Android 应用 fonts/）。未装时 find-font 返回 nil，自动跳过。
 ;; 字号加大可同步放大 modifier-bar 按钮（其尺寸随 frame 字体）。
 (defcustom self/default-font-height 160
   "默认字号（1/10 pt）。加大可同步放大 modifier-bar 按钮。"
   :type 'integer
   :group 'self)
 
-(let ((spec (font-spec :family "Maple Mono NF CN")))
+;; Platform: gui
+(let ((spec (font-spec :family self:font-family)))
   (when (and (display-graphic-p) (find-font spec))
     (set-face-attribute 'default nil :font spec
                         :height self/default-font-height)))
@@ -219,11 +223,11 @@ mode-line 渲染串宽(列): %S"
 
 ;; ─── 编辑行为（自桌面配置移植）───────────────────────────────────────
 ;; 覆盖选区 / 电配对 / 括号高亮 / CJK 类别折行（word-wrap-by-category）
-;; 四处基础编辑开关统一在 self-editing 声明——三档都要，本模块不再重复
+;; 四处基础编辑开关统一在 self-editing 声明——四档都要，本模块不再重复
 ;; 设点（否则两处取值漂移时无从判断哪份生效）。
 ;;
 ;; 长文档滚动更跟手（fast-but-imprecise-scrolling）属进程级环境变量，
-;; 已上提到 core/self-lib.el，三档一次设好。
+;; 已上提到 core/self-lib.el，四档一次设好。
 ;;
 ;; org 目录在 Syncthing 共享存储上：.# 锁文件与 #file# auto-save 文件会
 ;; 被同步成各端垃圾；丢数据风险由失焦自动保存兜底（见下）
@@ -245,7 +249,7 @@ mode-line 渲染串宽(列): %S"
 ;; ─── 移动端数据保全兜底 ────────────────────────────────────────────
 ;;
 ;; 失焦保存的机制本体（空闲 1s 保存改过的本地文件 buffer）统一在
-;; self-session 声明——三档共用，本模块只声明不重复定义。
+;; self-session 声明——四档共用，本模块只声明不重复定义。
 ;;
 ;; 下面两项是**移动端专属兜底**，不上提到共享模块：Android 后台随时可能
 ;; 被系统杀掉进程，kill-emacs-hook 不执行、after-focus-change-function 在
@@ -260,6 +264,7 @@ mode-line 渲染串宽(列): %S"
 (declare-function self/recentf-save "self-ui-touch")
 (declare-function self/save-buffer-and-recentf "self-ui-touch")
 
+;; Platform: android
 (when self:android-p
   ;; 访问文件定期真保存：直写访问文件、无 #file# 垃圾。30s 定时器是 FUSE
   ;; 共享存储上写频率的保守取值，代价是被杀时最多丢 30s 编辑。

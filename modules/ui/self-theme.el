@@ -58,6 +58,7 @@
 ;; D-Bus 只在 Linux 桌面跟随 Darkman 时用；Windows 构建没有 dbus 支持，
 ;; 不加载（调用侧另有平台守卫）。下面两条 declare 供 Windows 环境编译时
 ;; 消音（那里 dbus 不在内存里）。
+;; Platform: windows, linux
 (unless (eq system-type 'windows-nt)
   (require 'dbus))
 (declare-function dbus-get-property "dbus"
@@ -87,6 +88,7 @@
 ;; 的定义顶掉，让本模块的取值反过来决定全配置）。移动端（Android）与桌面端
 ;; 的差异一律经它守卫。
 (defvar self:android-p)
+(defvar self:font-family)
 
 ;; 持久化状态目录由 core/self-lib.el 定义；系统深浅色变量由内置 frame.el
 ;; 定义（Emacs 31+，Android 会设）。
@@ -156,6 +158,7 @@ main.el 之前完成(standalone 首帧也要生效);此处仅供
                               agent-shell-mode-hook))
   (add-hook hook #'self/theme--disable-file-line-numbers))
 
+;; Platform: android
 (use-package mouse
   :demand t
   ;; `context-menu-mode' 定义在内建库 mouse.el（不存在 context-menu.el，
@@ -246,6 +249,7 @@ main.el 之前完成(standalone 首帧也要生效);此处仅供
       (unless (memq color '(nil unspecified))
         color))))
 
+;; Platform: tty
 (defun self/theme--apply-terminal-faces (&optional frame)
   "让 TTY FRAME 的所有命名 face 使用终端透明背景(仅真实终端生效,GUI 为 no-op)。
 先清 face 背景与反色，再为 `hl-line' 恢复主题柔和背景、为代码块恢复
@@ -293,6 +297,7 @@ redisplay 会报「Invalid face reference」。"
 (defvar self/theme--tty-face-count 0
   "上次 TTY 刷新时的 face 总数;只有加载了定义新 face 的文件后才需要重刷。")
 
+;; Platform: tty
 (defun self/theme--refresh-terminal-faces (&rest _)
   "重新对所有存活 TTY frame 应用透明背景策略。"
   (unless noninteractive
@@ -337,9 +342,11 @@ self-tabline 的标签下缘横线复用同一对插值函数，故按 AGENTS.md
             channels))
     (apply #'color-rgb-to-hex (append (nreverse channels) '(2)))))
 
+;; Platform: gui, tty
 (defun self/theme--apply-frame-appearance (&optional frame)
   "为 FRAME 应用所有 display-dependent 外观设置。
-+ GUI: 字体高度、透明度、buffer 之间分隔线的宽度
++ GUI: 主字体（`self:font-family'，未安装时 find-font 落空自动跳过）、
+  字体高度、透明度、buffer 之间分隔线的宽度
 + TTY: 背景透明（清遮挡终端背景的 face 背景）、分隔线宽度清零。
   真彩 TTY 的前景色继续使用当前主题 palette。
 
@@ -350,6 +357,9 @@ self-tabline 的标签下缘横线复用同一对插值函数，故按 AGENTS.md
         (let ((graphic-p (display-graphic-p)))
           (set-frame-parameter nil 'cursor-type (if graphic-p 'bar 'box))
           (cond (graphic-p
+                 (let ((spec (font-spec :family self:font-family)))
+                   (when (find-font spec)
+                     (set-face-attribute 'default nil :font spec)))
                  (set-face-attribute 'default nil :height self:default-font-height)
                  (set-frame-parameter nil 'alpha-background self:frame-background-opacity)
                  (set-frame-parameter nil 'right-divider-width 1)
@@ -470,6 +480,7 @@ palette 取不到色时保留既有属性,不改 face。"
         ((equal string "dark") 'dark)
         (t nil)))
 
+;; Platform: linux
 (defun self/color-scheme--get-from-dbus ()
   "通过 D-Bus 获取当前 Darkman 模式。返回 `light'、`dark' 或 nil。"
   (condition-case err
@@ -484,6 +495,7 @@ palette 取不到色时保留既有属性,不改 face。"
      (message "[color-scheme] D-Bus 获取失败: %s" (error-message-string err))
      nil)))
 
+;; Platform: windows
 (defun self/color-scheme--get-from-registry ()
   "读 Windows 系统深浅色设置。返回 `light'、`dark' 或 nil。
 HKCU 的 Themes\\Personalize\\AppsUseLightTheme：1=浅色、0=深色；
@@ -579,6 +591,7 @@ HKCU 的 Themes\\Personalize\\AppsUseLightTheme：1=浅色、0=深色；
       (message "[color-scheme] Darkman 模式变化: %s" mode)
       (self/color-scheme-apply-theme new-mode))))
 
+;; Platform: linux
 (defun self/color-scheme--register-listener ()
   "注册 D-Bus 信号监听器，响应 Darkman 模式变化。"
   (condition-case err
@@ -604,6 +617,7 @@ HKCU 的 Themes\\Personalize\\AppsUseLightTheme：1=浅色、0=深色；
 ;;   D-Bus 注册成本。
 ;; - 独立 Emacs：立即初始化。启动时 selected-frame 已存在。
 
+;; Platform: gui, tty
 (defun self/color-scheme--supports-themes-p (&optional frame)
   "FRAME（默认 selected-frame）是否可呈现主题的完整前景 palette。"
   (with-selected-frame (or frame (selected-frame))
@@ -611,6 +625,7 @@ HKCU 的 Themes\\Personalize\\AppsUseLightTheme：1=浅色、0=深色；
         (and (not noninteractive)
              (>= (display-color-cells) 256)))))
 
+;; Platform: android, windows, linux
 (defun self/color-scheme--init ()
   "初始化颜色方案适配：取初始模式、应用主题、注册跟随入口。
 Linux 桌面优先 Darkman D-Bus；Windows 读注册表 AppsUseLightTheme；

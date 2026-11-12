@@ -44,8 +44,9 @@
 
 ;; ─── 字体：编辑区等宽 / 界面区 UI 字体 ──────────────────────────────
 
-(defcustom self:ide-buffer-font "Maple Mono NF CN"
-  "ide 档编辑区字体族；Zed 的 buffer font 对应物。"
+(defcustom self:ide-buffer-font self:font-family
+  "ide 档编辑区字体族；Zed 的 buffer font 对应物。
+默认与全配置主字体 `self:font-family' 一致，可单独定制。"
   :type 'string
   :group 'self-ide)
 
@@ -60,11 +61,13 @@
     tab-line tab-line-tab-current tab-line-tab-inactive)
   "随 `self:ide-ui-font' 走的中等字重 UI face 清单。")
 
+;; Platform: gui
 (defun self/ide--apply-frame-faces (&optional frame)
   "在 FRAME（缺省当前帧）上应用 ide 档字体分轨。
 字体族名不可靠时静默跳过（如用户换了机器没装字体）；TTY 帧天然忽略
-family，无需特判。self-theme 的 `self/restore-theme-presentation' 只覆写
-光标与线条颜色，不碰 family，两套定制可在同一 face 上共存。"
+family，无需特判。self-theme 的 `self/theme--apply-frame-appearance'
+先按 `self:font-family' 应用主字体与高度，本函数在其后（钩子注册顺序）
+覆写编辑区与 UI face 的 family，两套定制可在同一 face 上共存。"
   (when (display-graphic-p frame)
     (with-selected-frame (or frame (selected-frame))
       (let ((families (font-family-list)))
