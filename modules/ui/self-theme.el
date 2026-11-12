@@ -38,10 +38,11 @@
 ;;
 ;; * 颜色方案状态机*
 ;;   浅色用 `modus-operandi-tinted'、深色用 `modus-vivendi-tinted'，
-;;   桌面与 Android 共用同一套（Android 不再依赖 ef-themes）。桌面优先
-;;   跟随 Darkman 的 D-Bus 广播；Android 优先跟随系统深浅色
-;;   （`toolkit-theme'，Emacs 31+）。都不可用时读状态文件，再退到
-;;   `self:color-scheme-default-mode'。手动切换用
+;;   桌面与 Android 共用同一套（Android 不再依赖 ef-themes）。Linux
+;;   桌面优先跟随 Darkman 的 D-Bus 广播；Windows 读注册表
+;;   AppsUseLightTheme（无推送通道，仅初始化时跟随）；Android 优先
+;;   跟随系统深浅色（`toolkit-theme'，Emacs 31+）。都不可用时读状态
+;;   文件，再退 `self:color-scheme-default-mode'。手动切换用
 ;;   `self/color-scheme-toggle'（触屏底部栏「色」钮），模式写状态文件。
 ;;
 ;; 移植说明：调色板取色（`self/terminal-theme-color'）保留了源配置里对
@@ -54,7 +55,17 @@
 
 ;;; Code:
 
-(require 'dbus)
+;; D-Bus 只在 Linux 桌面跟随 Darkman 时用；Windows 构建没有 dbus 支持，
+;; 不加载（调用侧另有平台守卫）。下面两条 declare 供 Windows 环境编译时
+;; 消音（那里 dbus 不在内存里）。
+(unless (eq system-type 'windows-nt)
+  (require 'dbus))
+(declare-function dbus-get-property "dbus"
+                  (bus service path interface property))
+(declare-function dbus-register-signal "dbus"
+                  (bus service path interface signal handler))
+;; Windows 注册表读取是 w32 构建的 C 函数，其它平台编译时不可见。
+(declare-function w32-read-registry "w32fns.c" (root key name))
 
 ;; 行号显示与像素滚动所在的两个内建库在 Emacs 30 后不再随启动预载，
 ;; 但本模块要直接读写它们的变量、调用它们的 mode，故显式 require
@@ -473,6 +484,23 @@ palette 取不到色时保留既有属性,不改 face。"
      (message "[color-scheme] D-Bus 获取失败: %s" (error-message-string err))
      nil)))
 
+(defun self/color-scheme--get-from-registry ()
+  "读 Windows 系统深浅色设置。返回 `light'、`dark' 或 nil。
+HKCU 的 Themes\\Personalize\\AppsUseLightTheme：1=浅色、0=深色；
+值不存在（老版本 Windows 或未改过个性化设置）返回 nil，走后续兜底。"
+  (condition-case err
+      (let ((value (w32-read-registry
+                    'HKCU
+                    "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"
+                    "AppsUseLightTheme")))
+        (cond ((eql value 1) 'light)
+              ((eql value 0) 'dark)
+              (t nil)))
+    (error
+     (message "[color-scheme] 读取 Windows 注册表主题失败: %s"
+              (error-message-string err))
+     nil)))
+
 (defun self/color-scheme--theme-for-mode (mode)
   "返回 MODE(`light' 或 `dark')对应的主题符号,未知 MODE 返回 nil。"
   (cond ((eq mode 'dark) self:color-scheme-dark-theme)
@@ -585,12 +613,17 @@ palette 取不到色时保留既有属性,不改 face。"
 
 (defun self/color-scheme--init ()
   "初始化颜色方案适配：取初始模式、应用主题、注册跟随入口。
-桌面优先 Darkman D-Bus；Android 优先系统深浅色（`toolkit-theme'）。
-都不可用时读状态文件，再退 `self:color-scheme-default-mode'。"
+Linux 桌面优先 Darkman D-Bus；Windows 读注册表 AppsUseLightTheme；
+Android 优先系统深浅色（`toolkit-theme'）。都不可用时读状态文件，
+再退 `self:color-scheme-default-mode'。"
   (let ((initial-mode
          (cond
           (self:android-p
            (or toolkit-theme
+               (self/color-scheme--read-state)
+               self:color-scheme-default-mode))
+          ((eq system-type 'windows-nt)
+           (or (self/color-scheme--get-from-registry)
                (self/color-scheme--read-state)
                self:color-scheme-default-mode))
           (t
@@ -599,12 +632,17 @@ palette 取不到色时保留既有属性,不改 face。"
                self:color-scheme-default-mode)))))
     (self/color-scheme-apply-theme initial-mode)
     (setq self/color-scheme--initialized t)
-    (if self:android-p
-        (add-hook 'toolkit-theme-set-functions
-                  (lambda (theme)
-                    (self/color-scheme-apply-theme
-                     (if (eq theme 'dark) 'dark 'light))))
-      (self/color-scheme--register-listener))))
+    (cond
+     (self:android-p
+      (add-hook 'toolkit-theme-set-functions
+                (lambda (theme)
+                  (self/color-scheme-apply-theme
+                   (if (eq theme 'dark) 'dark 'light)))))
+     ((eq system-type 'windows-nt)
+      ;; 注册表无推送通道：初始化时跟随一次，之后用
+      ;; `self/color-scheme-toggle' 手动切换（模式写状态文件）。
+      nil)
+     (t (self/color-scheme--register-listener)))))
 
 (defun self/color-scheme--apply-for-frame (&optional frame)
   "在 FRAME 可用时补齐与主题相关的 frame 初始化。
