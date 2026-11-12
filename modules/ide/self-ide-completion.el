@@ -117,6 +117,8 @@
 (use-package kind-icon
   :after corfu
   :config
+  ;; corfu 的边栏格式器表：corfu 延迟加载，编译期不可见，就近声明。
+  (defvar corfu-margin-formatters)
   ;; Maple Mono NF CN 自带 NF 字形，kind-icon 的类型图标直接可用。
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 

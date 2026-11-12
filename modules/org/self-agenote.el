@@ -93,6 +93,27 @@
 (defvar agenote-org-directory)
 (defvar agenote-experiences-directory)
 (defvar agenote-inbox-file)
+;; C-c o k 键位表引用的命令：agenote 包延迟加载（:defer t），编译期
+;; 不可见，按跨模块引用规范就近声明全部 17 个（第三方延迟加载包的
+;; 合法守卫场景）。agenote 走私有 recipe，不能用 eval-when-compile
+;; require（编译环境不一定装了它）。
+(declare-function agenote-knowledge-archive-inbox-entry "agenote" t)
+(declare-function agenote-knowledge-browse-agenote "agenote" t)
+(declare-function agenote-knowledge-browse-human "agenote" t)
+(declare-function agenote-knowledge-capture "agenote" t)
+(declare-function agenote-knowledge-commit "agenote" t)
+(declare-function agenote-knowledge-connect "agenote" t)
+(declare-function agenote-knowledge-deduplicate "agenote" t)
+(declare-function agenote-knowledge-lint "agenote" t)
+(declare-function agenote-knowledge-memory "agenote" t)
+(declare-function agenote-knowledge-merge "agenote" t)
+(declare-function agenote-knowledge-open-inbox "agenote" t)
+(declare-function agenote-knowledge-review "agenote" t)
+(declare-function agenote-knowledge-search "agenote" t)
+(declare-function agenote-knowledge-search-by-tag "agenote" t)
+(declare-function agenote-knowledge-stats "agenote" t)
+(declare-function agenote-knowledge-touch "agenote" t)
+(declare-function agenote-knowledge-viz-open-browser "agenote" t)
 
 ;; ─── 包配置（安装与版本 pin 是 profile manifest 的职责）─────────────
 

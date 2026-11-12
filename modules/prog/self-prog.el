@@ -85,6 +85,10 @@
 (defvar self:executable-direnv)   ; envrc 注入 direnv 环境时调用的命令名
 (defvar self:executable-godot)    ; gdscript-mode 指定 Godot 解释器时的命令名
 
+;; avy 不在本档包清单（magit 等的传递依赖，实际存在），M-g j 直接引用
+;; 其命令；按 AGENTS.md §2 跨包引用用 declare-function 声明。
+(declare-function avy-goto-char-timer "avy" t)
+
 (declare-function self/bind (key target description group &rest properties)
   "声明并绑定全局 KEY 到 TARGET，归 self-keys。")
 (declare-function self/declare-binding-group (key description)

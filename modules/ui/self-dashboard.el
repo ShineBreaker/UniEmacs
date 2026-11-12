@@ -1054,7 +1054,6 @@ let 绑定请求级缓存变量,渲染结束自动丢弃,下次渲染重新扫�
                                     (projects . "nf-oct-rocket"))
           dashboard-startup-banner 'ascii
           dashboard-banner-ascii self:dashboard-banner-ascii
-          dashboard-set-navigator t
           dashboard-items '((agenda . 5) (recents . 6) (projects . 6))
           dashboard-projects-backend 'project-el
           dashboard-projects-switch-function #'project-switch-project
