@@ -53,24 +53,27 @@ glyph-check:
     #!/usr/bin/env bash
     set -euo pipefail
     # 不用 grep -q：-q 命中即退出会让 fc-list 吃 EPIPE，pipefail 下误报
-    if command -v fc-list >/dev/null && fc-list :family 2>/dev/null | grep -i maple >/dev/null; then
+    # 匹配要认准配置实际使用的家族名：只 grep "maple" 会把普通版
+    # Maple Mono（无 NF 字形）也当成目标字体，误报缺字形。
+    if command -v fc-list >/dev/null && fc-list :family 2>/dev/null | grep -i "Maple Mono NF CN" >/dev/null; then
       missing=""
       for cp in $(grep -ohE '\\u[0-9A-Fa-f]{4}' modules/*/*.el | sed 's/\\u//' | sort -u); do
-        fc-list ":charset=$cp" family 2>/dev/null | grep -i maple >/dev/null \
+        fc-list ":charset=$cp" family 2>/dev/null | grep -i "Maple Mono NF CN" >/dev/null \
           || missing="$missing U+$cp"
       done
       if [[ -n "$missing" ]]; then
-        echo "FAIL：以下码点在 Maple 字体中缺字形：$missing"
+        echo "FAIL：以下码点在 Maple Mono NF CN 中缺字形：$missing"
         exit 1
       fi
       echo "OK: 全部图标码点均有字形"
     else
-      echo "跳过（本机无 Maple 字体，跑 just font 后再验）"
+      echo "跳过（本机无 Maple Mono NF CN 字体，跑 just font 后再验）"
     fi
 
 # batch byte-compile 全部 .el：先加载完整配置再逐文件编译，否则误报
-# 未定义符号。警告与错误如实报告并整体失败（缺模块导致失败属预期，
-# 会逐个打印出来，不静默）。
+# 未定义符号（三方符号由加载进来的包消音，仓库声明债另案清理）。
+# 警告与错误如实报告并整体失败（缺模块导致失败属预期，会逐个打印，
+# 不静默）。
 compile:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -80,10 +83,29 @@ compile:
     export XDG_STATE_HOME="$HOME/state"
     export XDG_CACHE_HOME="$HOME/cache"
     mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
+    # 预检引导：对四个档各完整加载一次配置（elpaca 后端会在此步装齐
+    # 该档缺的包；guix 后端则要求先 guix environment）。加载失败必须
+    # 在这里报清楚退出——若放行到编译循环，任一三方包缺失会让
+    # byte-compile-file 中途废掉，留下没有 provide 的半截 .elc（比 .el
+    # 新，load-prefer-newer 选中它）毒化后续所有文件的配置加载，报
+    # "进程退出"而真因在最早的坏 .elc。四档全查：profiles/*.el 的包
+    # 声明按档隔离，编译 profile 文件时也按其所属档加载（见循环内）。
+    for p in minimal portable standard ide; do
+      pre=$(UNI_EMACS_PROFILE="$p" emacs --batch -q -l early-init.el -l init.el --eval '(message "PRECHECK-OK")' </dev/null 2>&1)
+      echo "$pre" | grep -q "PRECHECK-OK" || { echo "FAIL: $p 档配置预检未通过（包未就绪），编译中止。加载日志："; echo "$pre" | head -20; exit 2; }
+    done
+    # 防御历史残留：清仓库内全部 .elc，保证从源码自洽出发。
+    find . -name "*.elc" -not -path "./.sandbox*" -delete
     fail=0
     for f in early-init.el init.el core/*.el modules/*/*.el profiles/*.el; do
       echo "--- compile: $f ---"
-      out=$(emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' </dev/null 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
+      # profiles/<档>.el 按其所属档加载配置编译（包按档隔离）；其余
+      # 文件用默认档。ide 专属包只有 ide 档会话才进 load-path。
+      case "$f" in
+        profiles/*.el) prof=$(basename "$f" .el) ;;
+        *) prof="standard" ;;
+      esac
+      out=$(UNI_EMACS_PROFILE="$prof" emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' </dev/null 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
       echo "$out" | grep -q "COMPILE-DONE" || { echo "FAIL(哨兵缺失): $f"; echo "$out"; fail=1; continue; }
       warns=$(echo "$out" | grep -E "Warning|Error" | grep -v "COMPILE-DONE" || true)
       if [ -n "$warns" ]; then
@@ -218,8 +240,10 @@ icons:
 font:
     #!/usr/bin/env bash
     set -euo pipefail
-    if command -v fc-list >/dev/null && fc-list :family | grep -qi "maple"; then
-        echo "Maple 字体已安装，跳过"
+    # 只认配置实际使用的家族名：普通版 Maple Mono（无 NF 字形）装过也
+    # 不能跳过，否则 glyph-check 会拿它当目标字体误报缺字形。
+    if command -v fc-list >/dev/null && fc-list :family | grep -qi "Maple Mono NF CN"; then
+        echo "Maple Mono NF CN 已安装，跳过"
         exit 0
     fi
     command -v curl >/dev/null || { echo "需要 curl"; exit 1; }
