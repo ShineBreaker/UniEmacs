@@ -58,7 +58,13 @@
 `self/package-ensure' 按后端消费这份清单。")
 
 (defvar self:package-recipes
-  '((org-modern-indent :host github :repo "jdtsmith/org-modern-indent"))
+  '((org-modern-indent :host github :repo "jdtsmith/org-modern-indent")
+    ;; agenote 是本机私有包（monorepo 子目录），MELPA/ELPA 菜单里没有；
+    ;; 不登记 recipe 时 elpaca 报 \`Unable to determine recipe URL\`，
+    ;; C-c o k 键位全是死键。Guix 后端走 manifest.scm 的 emacs-agenote，
+    ;; 不读本表。
+    (agenote :host github :repo "ShineBreaker/agenote" :branch "main"
+             :files ("packages/agenote-el/*.el")))
   "MELPA/GNU/NonGNU 菜单里都没有的包：包名 → elpaca order 属性表。
 elpaca 找不到配方时报 \"Unable to determine recipe URL\"，在这里显式给出
 :host/:repo 即可。只作用于 elpaca 后端；Guix 后端不读本表（Guix 侧在
