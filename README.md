@@ -40,8 +40,10 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 
 ## 部署
 
-- 桌面：入口两文件（`early-init.el`、`init.el`）放 `~/.config/emacs/`，`user-emacs-directory` 重定向到本仓库。
+- 桌面：入口两文件（`early-init.el`、`init.el`）放 `~/.config/emacs/`，仓库 clone 到任意位置，再用 `UNI_EMACS_REPO` 环境变量或 `~/.config/emacs/repo-location.el`（一行 `(setq self:repo "...")`，二选一）告诉入口仓库在哪。代码经 load-path 从仓库加载，`user-emacs-directory` 保持家目录不变——重定向只发生在 Android 分支；状态落在 HOME 下的隔离目录，仓库目录保持只读。
 - Android：入口两文件复制到 Emacs 应用家目录的 `.emacs.d`（`/data/data/org.gnu.emacs/files/.emacs.d/`），仓库本体 clone 到 Termux home 的 `~/.config/emacs`；Termux 需为与 Emacs 同签名的重签版（[termux-emacs](https://github.com/ShineBreaker/termux-emacs) Releases 直接下载），完整安装流程见 `docs/mobile/README.md`。
+
+首次启动说明：桌面档（standard/ide）首次启动会经 elpaca 从 MELPA/GNU ELPA 安装约 60 个包并逐包 byte-compile，实测约 15–20 分钟（机器与网络而异），期间无输出属正常；包装完落在状态目录，之后启动秒开。中途断网/断电不怕——重跑启动会接着装。
 
 详见 `docs/architecture.md` §6。
 
