@@ -40,9 +40,17 @@ HOME=$(pwd)/.sandbox UNI_EMACS_PROFILE=minimal \
 
 ## 部署
 
-- Windows：使用指南见 [docs/windows/README.md](docs/windows/README.md)（家目录 `%APPDATA%` 坑、字体注册表安装、语法库与终端的 Windows 机制）；U 盘便携包组装见 [docs/windows/portable.md](docs/windows/portable.md)。
-- 桌面：入口两文件（`early-init.el`、`init.el`）放 `~/.config/emacs/`，仓库 clone 到任意位置，再用 `UNI_EMACS_REPO` 环境变量或 `~/.config/emacs/repo-location.el`（一行 `(setq self:repo "...")`，二选一）告诉入口仓库在哪。代码经 load-path 从仓库加载，`user-emacs-directory` 保持家目录不变——重定向只发生在 Android 分支；状态落在 HOME 下的隔离目录，仓库目录保持只读。
-- Android：入口两文件复制到 Emacs 应用家目录的 `.emacs.d`（`/data/data/org.gnu.emacs/files/.emacs.d/`），仓库本体 clone 到 Termux home 的 `~/.config/emacs`；Termux 需为与 Emacs 同签名的重签版（[termux-emacs](https://github.com/ShineBreaker/termux-emacs) Releases 直接下载），完整安装流程见 `docs/mobile/README.md`。
+**一条命令安装**（Linux / macOS / Android-Termux，需先装好 `git` 与 `emacs`）：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ShineBreaker/UniEmacs/main/install.sh | sh
+```
+
+它把仓库 clone 到 `~/.config/emacs`（桌面标准落点，入口即仓库文件、零副本零配置），Android 上另放 Termux 惯例位置并复制入口，最后跑一次首启验证。幂等，重复运行安全。装完直接 `emacs` 即可（默认 standard 档）；切档 `M-x self/set-profile`，排查 `M-x self/deploy-diagnose`。
+
+- **Windows**：PowerShell 里 `git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"` 然后启动（详见 [docs/windows/README.md](docs/windows/README.md)，含家目录 `%APPDATA%` 坑与便携包组装）。
+- **Guix 用户**：包与字体仍走 Guix（见下「依赖由谁提供」）；也可用上述安装器，后端自动检测、不冲突。
+- **高级选项**（一般用不到）：仓库放别处时设 `UNI_EMACS_REPO` 环境变量，或在家目录放 `repo-location.el`（`(setq self:repo "...")`）——二者优先级均高于默认位置。
 
 首次启动说明：桌面档（standard/ide）首次启动会经 elpaca 从 MELPA/GNU ELPA 安装约 60 个包并逐包 byte-compile，实测约 15–20 分钟（机器与网络而异），期间无输出属正常；包装完落在状态目录，之后启动秒开。中途断网/断电不怕——重跑启动会接着装。字体（Maple Mono NF CN，仓库自带 `data/fonts/` TTF 时——如便携包——离线安装）与 Windows 预编译 tree-sitter 语法库同样在首次启动时后台自动补全（`modules/base/self-bootstrap.el`，不阻塞启动，装完重启生效）；失败 24 小时内不自动重试，可随时 `M-x self/bootstrap-fonts` / `M-x self/bootstrap-grammars` 手动补。
 

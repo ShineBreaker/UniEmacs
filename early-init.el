@@ -62,6 +62,14 @@ portable → 默认 standard。")
     (when (file-directory-p (expand-file-name "core" dir))
       (setq self:repo (file-name-as-directory dir)))))
 
+;; 3b. 桌面默认位置（install.sh 的标准落点）：~/.config/emacs 本身就是
+;; 仓库本体时，入口文件即仓库文件，零副本零配置。UNI_EMACS_REPO 与
+;; repo-location.el 仍是高级覆盖手段，只是不再需要普通用户了解。
+(when (null self:repo)
+  (let ((dir (expand-file-name "~/.config/emacs/")))
+    (when (file-directory-p (expand-file-name "core" dir))
+      (setq self:repo dir))))
+
 ;; 4. Android 惯例位置（Termux 家目录下的仓库）。
 (when (and (null self:repo)
            (file-directory-p (expand-file-name

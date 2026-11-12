@@ -26,15 +26,19 @@ UniEmacs 在 Windows 上的完整使用手册：安装、部署、首次启动�
 
 ## 2. 部署配置
 
-部署形态与 Linux 桌面一致（见主 README「部署」节）：**两个入口副本 +
-仓库本体**。
+**最简路径（推荐）**：仓库直接 clone 进 Emacs 家目录，入口即仓库文件，
+零副本零配置：
 
-```bash
-git clone https://github.com/ShineBreaker/UniEmacs ~/UniEmacs
+```powershell
+git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 ```
 
-把仓库根下的 `early-init.el` 与 `init.el` 复制到 Emacs 家目录的
-`.emacs.d/`，再告诉入口仓库在哪（二选一）：
+（设过 `HOME=C:\Users\<你>` 的话用 `~/.emacs.d`；early-init 的「本文件
+所在目录」解析自动命中仓库根。）
+
+**分体路径（仓库放别处时）**：clone 到任意目录，再把仓库根下的
+`early-init.el` 与 `init.el` 复制到 Emacs 家目录的 `.emacs.d/`，然后
+二选一告诉入口仓库在哪：
 
 - 环境变量 `UNI_EMACS_REPO=C:\Users\<你>\UniEmacs`；
 - 或在 `.emacs.d/` 放 `repo-location.el`，内容一行：

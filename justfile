@@ -109,10 +109,19 @@ compile:
       esac
       out=$(UNI_EMACS_PROFILE="$prof" emacs --batch -q -l early-init.el -l init.el --eval "(byte-compile-file \"$f\")" --eval '(message "COMPILE-DONE")' </dev/null 2>&1) || { echo "FAIL(进程退出): $f"; echo "$out"; fail=1; continue; }
       echo "$out" | grep -q "COMPILE-DONE" || { echo "FAIL(哨兵缺失): $f"; echo "$out"; fail=1; continue; }
+      # 警告只认「正在编译的文件自身」：加载配置会触发 elpaca 后台
+      # byte-compile 第三方包（如 arei），它们的警告路径与 $f 不同，
+      # 不算到本文件头上；但仍原样打印，便于发现上游包的问题。
       warns=$(echo "$out" | grep -E "Warning|Error" | grep -v "COMPILE-DONE" || true)
+      ownwarns=""
       if [ -n "$warns" ]; then
+        ownwarns=$(echo "$warns" | grep -F "$f" || true)
+        others=$(echo "$warns" | grep -vF "$f" || true)
+        [ -n "$others" ] && echo "note: 第三方包警告（不影响判定）：$others"
+      fi
+      if [ -n "$ownwarns" ]; then
         echo "FAIL(警告): $f"
-        echo "$warns"
+        echo "$ownwarns"
         fail=1
       else
         echo "OK: $f"

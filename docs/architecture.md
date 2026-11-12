@@ -180,7 +180,7 @@ self-package 检测顺序（self/package--guix-emacs-p，任一命中即 guix）
 
 ## 6. 部署模型
 
-- **桌面**：仓库 clone 到任意位置；`~/.config/emacs/`（或 `~/.emacs.d/`）放 `early-init.el` + `init.el` 两个入口副本（或软链）；仓库位置用 `UNI_EMACS_REPO` 环境变量或家目录下 `repo-location.el`（`(setq self:repo "...")`，需用户自建的一行文件）告知入口。代码经 load-path 从仓库加载，桌面**不**重定向 `user-emacs-directory`（重定向只在 Android 分支发生），状态统一进 `self:var-directory`，仓库保持只读源码身份。Guix 继续管包。
+- **桌面（标准路径）**：`install.sh` 把仓库 clone 到 `~/.config/emacs/` 本身——入口即仓库文件，零副本零配置（early-init 解析第 3b 优先级直接命中）。**分体路径**：仓库 clone 到任意位置，`~/.config/emacs/`（或 `~/.emacs.d/`）放 `early-init.el` + `init.el` 两个入口副本（或软链），仓库位置用 `UNI_EMACS_REPO` 环境变量或家目录下 `repo-location.el`（`(setq self:repo "...")`）告知入口。代码经 load-path 从仓库加载，桌面**不**重定向 `user-emacs-directory`（重定向只在 Android 分支发生），状态统一进 `self:var-directory`，仓库保持只读源码身份。Guix 继续管包。
 - **Android**：入口两文件复制到 Emacs 的 `~/.emacs.d`，仓库 clone 在 Termux home，重定向后全部从仓库加载——沿用在真机上已验证的转发模型；Termux 需为与 Emacs 同签名的重签版，完整安装流程与真机验证清单见 `docs/mobile/README.md`。
 - **状态隔离**：缓存/持久化统一进 `self:var-directory`（XDG state 语义），仓库目录保持只读源码身份。
 - **手机基建**：与 Emacs 同签名的 Termux 系 APK（主程序 + 插件）由独立仓库 [termux-emacs](https://github.com/ShineBreaker/termux-emacs) 产出（官方公开密钥重签 + CI 自动发布）；`early-init.el` 的 Android 分支把 Termux bin 注入 `exec-path`/`PATH`（Emacs 才能执行 Termux 内的 git/rg/sqlite3）。手机安装与验证见 `docs/mobile/README.md`。
