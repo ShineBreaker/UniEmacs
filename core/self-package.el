@@ -309,6 +309,45 @@ defcustom，`elpaca-builds-directory' 等是由它派生的 defvar；let 绑定
         (let ((load-source-file-function nil))
           (load "./elpaca-autoloads"))))))
 
+(defun self/package--clone-melpa-recipes (path)
+  "`elpaca-menu-melpa--clone' 的替代实现：拉 MELPA 配方仓库到 PATH。
+背景：MELPA 仓库默认分支 2025 年由 master 改为 main，而 elpaca 0.2.x
+的 `elpaca-menu-melpa--clone' 把分支名硬编码为 master，全新机器首次
+启动会在 \"Downloading MELPA recipes...\" 处报
+\"Unable to clone MELPA: ... 无法找到远程引用 master\"，portable /
+standard / ide 三档全部起不来。上游修复后删掉本函数与调用处的
+advice 即可，不影响其它逻辑。
+与上游实现的差异只有两处：
+1. 分支名 master → main（pull / checkout / set-upstream 三处）；
+2. 失败时先删掉半成品目录再报错。上游 make-directory 先于 git 命令，
+   克隆失败会留下空目录，之后 `file-exists-p' 判存在跳过克隆，改报
+   \"Opening directory .../melpa/recipes\"，且每次启动都复现。"
+  (let ((default-directory path))
+    (make-directory path t)
+    (make-directory (expand-file-name ".git/info/" path) t)
+    (message "Downloading MELPA recipes...")
+    (let* ((process-environment (append '("GIT_CONFIG_SYSTEM=/dev/null"
+                                          "GIT_CONFIG_GLOBAL=/dev/null")
+                                        process-environment))
+           (processes
+            (list
+             (elpaca-process-call "git" "init")
+             (elpaca-process-call "git" "config" "core.sparseCheckout" "true")
+             (with-temp-buffer
+               (insert "recipes")
+               (append-to-file (point-min) (point-max)
+                               (expand-file-name ".git/info/sparse-checkout" path)))
+             (elpaca-process-call "git" "remote" "add" "origin" "https://github.com/melpa/melpa.git")
+             (elpaca-process-call "git" "pull" "--depth=1" "origin" "main")
+             (elpaca-process-call "git" "checkout" "main")
+             (elpaca-process-call "git" "branch" "--set-upstream-to" "origin/main" "main")))
+           (err (car (cl-remove-if #'zerop (delq nil processes) :key #'car))))
+      (if err
+          (progn
+            (ignore-errors (delete-directory path t))
+            (error "Unable to clone MELPA: %S" err))
+        (message "Downloading MELPA recipes...100%%")))))
+
 (defun self/package--ensure-elpaca (pkgs)
   "elpaca 后端：bootstrap 后逐个包入队，处理队列并等待完成。
 显式调 elpaca-process-queues + elpaca-wait，不依赖 after-init-hook，
@@ -318,6 +357,21 @@ eval 拼调用，这是官方用法的动态版，不是炫技。"
   (self/package--apply-elpa-mirror)
   (self/package--bootstrap-elpaca)
   (require 'elpaca)
+  ;; MELPA 配方仓库分支 master→main 的兼容（见函数 docstring）。
+  ;; advice 挂在符号上：elpaca-menu-melpa.el 此时可能尚未加载（走
+  ;; autoload），之后加载重定义函数时 advice 依然生效。
+  (advice-add 'elpaca-menu-melpa--clone :override
+              #'self/package--clone-melpa-recipes)
+  ;; 自愈：清掉上次失败留下的半成品 MELPA 配方目录。elpaca 菜单代码
+  ;; 只在目录不存在时才克隆（file-exists-p 判存在即跳过），而克隆失败
+  ;; 会留下只有 .git 的空目录——不清理的话以后每次启动都改报
+  ;; "Opening directory .../melpa/recipes"，且永远不会自愈（升级
+  ;; 本修复前失败过的机器，靠这段恢复）。
+  (let ((melpa-cache (expand-file-name "melpa/" elpaca-cache-directory)))
+    (when (and (file-directory-p melpa-cache)
+               (not (file-directory-p (expand-file-name "recipes/"
+                                                       melpa-cache))))
+      (ignore-errors (delete-directory melpa-cache t))))
   ;; 强制整仓浅克隆（--depth=1）：elpaca 默认 :depth treeless 走
   ;; --filter=tree:0 部分克隆，Android/Termux 的 git 在此路径下源码
   ;; 目录不落盘，主 elisp 文件找不到，包全数 failed。整仓浅克隆体积
