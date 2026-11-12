@@ -45,6 +45,7 @@
 (declare-function treemacs-get-local-window "treemacs")
 (declare-function treemacs-add-and-display-current-project "treemacs")
 (declare-function treemacs-load-theme "treemacs")
+(declare-function treemacs-git-mode "treemacs-async" (&optional arg))
 
 ;; ─── Treemacs 配置 ─────────────────────────────────────────────────
 ;; 这一组 defcustom 都是「先赋值、后由 treemacs 启动时读取」的模式：
@@ -64,7 +65,6 @@
   :custom
   (treemacs-width 30)                    ; Zed 侧栏 ≈ 240px，约 30 列
   (treemacs-position 'left)
-  (treemacs-git-mode 'deferred)          ; 异步 Git 状态，不卡打开
   (treemacs-filewatch-mode nil)          ; inotify 实例紧张，关
   (treemacs-follow-mode t)               ; 树跟随当前文件
   (treemacs-tag-follow-mode t)           ; 树内展开当前文件符号
@@ -82,6 +82,11 @@
   (treemacs-user-mode-line-format 'none)
   (treemacs-recenter-after-file-follow 'always)
   :config
+  ;; treemacs-git-mode 不能走 :custom：custom-set-minor-mode 以 arg=1
+  ;; 调 mode 函数，treemacs--git-mode 无先值时落进 call-interactively 的
+  ;; completing-read（batch 直接 EOF，交互式启动弹问）。传符号直命中
+  ;; memq 分支完成 setup，与 indent-guide 那条注释同一个坑。
+  (treemacs-git-mode 'deferred)          ; 异步 Git 状态，不卡打开
   ;; nerd-icons 主题须在 treemacs 本体加载后切换。
   (require 'treemacs-nerd-icons)
   (treemacs-load-theme "nerd-icons"))
