@@ -1,6 +1,6 @@
 # UniEmacs 架构设计
 
-> 版本 v0.4（2026-10-19）。改架构先改本文档与 AGENTS.md。
+> 版本 v0.5（2026-11-12）。改架构先改本文档与 AGENTS.md。
 
 ## 1. 目标与四档语义
 
@@ -12,6 +12,8 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 | `portable` | Android 原生 Emacs 触屏                        | 触屏交互、tool-bar、移动端 Org/Roam、阅读                                                                                                    | elpaca 管理       |
 | `standard` | 桌面全量：增强的完整 Emacs 体验                | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
 | `ide`      | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | standard 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame + **鼠标交互增强层**                                                      | Guix profile 管理 |
+
+第三方包后端由**环境**决定，不是档位：Guix 环境走 profile 校验（`just` 只验不装），非 Guix 环境（Windows / 通用 Linux / Android）经 elpaca 安装——表中 standard/ide 的「Guix profile 管理」仅指 Guix 环境下的形态，详见 §4。
 
 四档共享 `core/`（基础设施）与 `modules/`（全部功能模块）。档间差异只体现在 `profiles/<档>.el` 勾选了哪些模块、声明了哪些包。
 
@@ -32,19 +34,19 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 
 ```
 UniEmacs/
-├── early-init.el         # 入口①：启动期优化 + 平台常量 + profile 解析
+├── early-init.el         # 入口①：启动期优化 + 仓库定位 / Android 重定向 + profile 解析
 ├── init.el               # 入口②：引导加载
 ├── core/
 │   ├── self-lib.el       #   平台谓词、路径常量、profile 解析结果、加载辅助
 │   └── self-package.el   #   包后端抽象（guix 校验 / elpaca 安装）
 ├── modules/              # 功能模块按域归档（require 语义与目录无关）
-│   ├── base/             #   三档共用底座：session / keys / editing / completion
+│   ├── base/             #   共用底座：session / keys / editing / completion / bootstrap
 │   ├── ui/               #   视觉层：theme / modeline / tabline / windowing / dashboard / help-zh
 │   ├── touch/            #   触屏层：glyph / ui-touch / touch / bar / markdown / reading / misc
 │   ├── org/              #   Org 知识栈：org / roam / agenote
-│   ├── prog/             #   编程栈：compat / prog / langs / jupyter / project / vcs / terminal
-│   ├── desktop/          #   桌面运行环境：daemon / apps / keys-desktop
-│   └── ide/              #   IDE 档层：chrome / panel / completion / blame
+│   ├── prog/             #   编程栈：prog / langs / jupyter / project / vcs / terminal
+│   ├── desktop/          #   桌面运行环境：daemon / apps / discover / keys-desktop
+│   └── ide/              #   IDE 档层：chrome / panel / slots / completion / mouse / blame
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
@@ -53,7 +55,9 @@ UniEmacs/
 ├── data/                 # 静态数据：翻译表、图标资产
 ├── scripts/              # 运维脚本（验证脚本）
 ├── docs/                 # 设计文档（本文件等）
-│   └── mobile/           #   手机部署指南
+│   ├── mobile/           #   手机部署指南
+│   ├── windows/          #   Windows 使用与便携包指南
+│   └── platform-matrix.md #  平台分支矩阵
 ├── justfile              # 本机命令入口
 └── manifest.scm          # Guix 开发环境声明（direnv use guix）
 ```
@@ -64,10 +68,11 @@ UniEmacs/
 emacs
  └─ early-init.el          ① 通用优化：GC 阈值拉高、file-name-handler-alist 置空、
    │                          frame 参数抑制、package-enable-at-startup=nil
-   │                        ② 定义平台常量（不依赖 core）：self:android-p 等
+   │                        ② 仓库定位 + Android 重定向：确定 self:repo；Android 部署把
+   │                          user-emacs-directory 重定向到仓库、Termux bin 注入 exec-path
    │                        ③ 解析 self:profile：UNI_EMACS_PROFILE → 家目录 profile.el
-   │                           → android→portable → ide
-   │                        ④ （Android 部署形态）user-emacs-directory 重定向到仓库
+   │                           → android→portable → 默认 standard
+   │                          （平台常量 self:android-p 等在 core/self-lib.el 定义，非此处）
  └─ init.el
    ├─ load-path += core/ modules/<七域>/ profiles/
    ├─ (require 'self-lib)          路径常量、谓词、self/load-profile
@@ -82,8 +87,10 @@ emacs
 ## 4. 包后端抽象
 
 ```
-self-package 检测顺序：
-  EMACSLOADPATH 存在 / locate-library 命中 Guix site-lisp → backend=guix
+self-package 检测顺序（self/package--guix-emacs-p，任一命中即 guix）：
+  ① 可执行文件真实路径在 /gnu/store 下（强信号）
+  ② locate-library 命中 guix-emacs 库（强信号）
+  ③ EMACSLOADPATH 非空（弱兜底：别的工具也会设它）→ backend=guix
     └─ 行为：逐个验证 profile 声明包可 locate，缺失 push 警告列表，启动末统一提示
   其余环境（Android/通用发行版）→ backend=elpaca
     └─ 行为：bootstrap elpaca（镜像可配）→ 对声明包排队安装 → elpaca-wait 收口
@@ -95,13 +102,14 @@ self-package 检测顺序：
 
 ## 5. 模块划分方案
 
-移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫。`modules/` 按域分七个子目录归档——目录只是分类归属，`require 'self-<名>` 的语义与目录无关；**共享度优先**：同一概念只允许一处定义（变量真相源归 `core/self-lib.el` 或首个消费模块，其余文件一律不带值 `defvar` / `declare-function`），重复实现一经发现立即收敛。
+移植原则是**功能内聚**：一份配置中的同一功能域尽量进同一个模块，平台差异在模块内用谓词守卫（全量分支矩阵与 `;; Platform:` 标记公约见 [platform-matrix.md](platform-matrix.md)）。`modules/` 按域分七个子目录归档——目录只是分类归属，`require 'self-<名>` 的语义与目录无关；**共享度优先**：同一概念只允许一处定义（变量真相源归 `core/self-lib.el` 或首个消费模块，其余文件一律不带值 `defvar` / `declare-function`），重复实现一经发现立即收敛。
 
-### 5.1 `modules/base/` —— 三档共用底座（minimal 也加载）
+### 5.1 `modules/base/` —— 共用底座（minimal 加载除 self-bootstrap 外的全部）
 
 | 模块             | 内容                                             | 来源域              |
 | ---------------- | ------------------------------------------------ | ------------------- |
 | `self-session`   | 持久化（recentf/savehist/saveplace）、失焦自动保存、auto-revert、备份策略 | startup/core-behavior |
+| `self-bootstrap` | 首次启动后台补全字体/语法库（minimal 刻意不含外部命令，不加载）；just font/grammars 的单一真相源 | justfile 配置依赖组 |
 | `self-editing`   | 基础编辑增强：缩进、DWIM、pair、内置补全默认值     | editing（基础子集） |
 | `self-keys`      | `self/bind` 键位声明机制 + 顶层前缀声明          | keys-completion（机制层） |
 | `self-completion`| 内置补全栈（桌面端全内建，vertico 栈在 Android 分支）| completion（两端合并）|
@@ -110,18 +118,18 @@ self-package 检测顺序：
 
 | 模块             | 档位               | 内容                                             |
 | ---------------- | ------------------ | ------------------------------------------------ |
-| `self-theme`     | standard, portable | modus 主题 + D-Bus 深浅色 + 字体                 |
-| `self-modeline`  | standard           | 桌面自研 modeline（缓存/分段/调度）              |
-| `self-tabline`   | standard           | per-frame buffer 标签                            |
-| `self-windowing` | standard           | display-buffer 路由、窗口面板布局                |
-| `self-dashboard` | standard, portable | 欢迎屏（两端合并，平台段守卫）                   |
-| `self-help-zh`   | standard, portable | 帮助系统/右键菜单/which-key 中文化（含触屏分页） |
+| `self-theme`     | standard, portable, ide | modus 主题 + D-Bus 深浅色 + 字体                 |
+| `self-modeline`  | standard, ide           | 桌面自研 modeline（缓存/分段/调度）              |
+| `self-tabline`   | standard, ide           | per-frame buffer 标签                            |
+| `self-windowing` | standard, ide           | display-buffer 路由、窗口面板布局                |
+| `self-dashboard` | standard, portable, ide | 欢迎屏（两端合并，平台段守卫）                   |
+| `self-help-zh`   | standard, portable, ide | 帮助系统/右键菜单/which-key 中文化（含触屏分页） |
 
 ### 5.3 `modules/touch/` —— 触屏层（portable 为主）
 
 | 模块            | 档位               | 内容                                                    |
 | --------------- | ------------------ | ------------------------------------------------------- |
-| `self-glyph`    | portable, standard | 图标资产加载、NF 字形降级唯一入口                       |
+| `self-glyph`    | portable, standard, ide | 图标资产加载、NF 字形降级唯一入口                       |
 | `self-ui-touch` | portable           | 移动端 UI（mode-line 按钮、配色状态、Android 落盘兜底） |
 | `self-touch`    | portable           | 触屏交互（tap/选择/键盘联动、存储权限）                 |
 | `self-bar`      | portable           | tool-bar / modifier-bar 按钮管线                        |
@@ -133,29 +141,29 @@ self-package 检测顺序：
 
 | 模块           | 档位               | 内容                                    |
 | -------------- | ------------------ | --------------------------------------- |
-| `self-org`     | standard, portable | org 基础、capture 模板装配、agenda 基线 |
-| `self-roam`    | standard, portable | org-roam（Android 降额策略内守卫）      |
-| `self-agenote` | standard           | agenote 知识库适配                      |
+| `self-org`     | portable, standard, ide | org 基础、capture 模板装配、agenda 基线 |
+| `self-roam`    | portable, standard, ide | org-roam（Android 降额策略内守卫）      |
+| `self-agenote` | standard, ide           | agenote 知识库适配                      |
 
 ### 5.5 `modules/prog/` —— 编程与项目栈（standard 为主）
 
 | 模块            | 档位          | 内容                                                                            |
 | --------------- | ------------- | ------------------------------------------------------------------------------- |
-| `self-prog`     | standard      | tree-sitter、eglot、flymake、apheleia 格式化                                    |
-| `self-langs`    | standard      | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等）与 arei Scheme 染色    |
+| `self-prog`     | standard, ide | tree-sitter、eglot、flymake、apheleia 格式化                                    |
+| `self-langs`    | standard, ide | 各语言 mode 注册（fish/kdl/nix/zig/gdscript/markdown 等）与 arei Scheme 染色    |
 | `self-jupyter`  | standard, ide | Jupyter 内核 REPL（C-c j 前缀）与 Org Babel `jupyter-python` 源码块；全栈懒加载 |
-| `self-project`  | standard      | project.el、目录树、项目导航                                                    |
-| `self-vcs`      | standard      | magit/forge/diff-hl、git 状态展示                                               |
-| `self-terminal` | standard      | ghostel 终端面板 + GIT_EDITOR 导出                                              |
+| `self-project`  | standard, ide | project.el、目录树、项目导航                                                    |
+| `self-vcs`      | standard, ide | magit/forge/diff-hl、git 状态展示                                               |
+| `self-terminal` | standard, ide | ghostel 终端面板 + GIT_EDITOR 导出                                              |
 
 ### 5.6 `modules/desktop/` —— 桌面运行环境（standard 为主）
 
 | 模块                | 档位          | 内容                                                                                                                               |
 | ------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `self-daemon`       | standard      | server-mode、daemon 预热、client 帧行为                                                                                            |
-| `self-apps`         | standard      | agent-shell / telega / guix / newsticker 等应用集成                                                                                |
+| `self-daemon`       | standard, ide | server-mode、daemon 预热、client 帧行为                                                                                            |
+| `self-apps`         | standard, ide | agent-shell / telega / guix / newsticker 等应用集成                                                                                |
 | `self-discover`     | standard, ide | Emacs 独门特性发现层：窄化/寄存器/矩形/键盘宏/间接缓冲/Sexp/Ediff/hi-lock/递归 minibuffer 的内建键位再声明与行为开关（零三方依赖） |
-| `self-keys-desktop` | standard      | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys                                                                |
+| `self-keys-desktop` | standard, ide | 桌面键位表（C-hjkl 移动、IDE 直达键、面板切换）；机制层在 self-keys                                                                |
 
 ### 5.7 `modules/ide/` —— ide 档专属层（standard 之上的覆写/新增）
 
@@ -182,7 +190,7 @@ self-package 检测顺序：
 | 阶段 | 内容                                                                            | 产出                 |
 | ---- | ------------------------------------------------------------------------------- | -------------------- |
 | P0   | 规矩与环境（本文档、AGENTS、manifest.scm）                                      | 可工作的开发环境     |
-| P1   | core 脚手架（early-init/init/self-lib/self-package）+ 三 profile 骨架           | minimal 档冒烟可启动 |
+| P1   | core 脚手架（early-init/init/self-lib/self-package）+ 四 profile 骨架           | minimal 档冒烟可启动 |
 | P2   | 底座模块移植（session/editing/keys/completion）                                 | minimal 档功能完整   |
 | P3   | 移动端模块移植（glyph/ui-touch/touch/bar/org/roam/dashboard/reading/markdown）  | portable 档全绿      |
 | P4   | 桌面模块抽取（appearance/programming/projects/org-knowledge/system-tools 8 域） | standard 档全绿      |
@@ -198,7 +206,7 @@ Org 笔记路径族（`self:org-directory` 及其派生值 Roam / 收件箱 / �
 
 ### 机制
 
-- **命令**：`M-x self/org-relocate`（portable/desktop/ide 档绑在 `C-c o d`）。
+- **命令**：`M-x self/org-relocate`（portable/standard/ide 档绑在 `C-c o d`）。
   参数取新根目录，前缀参数 `C-u` 表示把现有内容一并搬过去；跨设备搬迁
   失败逐个警示但不中断。命令会补齐骨架目录，无需重启，也无需改仓库源码。
 - **持久化**：写 `self:org-config-file`（`self:etc-directory` 下的
