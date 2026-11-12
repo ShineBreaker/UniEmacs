@@ -26,6 +26,7 @@
 (unless (and (boundp 'self:profile) self:profile)
   ;; early-init 未运行的兜底：按平台推断，与 early-init 的回退逻辑一致，
   ;; 避免 Android 入口副本缺失时误装桌面档。
+  ;; Platform: android
   (setq self:profile (if (eq system-type 'android) 'portable 'standard)))
 
 ;; ─── 部署诊断（不依赖 modules，require 失败后仍可用） ─────────────
@@ -34,6 +35,7 @@
 ;; 守卫（跨构建变量/函数的合法场景）。
 (declare-function android-external-storage-available-p "androidfns.c")
 
+;; Platform: android
 (defun self/deploy--conclusion ()
   "返回针对当前状态的诊断结论字符串。"
   (cond
@@ -51,6 +53,7 @@
     "部署链路正常。")
    (t "桌面环境：代码从 self:repo 加载，状态落在 HOME 下的隔离目录，仓库目录保持只读。")))
 
+;; Platform: android
 (defun self/deploy-diagnose ()
   "弹出 buffer 显示部署链路诊断与结论。
 不依赖 modules，require 失败后仍可调用排查。"
@@ -118,6 +121,7 @@ native-comp 可用：      %S
     (pop-to-buffer buf)))
 
 ;; ─── 入口：Android 转发或本体 ─────────────────────────────────────
+;; Platform: android
 
 (if (and self:repo
          (eq system-type 'android)

@@ -25,6 +25,7 @@
 
 (declare-function server-running-p "server")
 
+;; Platform: android
 (when self:android-p
   (require 'server)
   (unless (server-running-p) (server-start)))

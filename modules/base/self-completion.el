@@ -9,7 +9,7 @@
 ;; Packages: vertico, orderless, marginalia, consult, embark, embark-consult,
 ;;           corfu, cape（全部只出现在 Android 平台分支里）
 ;;
-;; 三档共用的补全基座全部是 Emacs 内建能力：flex 模糊匹配 + 行内幽灵文本
+;; 四档共用的补全基座全部是 Emacs 内建能力：flex 模糊匹配 + 行内幽灵文本
 ;; （completion-preview.el，Emacs 30 起随 Emacs 分发）+ isearch 的 IDE 化
 ;; 交互 + aspell 后端 + 回显行降噪。源配置这一整节本来就声明「完全基于
 ;; Emacs 30 与 31 原生内置的补全机制，不依赖任何第三方补全框架」，故
@@ -66,6 +66,7 @@
 ;; flex 模糊匹配负责「mbl → magit-blame」这类跳跃式输入，basic 前缀匹配
 ;; 兜底保证任何合法前缀都能命中；触屏换 orderless（子序列匹配，长候选列表
 ;; 里误排更少）。completions-sort 用 historical 让常用命令自然浮到顶部。
+;; Platform: android
 (setq completion-styles (if self:android-p '(orderless basic) '(flex basic))
       completions-sort 'historical)
 
@@ -221,6 +222,7 @@ isearch 仍处活跃状态时把种子写进搜索串。直接调 `(isearch-forw
 ;; 触屏没有物理键盘：候选列表要能滚动、要能点选、要点选后不弹系统键盘。
 ;; vertico + orderless + marginalia + consult + embark + corfu + cape 这一
 ;; 套就是为此组合的，桌面端用上面的内建方案即可，故整块按平台谓词守卫。
+;; Platform: android
 (when self:android-p
   (use-package vertico
     :init (vertico-mode)

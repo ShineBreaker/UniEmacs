@@ -446,6 +446,7 @@ org 目录回退到私有目录）返回空表，让调用方显示「暂无文�
                       (file-attribute-modification-time (cdr a)))))
              n))))
 
+;; Platform: gui
 (defun self/dashboard--icon (code)
   "GUI 返回 NF 码点 CODE 的图标串，tty 返回空串。"
   (and (display-graphic-p)
@@ -536,6 +537,7 @@ org 目录回退到私有目录）返回空表，让调用方显示「暂无文�
   (interactive)
   (call-interactively #'self/show-help))
 
+;; Platform: gui, android
 (defun self/dashboard--nav-buttons ()
   "返回 navigator 按钮数据表：(图标 标题 帮助 动作) 四元组列表。
 宽屏图形 frame（非 Android）走桌面端四枚（计时 / 书签 / 知识库 / 快捷键，
@@ -598,6 +600,7 @@ COMMAND 是命令符号，而 widget 以 (widget EVENT) 两参调用它，所以
 
 ;; ─── 存储权限警示（官方 splash 提示的 dashboard 承接） ────────────
 
+;; Platform: android
 (defun self/dashboard-insert-permission-notice ()
   "Android 存储权限未授予时插入可点警示行，已授予/非 Android 不输出。"
   (when (and self:android-p
@@ -793,6 +796,7 @@ Emacs 的 `char-width' 把 box-drawing（─ ═ 等，East Asian Ambiguous）
                        (char-width ch))))))
     w))
 
+;; Platform: gui, tty
 (defun self/dashboard--line-width (str)
   "STR 的显示列数：GUI 走插件的像素量法，TTY 走终端列宽校正。
 GUI 下 `dashboard-str-len' 直接量像素，与真实渲染一致；TTY 下它退
@@ -871,6 +875,7 @@ today:\" → \"待办\"），量 buffer 原文会多算出英文长名，三栏�
                   (progn (forward-line 1) t))
         (self/dashboard--center-line body-width)))))
 
+;; Platform: android
 (defun self/dashboard--decorate-headings (&optional window)
   "渲染后装饰标题行、右贴快捷键、行间距与板块分割线,最后分组居中。
 标题行与分割线补齐到版心宽;只从 `self/dashboard--refresh-in-window' 与
@@ -1014,6 +1019,7 @@ let 绑定请求级缓存变量,渲染结束自动丢弃,下次渲染重新扫�
 (setf (alist-get 'roam dashboard-item-generators)
       #'self/dashboard-insert-roam)
 
+;; Platform: android
 (if self:android-p
     (progn
       ;; ─── Android：整条视觉层自绘 ──────────────────────────────

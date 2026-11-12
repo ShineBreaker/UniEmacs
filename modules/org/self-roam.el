@@ -132,6 +132,7 @@
 (use-package emacsql-sqlite
   :defer t)
 
+;; Platform: android
 (when self:android-p
   (unless (or (and (fboundp 'sqlite-available-p) (sqlite-available-p))
               (executable-find "sqlite3"))
@@ -140,6 +141,7 @@
 
 ;; ─── org-roam ──────────────────────────────────────────────────────
 
+;; Platform: android
 (use-package org-roam
   :defer t
   :commands (org-roam-node-find org-roam-node-insert org-roam-buffer-toggle)

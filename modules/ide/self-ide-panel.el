@@ -239,6 +239,7 @@ buffer 满足 `self/ide--layout-context-p' 的窗口；都没有返回 nil。
           ((get-buffer-window buf (selected-frame)) nil)
           (t (display-buffer buf)))))
 
+;; Platform: gui
 (defun self/ide--startup-layout ()
   "当前帧上下文值得时摆出 Zed 式三槽布局：左 Treemacs、底槽终端、编辑区。
 GUI 帧且 `self/ide--layout-context-p' 成立才动作；每帧最多执行一次

@@ -110,6 +110,7 @@ manifest.scm 登记 spec 名，如 emacs-org-modern-indent）。")
   "guix 后端下 locate 不到的包名表，供启动后自查。")
 
 ;; ─── 后端检测 ────────────────────────────────────────────────────
+;; Platform: guix
 
 (defun self/package--guix-emacs-p ()
   "判断当前 Emacs 是否来自 Guix 安装。决定包后端。
@@ -145,6 +146,7 @@ Emacs profile 生成一份）。
     (nreverse result)))
 
 ;; ─── guix 后端：只校验 ───────────────────────────────────────────
+;; Platform: guix
 
 (defun self/package--spec-prefixes (name)
   "把 \"a-b-c\" 拆成 (\"a-b-c\" \"a-b\" \"a\") 前缀候选。

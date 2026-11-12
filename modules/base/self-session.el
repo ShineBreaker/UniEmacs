@@ -4,7 +4,7 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;; 三档共享的会话底座：让 Emacs 进程内的状态（输入历史、最近文件、光标
+;; 四档共享的会话底座：让 Emacs 进程内的状态（输入历史、最近文件、光标
 ;; 位置、书签）落盘到仓库外的状态目录，把备份与自动保存同样赶出源码树，
 ;; 切换窗口时静默保存改过的本地文件，并在文件被外部改写时自动跟随磁盘。
 ;; 全部内建包，零第三方依赖。
@@ -20,7 +20,7 @@
 ;;   进程而非会话，属 core/self-lib.el。
 ;; · gcmh 与 no-littering——第三方包，与「minimal 档不得声明任何第三方包」
 ;;   冲突，故写在 profiles/standard.el 尾部作档内配置。本文件因此用纯 setq
-;;   手工完成同样的目录隔离，三档都拿得到，standard 档的 no-littering 只是把
+;;   手工完成同样的目录隔离，四档都拿得到，standard 档的 no-littering 只是把
 ;;   同一组目录再声明一遍（两边取值同源，不会打架）。
 ;; · `server-mode'——属 daemon 启动路径，在 self-daemon.el。
 ;;

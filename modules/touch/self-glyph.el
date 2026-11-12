@@ -74,6 +74,7 @@
   "tty 下宿主终端是否带 Nerd Font 字形（tmux 校验对齐真机宽度模型用，
 经环境变量 UNI_EMACS_NF_TTY=1 开启）。")
 
+;; Platform: gui, tty
 (defun self/glyph-nf-p ()
   "当前环境是否按 NF 字形渲染（GUI 恒是；tty 由 `self:glyph-nf-tty' 开）。"
   (or (display-graphic-p) self:glyph-nf-tty))

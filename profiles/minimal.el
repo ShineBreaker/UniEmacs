@@ -1,7 +1,7 @@
 ;;; minimal.el --- minimal 档：纯内建底座 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; 三档中最轻的一档：只要 Emacs 内建功能，不声明任何第三方包，对标
+;; 四档中最轻的一档：只要 Emacs 内建功能，不声明任何第三方包，对标
 ;; nano 与未配置 nvim 的功能水平与可调试性。跑在任何能启动 Emacs 的
 ;; 地方，是冒烟测试与故障排查的基准。
 ;;

@@ -630,6 +630,7 @@ flymake 计数、project 缓存都依赖该上下文）。左半有短消息时�
 
 ;; ─── 刷新调度与底栏集成 ───────────────────────────────────────────
 
+;; Platform: gui
 (defun self/modeline-refresh (&optional frame)
   "把状态行写入 `self/modeline--minibuffer'，内容有变化才重写并置位 redisplay。
 
@@ -714,6 +715,7 @@ daemon 无键盘输入时空闲周期无限长，idle timer 实际等同失效�
 
 ;; ─── 消息接管与事件防御 ───────────────────────────────────────────
 
+;; Platform: tty
 (defun self/modeline--tooltip-hide (orig &rest args)
   "TTY 下 tooltip-hide 的 `(message \"\")` 在无消息可清时跳过。
 GUI 分支、有消息可清、或 minibuffer 活动时照原样执行。

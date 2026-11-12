@@ -119,6 +119,7 @@
       (setq tool-bar-map (cons 'keymap (reverse (cdr tool-bar-map))))
       (tool-bar-mode 1))))
 
+;; Platform: android
 (when self:android-p
   (self/bar--install)
   ;; 挂在被调方而不是调用方：套主题的入口不止一处（切换命令、D-Bus 回调、

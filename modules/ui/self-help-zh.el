@@ -541,10 +541,11 @@ idle timer 与 20 秒绝对计时器直接调用，不经 autoload。"
   (unless (bound-and-true-p which-key-mode)
     (which-key-mode 1)))
 
-;; 触屏专属的 which-key 取值覆盖：自-keys 给出三档共用默认值（桌面取向），
+;; 触屏专属的 which-key 取值覆盖：自-keys 给出四档共用默认值（桌面取向），
 ;; 这里按平台分支补触屏取向——底部弹窗（视线近）、窄屏列宽（描述限 20 列，
 ;; 否则 40 列窗的单列上限会让列宽算出负数崩渲染）、关掉 C-h 分发（触屏
 ;; 发不出 C-h，页脚键位提示随之消失，翻页改走上面的自绘按钮）。
+;; Platform: android
 (when self:android-p
   (use-package which-key
     :defer t

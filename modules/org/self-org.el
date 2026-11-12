@@ -194,6 +194,7 @@
 ;; 链接预览只在图形 frame 里开：TTY 没有可点的链接，开着只是闪烁的噪声。
 ;; 判据用运行期的 `display-graphic-p'：org buffer 常在 GUI 与 TTY 之间共享
 ;; （emacsclient 在两种端口上各开一帧），加载期常量 `self:gui-p' 分不出来。
+;; Platform: gui
 (defun self/org--toggle-link-previews ()
   "按当前 frame 是否图形化设置本 buffer 的链接预览开关。"
   (setq-local org-startup-with-link-previews (display-graphic-p)))
@@ -282,6 +283,7 @@
   (self/org--ensure-directories)
   (car (org-agenda-files)))
 
+;; Platform: android
 (defun self/org-capture--roam-file ()
   "返回本次长期笔记的 Roam 文件路径（文件名用当前时间戳）。
 交互读到的标题写入 `self/org-capture--roam-title' 供模板体取值。
@@ -416,6 +418,7 @@ SCHEDULED: %^t
                    30 nil nil "…")))
         (if (string-empty-p (string-trim head)) "（分享内容）" head)))))
 
+;; Platform: android
 (when self:android-p
   ;; 空闲加载不占启动；server 侧 advice 在 require 后即刻生效
   (run-with-idle-timer
@@ -472,6 +475,7 @@ ORIG 与 ARGS 是被 advice 的 `org-modern--update-faces' 及其参数。"
 
 ;; 深度 -90：必须早于 org-modern-mode（org-mode-hook 默认深度）运行，
 ;; 让 org-modern 按 buffer 构建的星号缓存取到降级后的取值。
+;; Platform: tty
 (defun self/org-modern--apply-display ()
   "按当前 frame 类型降级 `org-modern' 的星号与表格渲染。
 TTY 退回 ASCII 表格与 Unicode 子弹；GUI 保留像素细线与 Nerd 子弹。
@@ -546,6 +550,7 @@ self-prog 注册）；没有 Apheleia 的环境（portable 等）退回按各语
 ;;
 ;; 整块按平台守卫：这两节依赖 self-ui-touch 的 mode-line 按钮表与
 ;; self-touch 的键盘面板，都是触屏专属设施；桌面档不加载那两个模块。
+;; Platform: android
 
 (when self:android-p
   (declare-function self/mode-line--button "self-ui-touch")

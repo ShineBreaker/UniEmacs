@@ -8,6 +8,8 @@ UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、�
 
 **绝对禁令：禁止在任何受 git 跟踪的文件中提及 `reference/` 目录或以任何形式引用它的路径**——它只是本地参考资料夹，需要其中代码时直接复制进正式目录。
 
+**文档与代码冲突时以代码为准**：When a repository's documentation and its existing code disagree, follow the conventions used in the existing code, and in your final reply point out each inconsistency you found between the documentation and the code.（当仓库文档与现有代码不一致时，以现有代码采用的约定为准，并在最终回复中逐条指出发现的每一处文档与代码的不一致。）文档会过时，代码是运行着的真相；发现不一致先按代码约定行事，再逐条上报，不要照文档改坏代码。
+
 ## 1. 环境管理（direnv / Guix）
 
 - 一律使用 direnv 管理开发环境；`manifest.scm` 是环境的唯一声明源，新增工具/依赖先改 manifest。
@@ -17,7 +19,7 @@ UniEmacs 是一份跨桌面与手机的统一 Emacs 配置：单一代码库、�
 ## 2. 架构契约
 
 ```
-early-init.el    通用启动优化 + 平台常量 + profile 解析（UNI_EMACS_PROFILE env → profile.el → 平台推断 → 默认 standard）
+early-init.el    通用启动优化 + 仓库定位 / Android 重定向 + profile 解析（UNI_EMACS_PROFILE env → profile.el → 平台推断 → 默认 standard）
 init.el          引导：定位仓库根 → 配 load-path → require self-lib → self/load-profile
 core/self-lib.el      平台谓词、路径常量、加载辅助（四档共享）
 core/self-package.el  包后端抽象（guix | elpaca）与包清单装/验（四档共享）
@@ -25,7 +27,7 @@ modules/<域>/self-*.el 全部功能模块，按域归档（base/ui/touch/org/pr
 profiles/<档>.el      该档的加载契约：包清单 + 模块 require 序列 + 档内覆写
 data/                 静态数据（翻译表、图标资产）；只允许字面量 setq / defconst 与注释
 scripts/              运维脚本（验证脚本）
-docs/                 设计文档；docs/mobile/ 手机部署指南
+docs/                 设计文档；docs/mobile/ 手机部署指南；docs/windows/ Windows 使用与便携包指南；docs/platform-matrix.md 平台分支矩阵
 justfile              本机命令入口（verify / compile / 配置依赖）
 ```
 
@@ -44,7 +46,7 @@ justfile              本机命令入口（verify / compile / 配置依赖）
 - 模块文件头的 `;;; Commentary:` 下方必须标注两行元信息：`;; Profiles: <使用该模块的档>` 与 `;; Requires: <依赖的 self-* 模块>`。
 - **跨模块引用必须显式声明**：函数用 `declare-function`，变量用 `defvar` 就近声明；禁止用 `boundp` 防御性访问他模块变量（模块由 manifest 保证已加载）。
 - 同一仓库内部的函数互调不加 `fboundp`/`boundp` 守卫；守卫仅用于第三方延迟加载包与跨构建变量。
-- 平台差异与档位差异是**两个正交维度**：平台差异用 `self:android-p` / `self:gui-p` 等谓词在模块内部守卫；档位差异只能通过 manifest 勾选模块实现，模块内禁止 `when (eq self:profile ...)` 式自我裁剪。
+- 平台差异与档位差异是**两个正交维度**：平台差异用 `self:android-p` / `self:gui-p` 等谓词在模块内部守卫，分支点上方加 `;; Platform: <平台>` 标记并登记进 `docs/platform-matrix.md`（标记公约与全量矩阵见该文件）；档位差异只能通过 manifest 勾选模块实现，模块内禁止 `when (eq self:profile ...)` 式自我裁剪。
 
 ### 用户可改路径（Org 重定位）
 
@@ -131,7 +133,7 @@ Android 需要与 Emacs 同签名的 Termux（`sharedUserId` 机制），APK 重
 
 1. **定位**：改模块先读文件头 Profiles/Requires 元信息；新增功能先判断属于哪个模块或是否该新建。
 2. **就地修改**：编辑对应模块；跨模块 API 变更要同步所有 Requires 它的文件。
-3. **登记**：新增包 → profile 清单 + `manifest.scm` + `Guix-configs/source/config.org` 三处同步；新增模块 → 文件头元信息 + 相关 profile 清单。
+3. **登记**：新增包 → profile 清单 + `manifest.scm` + `Guix-configs/source/config.org` 三处同步；新增模块 → 文件头元信息 + 相关 profile 清单；新增平台分支 → 源码 `;; Platform:` 标记 + `docs/platform-matrix.md` 登记一行。
 4. **验证**：跑 `just verify`（见 §5）；改动部署/启动链路还须真机或沙箱端到端验证。
 
 ## 5. 验收标准

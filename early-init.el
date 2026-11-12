@@ -70,6 +70,7 @@ portable → 默认 standard。")
   (setq self:repo "/data/data/com.termux/files/home/.config/emacs/"))
 
 ;; ─── Android 入口副本：重定向后加载仓库版 ──────────────────────────
+;; Platform: android
 
 (if (and self:repo
          (eq system-type 'android)
@@ -89,6 +90,7 @@ portable → 默认 standard。")
   ;; CLI 后端依赖 sqlite3 才能启用）。GNU 官方 README 建议放在
   ;; early-init.el；未安装 Termux 或未完成同签名重签（见 docs/mobile/）
   ;; 时目录不存在，静默跳过。
+  ;; Platform: android
   (when (eq system-type 'android)
     (let ((termux-bin "/data/data/com.termux/files/usr/bin"))
       (when (file-directory-p termux-bin)
@@ -111,6 +113,7 @@ portable → 默认 standard。")
   ;; TTY frame 初始参数注入（移植自桌面端配置）：daemon client 与
   ;; standalone 启动阶段就继承终端默认前后景，避免短暂显示 Emacs
   ;; 的有色默认 face。t 条目不存在时新建，存在时逐项合入。
+  ;; Platform: tty
   (let ((tty-params '((background-color . "unspecified-bg")
                       (foreground-color . "unspecified-fg")
                       (menu-bar-lines . 0)
@@ -170,6 +173,7 @@ portable → 默认 standard。")
             nil))))))
 
   ;; 非法值警告一次，并回退到平台推断（与下面两条同逻辑）。
+  ;; Platform: android
   (setq self:profile
         (let ((from-env (getenv "UNI_EMACS_PROFILE")))
           (cond
@@ -180,9 +184,9 @@ portable → 默认 standard。")
            ((and from-env (> (length from-env) 0))
             (display-warning
              'self
-             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/desktop/ide，已按平台推断回退。"
+             (format "非法的 UNI_EMACS_PROFILE=%S，可选 minimal/portable/standard/ide，已按平台推断回退。"
                      from-env))
-            (if (eq system-type 'android) 'portable 'ide))
+            (if (eq system-type 'android) 'portable 'standard))
            ((self--profile-from-file))
            ((eq system-type 'android) 'portable)
            (t 'standard)))))
