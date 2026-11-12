@@ -19,7 +19,7 @@ usage() {
 [ $# -eq 1 ] || usage
 profile="$1"
 case "$profile" in
-  minimal | portable | standard) ;;
+  minimal | portable | standard | ide) ;;
   *) echo "error: 非法 profile '$profile'（可选 minimal/portable/standard）" >&2
      usage ;;
 esac
