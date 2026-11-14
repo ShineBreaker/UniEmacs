@@ -141,7 +141,8 @@ prog 域**没有平台谓词分支**——它的适配是环境探测型（§5�
 |------|------|------|----------|
 | self-daemon.el | `self/daemon--heal-server-auth-dir` | windows | 开 server-mode 前自愈认证目录所有权（管理员启动留下的 RID 544 quirk） |
 | self-ide-chrome.el | `self/ide--apply-frame-faces` | gui | 图形帧字体分轨 |
-| self-ide-panel.el | `self/ide--startup-layout` | gui | 图形帧才摆 Zed 式三槽布局 |
+| self-ide-chrome.el | `self/ide--apply-island-geometry` | gui | 图形帧内边距与窗口缝；TTY 不写宽度 |
+| self-ide-panel.el | `self/ide--startup-layout` | gui | 图形帧才摆左侧项目树 |
 
 ## 5. 环境探测型适配（不打标记）
 

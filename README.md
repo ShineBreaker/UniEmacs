@@ -33,9 +33,9 @@ git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 | `minimal`  | 底座：纯内建、可调试、秒开                                                                      | `UNI_EMACS_PROFILE=minimal` |
 | `portable` | Android 原生 Emacs 触屏                                                                         | Android 上自动；可 env 强制 |
 | `standard` | 桌面全量：增强的完整 Emacs 体验，重点是掌握 Emacs 独有特性（窄化/寄存器/宏/Ediff…）             | 默认档                      |
-| `ide`      | standard 超集：复刻 Zed/VSCode/JetBrains 的 IDE 体验（文件树/命令面板/面包屑/blame + 鼠标增强） | `UNI_EMACS_PROFILE=ide`     |
+| `ide`      | standard 超集，对齐 IntelliJ IDEA：Windows 默认键图、New UI Dark、项目树、命令面板、面包屑、blame、鼠标。对照见 `docs/ide-intellij.md` | `UNI_EMACS_PROFILE=ide`     |
 
-> 两个桌面档是不同目标体验：standard 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档是给「从 Zed/现代 IDE 直接迁移」的用户的承接层，在 standard 之上做 IDE 化覆写与鼠标平权。
+> 两个桌面档是不同目标体验：standard 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档承接 IntelliJ IDEA 的日常操作和 New UI 外观，在 standard 之上做键图、外观覆写与鼠标平权。键位对照见 `docs/ide-intellij.md`。
 
 ## 安装细则
 
