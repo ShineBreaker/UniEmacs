@@ -99,8 +99,9 @@
        (treemacs-get-local-window)))
 
 (defun self/ide-panel-toggle ()
-  "开关左侧 Treemacs 文件树；等价 Zed 的 C-b。
-交互命令：M-x self/ide-panel-toggle，也绑在 C-b。"
+  "开关左侧 Treemacs 文件树（IDEA Alt+1 的项目工具窗）。
+交互命令：M-x self/ide-panel-toggle。Alt+1 的项目工具窗调用本命令。
+C-b 在本档是跳转到声明，由 self-ide-keys 覆写。"
   (interactive)
   (treemacs))
 
@@ -114,7 +115,8 @@
   "打开文件树并定位当前文件；等价 Zed 的 Reveal in Project Panel。
 无文件的缓冲区退化为只开树。treemacs-find-file 对不在工作区内的
 文件自行报 user-error，信息本身有解释力，不做额外包装。
-交互命令：M-x self/ide-panel-reveal，也绑在 C-S-e / C-c w d。"
+交互命令：M-x self/ide-panel-reveal，也绑在 C-c w d。
+Alt+F1 的「在项目树中定位」调用本命令。C-S-e 在本档是最近位置。"
   (interactive)
   (if buffer-file-name
       (treemacs-find-file)
@@ -150,12 +152,13 @@
 
 ;; ─── 档私有键位覆写 ─────────────────────────────────────────────────
 
-(defun self/ide--rebind (key command description)
+(defun self/ide--rebind (key command description &optional group)
   "把全局键 KEY 改绑到 COMMAND 并同步帮助数据源。
 `self/bind' 对重复 (key . mode) 声明直接报错，档内覆写只能用本函数：
 keymap-global-set 换实际绑定，plist-put 就地改写 `self:binding-spec'
 条目，Which-key 描述走 `self/binding--register-which-key' 正常通道
-（which-key-allow-multiple-replacements 已开，重注册即覆盖）。"
+（which-key-allow-multiple-replacements 已开，重注册即覆盖）。
+GROUP 非 nil 时连帮助分组一起改（self-ide-keys 把 IDEA 键收进同一组）。"
   (keymap-global-set key command)
   (let ((entry (seq-find
                 (lambda (item)
@@ -164,7 +167,9 @@ keymap-global-set 换实际绑定，plist-put 就地改写 `self:binding-spec'
                 self:binding-spec)))
     (when entry
       (plist-put entry :command command)
-      (plist-put entry :description description)))
+      (plist-put entry :description description)
+      (when group
+        (plist-put entry :group group))))
   (self/binding--register-which-key key description))
 
 (self/ide--rebind "C-b" #'self/ide-panel-toggle "文件树开关")
@@ -173,8 +178,8 @@ keymap-global-set 换实际绑定，plist-put 就地改写 `self:binding-spec'
 (self/ide--rebind "C-c w d" #'self/ide-panel-reveal "面板定位当前文件")
 (self/ide--rebind "C-c w T" #'self/ide-panels-toggle "双面板总开关")
 
-;; ─── 新帧自动摆布局（左树 + 底槽终端）─────────────────────────────
-;; Zed 打开文件夹/文件即进入「左树 + 编辑区 + 底面板」布局，本段覆盖
+;; ─── 新帧自动摆布局（左侧项目树）─────────────────────────────────
+;; IDEA 启动只开左侧项目树，底槽终端留给 Alt+F12。本段覆盖
 ;; 两条进入路径：
 ;;
 ;;   · standalone `emacs <路径>'：emacs-startup-hook 时 current-buffer
@@ -241,9 +246,9 @@ buffer 满足 `self/ide--layout-context-p' 的窗口；都没有返回 nil。
 
 ;; Platform: gui
 (defun self/ide--startup-layout ()
-  "当前帧上下文值得时摆出 Zed 式三槽布局：左 Treemacs、底槽终端、编辑区。
-GUI 帧且 `self/ide--layout-context-p' 成立才动作；每帧最多执行一次
-（frame 参数 self:ide-layout-seen 标记）。"
+  "当前帧上下文值得时摆出 IDEA 式布局：左侧项目树 + 编辑区。
+底槽终端不自动打开，交给 Alt+F12。GUI 帧且 `self/ide--layout-context-p'
+成立才动作；每帧最多执行一次（frame 参数 self:ide-layout-seen 标记）。"
   (when (and (not noninteractive)
              (display-graphic-p)
              (not (frame-parameter nil 'self:ide-layout-seen))
@@ -251,8 +256,7 @@ GUI 帧且 `self/ide--layout-context-p' 成立才动作；每帧最多执行一�
     (set-frame-parameter nil 'self:ide-layout-seen t)
     (save-selected-window
       (unless (self/ide-panel-visible-p)
-        (treemacs-add-and-display-current-project))
-      (self/ide--show-bottom-terminal))))
+        (treemacs-add-and-display-current-project)))))
 
 (defun self/ide--layout-timer-tick (frame attempts)
   "布局调度的 timer 体：在 FRAME 上找上下文窗口并执行 `self/ide--startup-layout'。

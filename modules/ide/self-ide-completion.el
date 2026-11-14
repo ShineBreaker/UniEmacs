@@ -79,9 +79,10 @@
 
 ;; 键位接管：符号大纲与项目搜索换 consult 预览式等价物。
 ;; self-keys-desktop 已绑 C-S-o→imenu、M-s p→project-find-regexp；本档
-;; 换成与 vertico 栈同一套 UI 的 consult 命令——consult-imenu 是
-;; VSCode C-S-o 的符号大纲，consult-ripgrep 无参默认在项目根下搜
-;; （目录解析链：project.el → default-directory），是 C-S-f 全局搜索。
+;; 换成与 vertico 栈同一套 UI 的 consult 命令。consult-imenu 是文件结构
+;; 弹出（IDEA Ctrl+F12 的同类），consult-ripgrep 无参默认在项目根下搜
+;; （目录解析链：project.el → default-directory）。IDEA 的 Ctrl+Shift+F
+;; 由 self-ide-keys 再绑到 consult-ripgrep；这里保留 M-s p 这条入口。
 ;; 覆写只能走 `self/ide--rebind'：self/bind 对重复声明报错。
 (self/ide--rebind "C-S-o" #'consult-imenu "符号大纲（预览式）")
 (self/ide--rebind "M-s p" #'consult-ripgrep "项目搜索（ripgrep）")
