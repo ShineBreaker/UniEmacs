@@ -304,9 +304,9 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 
 (defconst self:font-family "Maple Mono NF CN"
   "主字体家族名（中英等宽 + Nerd 图标字形），全配置唯一真相源。
-self-theme 的外观应用、self-ui-touch 触屏档、ide-chrome 的编辑区字体
-与 self-bootstrap 的安装判定都读它。普通版 Maple Mono 无 NF 图标
-字形，装了也不算数（判定只认这个全名）。")
+self-theme 的外观应用、self-ui-touch 触屏档与 self-bootstrap 的安装
+判定都读它。ide 档不另换字体族，编辑区、顶栏和终端沿用这里。
+普通版 Maple Mono 无 NF 图标字形，装了也不算数（判定只认这个全名）。")
 
 (defvar self:nerd-icons-available (require 'nerd-icons nil t)
   "nerd-icons 包是否已加载；图标渲染的统一守卫变量。

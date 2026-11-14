@@ -15,9 +15,9 @@
 ;; Emacs 窗口是直角的，做不到 Islands 的圆角卡片，缝隙用 internal-border
 ;; 加宽 window-divider 来近似。
 ;;
-;;   1. 字体：编辑区优先 JetBrains Mono，没有就退回 `self:font-family'
-;;      （Maple Mono NF CN，带中文）。标签、面包屑、状态栏用 Sarasa UI SC，
-;;      避免界面中文变成方框。
+;;   1. 字体：不在本档换家族。编辑区、顶栏、状态栏和终端都沿用
+;;      self-theme 按 `self:font-family'（Maple Mono NF CN）设的字体；
+;;      没装 Maple 时留下系统默认，不改成别的等宽字体。
 ;;   2. 配色：覆盖 Modus 的 face，取 IDEA Dark 的编辑区 #1E1F22、
 ;;      工具窗 #2B2D30、画布 #131314、强调色 #3574F0。主题再切换时
 ;;      由 `enable-theme-functions' 重新盖上去。
@@ -42,84 +42,18 @@
 (defvar self/modeline--vc-state-cache)
 (defvar self/modeline--flymake-counts)
 
-;; ─── 字体：编辑区等宽 / 界面区 UI 字体 ──────────────────────────────
-
-(defcustom self:ide-buffer-font nil
-  "ide 档编辑区字体族。nil 表示自动选择。
-自动顺序：JetBrains Mono，其次 JetBrainsMono Nerd Font，再次
-`self:font-family'（Maple Mono NF CN）。装了 JetBrains Mono 就用它，
-没装时中文注释仍能靠 Maple 显示。"
-  :type '(choice (const :tag "自动" nil) string)
-  :group 'self-ide)
-
-(defconst self:ide-font-candidates
-  '("JetBrains Mono" "JetBrainsMono Nerd Font" "JetBrains Mono NL")
-  "编辑区字体候选，按顺序用第一个已安装的。")
-
-(defcustom self:ide-ui-font "Sarasa UI SC"
-  "ide 档界面字体族，用于标签、面包屑、顶栏和状态栏。
-IDEA 自己的界面字体是 Inter / JetBrains Sans，不含中文。本配置的
-顶栏和状态栏是中文，所以固定用思源系的 Sarasa UI SC。"
-  :type 'string
-  :group 'self-ide)
-
-(defun self/ide--first-available-font (candidates)
-  "返回 CANDIDATES 里第一个当前图形设备有的字体族，都没有则 nil。"
-  (let ((families (font-family-list))
-        (found nil)
-        (rest candidates))
-    (while (and rest (not found))
-      (when (member (car rest) families)
-        (setq found (car rest)))
-      (setq rest (cdr rest)))
-    found))
-
-(defconst self--ide-ui-faces
-  '(mode-line mode-line-inactive minibuffer-prompt
-    header-line header-line-inactive
-    tab-line tab-line-tab-current tab-line-tab-inactive)
-  "随 `self:ide-ui-font' 走的中等字重 UI face 清单。")
-
-;; Platform: gui
-(defun self/ide--apply-frame-faces (&optional frame)
-  "在 FRAME（缺省当前帧）上应用 ide 档字体分轨。
-字体族名不可靠时静默跳过（如用户换了机器没装字体）；TTY 帧天然忽略
-family，无需特判。self-theme 的 `self/theme--apply-frame-appearance'
-先按 `self:font-family' 应用主字体与高度，本函数在其后（钩子注册顺序）
-覆写编辑区与 UI face 的 family，两套定制可在同一 face 上共存。"
-  (when (display-graphic-p frame)
-    (with-selected-frame (or frame (selected-frame))
-      (let* ((families (font-family-list))
-             (buffer-font
-              (or self:ide-buffer-font
-                  (self/ide--first-available-font self:ide-font-candidates)
-                  (and (member self:font-family families) self:font-family))))
-        (when (and buffer-font (member buffer-font families))
-          (set-face-attribute 'default nil :family buffer-font))
-        (when (member self:ide-ui-font families)
-          (dolist (face self--ide-ui-faces)
-            (set-face-attribute face nil
-                                :family self:ide-ui-font
-                                :weight 'medium)))))))
-
-;; daemon 预热期无 GUI 帧，每个 client 帧建好时各刷一次；standalone
-;; 的初始帧不走 after-make-frame-functions，加载期显式补一次。
-(add-hook 'after-make-frame-functions #'self/ide--apply-frame-faces)
-(self/ide--apply-frame-faces (selected-frame))
-
 ;; ─── 行号 / 帧标题 / 顶部 chrome / 子进程 EDITOR ────────────────────
 
 ;; IDEA 编辑区用绝对行号。standard 档的相对行号是给 Emacs 自身导航的。
 (setq display-line-numbers-type t)
 
-;; Zed 窗口顶部没有菜单栏与工具栏：ide 档把这两条 GTK chrome 裁掉，
-;; 让 tab-line（标签栏）直接顶到窗口上缘，空间利用与观感对齐。
-;; minimal/standard 档保留菜单栏（学习档需要可探索的菜单）。
+;; IDEA New UI 把主菜单收进顶栏汉堡按钮，不留 GTK 菜单栏和工具栏。
+;; 文件标签用 tab-line，紧挨在顶栏下面。minimal/standard 档保留菜单栏。
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 
 (defun self/ide--frame-title ()
-  "帧标题：项目名 — 分支 — 缓冲区名，对齐 Zed 标题栏的项目/分支提示。"
+  "帧标题：项目名 — 分支 — 缓冲区名。"
   (let* ((project (project-current nil))
          (proj-name (and project (file-name-nondirectory
                                   (directory-file-name
@@ -136,7 +70,7 @@ family，无需特判。self-theme 的 `self/theme--apply-frame-appearance'
 ;; frame-title 也能用（变量在求值处取选中窗口缓冲的值）。
 (setq frame-title-format '((:eval (self/ide--frame-title))))
 
-;; 对齐 Zed 的 terminal.env EDITOR=zeditor --wait：从 Emacs 拉的终端
+;; 从 Emacs 拉的终端
 ;; 子进程（Ghostel、编译缓冲区等）里跑 git commit / crontab -e 时，
 ;; 编辑器都交回当前 Emacs 实例。server-mode 由 self-daemon 保证。
 (setenv "EDITOR" "emacsclient")
@@ -144,21 +78,24 @@ family，无需特判。self-theme 的 `self/theme--apply-frame-appearance'
 
 ;; ─── 面包屑：header-line 上的「相对路径 › 函数」 ────────────────────
 
-;; Zed 标签栏下面那行：左端是项目相对路径，光标所在符号以 › 续在后面。
+;; 标签下面的面包屑：左端是项目相对路径，光标所在符号以 › 续在后面。
 ;; which-function-mode 以 imenu/semantic 求当前符号，多数 prog buffer 有
 ;; imenu 支持；结果按窗口缓存进 `which-func-table'（Emacs 32 起
 ;; `which-func-current' 本身是 :eval 格式段而非字符串，不能直接
 ;; propertize——真名字符串要 gethash 取）。
+;; 只在代码缓冲里建 imenu。which-func-modes 为 t 时，文本和 Markdown
+;; 也会跑索引，失败就把 "which-func-ff-hook error" 写进 echo area，
+;; 盖住状态栏。函数名只对 prog-mode 有意义。
+(setq which-func-modes '(prog-mode))
 (which-function-mode 1)
 
 (defvar-local self/ide--breadcrumb-path nil
   "面包屑路径段缓存：项目相对路径，非项目文件为文件名。
 在 `self/ide--breadcrumb-install' 里一次性算好，redisplay 零 I/O。")
 
-;; 给 header-line 上的函数名一个和 Zed 面包屑一致的形态：路径用界面
-;; 字体继承 header-line，函数名换 function-name 配色提示层级切换。
+;; 路径继承 header-line 的字体，函数名换 function-name 配色。
 (defun self/ide--breadcrumb ()
-  "当前缓冲的 Zed 式面包屑字符串；无内容时返回空串。
+  "当前缓冲的面包屑字符串；无内容时返回空串。
 路径段在 find-file 时缓存进 `self/ide--breadcrumb-path'，渲染只读变量，
 不做 I/O——header-line 每次 redisplay 都会求值，这里必须是纯计算。"
   (let ((path self/ide--breadcrumb-path)
@@ -190,7 +127,7 @@ family，无需特判。self-theme 的 `self/theme--apply-frame-appearance'
 
 ;; ─── 标签语义着色：诊断 > Git 修改 > 未跟踪 ─────────────────────────
 
-;; Zed 的 tabs 显示 Git 状态色与诊断标记。Emacs tab-line 标签只能整体换
+;; 标签用前景色标出 Git 状态和诊断。Emacs tab-line 标签只能整体换
 ;; face，约定一条通道走优先级最高的信息：有错误诊断染 error 红，无错误
 ;; 但 Git 有改动染 warning 黄，未跟踪文件用 success 绿提示是新文件。
 ;; 数据全部取自 self-modeline 已缓存的 buffer-local 变量，零 I/O。
@@ -409,10 +346,10 @@ FACE 再包一层 `:inherit'，不动既有选中态底色逻辑。"
     (window-divider-mode 1)))
 
 (defun self/ide--apply-newui (&rest _)
-  "套用 New UI 配色、岛屿缝和编辑区字体。主题切换后也走这里。"
+  "套用 New UI 配色和岛屿缝。字体留给 self-theme 的全局 Maple 设置。
+主题切换后也走这里。"
   (self/ide--apply-newui-faces)
   (self/ide--apply-island-geometry (selected-frame))
-  (self/ide--apply-frame-faces (selected-frame))
   (setq-default cursor-type '(bar . 2)
                 line-spacing 0.08
                 left-fringe-width 12
@@ -468,7 +405,7 @@ FACE 再包一层 `:inherit'，不动既有选中态底色逻辑。"
     (nreverse items)))
 
 (defun self/ide-toolbar-left ()
-  "顶栏左段：菜单、项目、运行、调试、停止、搜索。"
+  "顶栏左段：菜单、项目、运行、调试、停止、搜索、终端。"
   (self/ide--toolbar-buttons
    `((ide-menu " ≡ " tmm-menubar "主菜单" self-ide-toolbar)
      (ide-project ,(format " %s " self/ide--project-label)
@@ -478,7 +415,9 @@ FACE 再包一层 `:inherit'，不动既有选中态底色逻辑。"
      (ide-debug " 调试 " self/ide-debug "调试 (Shift+F9)" self-ide-toolbar)
      (ide-stop " 停止 " self/ide-stop "停止 (Ctrl+F2)" self-ide-toolbar)
      (ide-search " 搜索 " self/ide-search-everywhere
-                 "Search Everywhere (Ctrl+Shift+P)" self-ide-toolbar))))
+                 "Search Everywhere (Ctrl+Shift+P)" self-ide-toolbar)
+     (ide-term " 终端 " self/ide-tool-terminal
+               "终端 (Alt+F12)" self-ide-toolbar))))
 
 (defun self/ide-toolbar-right ()
   "顶栏右段：分支与设置。"
@@ -489,7 +428,9 @@ FACE 再包一层 `:inherit'，不动既有选中态底色逻辑。"
        (ide-settings " 设置 " self/ide-settings
                      "设置 (Ctrl+Alt+S)" self-ide-toolbar)))))
 
-(setq tab-bar-show 1
+;; tab-bar-show 是数字时表示「帧标签个数超过它才显示」。
+;; 平时只有一个帧标签，写成 1 会把整条工具栏藏掉。t 才是始终显示。
+(setq tab-bar-show t
       tab-bar-format '(self/ide-toolbar-left
                        tab-bar-format-align-right
                        self/ide-toolbar-right)
@@ -507,7 +448,7 @@ FACE 再包一层 `:inherit'，不动既有选中态底色逻辑。"
     (self/ide--apply-newui-faces)))
 (self/ide--apply-newui)
 
-;; ─── 颜色字面量就地渲染（Zed colorizer 扩展对应物）──────────────────
+;; ─── 颜色字面量就地渲染 ─────────────────────────────────────────────
 
 (use-package colorful-mode
   :defer t
