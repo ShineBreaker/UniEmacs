@@ -11,7 +11,7 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 | `minimal`  | 全配置的底座，强调可调试性                     | 对标 nano / 未大量配置的 nvim、helix                                                                                                         | **零**（纯内建）  |
 | `portable` | Android 原生 Emacs 触屏                        | 触屏交互、tool-bar、移动端 Org/Roam、阅读                                                                                                    | elpaca 管理       |
 | `standard` | 桌面全量：增强的完整 Emacs 体验                | 重点是学习与掌握 **Emacs 独有特性**：窄化/寄存器/键盘宏/矩形/间接缓冲/Ediff/Sexp 导航等内建机制全开并中文导航化；编程栈、知识库、daemon 齐备 | Guix profile 管理 |
-| `ide`      | 复刻常用 IDE（Zed/VSCode/JetBrains）的完整体验 | standard 全部模块 + Treemacs 树/命令面板式补全栈/面包屑/行内 blame + **鼠标交互增强层**                                                      | Guix profile 管理 |
+| `ide`      | 对齐 IntelliJ IDEA（Windows 键图 + New UI） | standard 全部模块 + Treemacs 项目树 / 命令面板 / 面包屑 / 行内 blame / 鼠标层 + **IDEA Windows 键图与 New UI Dark**。对照见 [ide-intellij.md](ide-intellij.md) | Guix profile 管理 |
 
 第三方包后端由**环境**决定，不是档位：Guix 环境走 profile 校验（`just` 只验不装），非 Guix 环境（Windows / 通用 Linux / Android）经 elpaca 安装——表中 standard/ide 的「Guix profile 管理」仅指 Guix 环境下的形态，详见 §4。
 
@@ -20,9 +20,9 @@ UniEmacs 把桌面端与手机端两份独立配置统一为单一代码库。�
 两个桌面档的定位分野是**不同的目标体验**，不是功能强弱：
 
 - `standard` 面向「把 Emacs 当 Emacs 用」：保留菜单栏供探索、用内建补全栈（flex + 幽灵文本）、Dired 文件面板，并通过 `self-discover` 模块把窄化、寄存器、矩形、kmacro、间接缓冲、Ediff、hi-lock、递归 minibuffer 这类 Emacs 独门机制显式化——默认键位原样再登记换中文提示与帮助页条目，用户在 <f1> ? 速查表和 which-key 弹窗里就能把它们学完。
-- `ide` 面向「无缝迁移自 Zed/VSCode/JetBrains」：界面结构与交互习惯对齐现代 IDE（左树/底槽/标签/面包屑/行内 blame/命令面板），并额外做鼠标平权——Ctrl+点击跳定义、Shift+滚轮横滚、行槽点击断点、代码右键菜单等，全部由 `modules/ide/` 承担。
+- `ide` 面向「从 IntelliJ IDEA 迁过来」：键图用 IDEA 的 Windows / Linux 默认方案，外观用 2023+ New UI 的 Dark / Islands（编辑区浮在更暗的画布上、顶栏、状态栏）。左树、标签、面包屑、行内 blame、命令面板和鼠标平权（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、代码右键）仍由 `modules/ide/` 承担。键位对照与做不到的地方见 [ide-intellij.md](ide-intellij.md)。
 
-`ide` 与 `standard` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 standard.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（Treemacs 接管文件面板键位、三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义）。standard 档保持语法可读优先；ide 档允许更复杂的实现。
+`ide` 与 `standard` 的关系刻意做成「清单超集 + 末尾覆写」而非继承机制：ide.el 的模块序列前半与 standard.el 逐行同序，末端追加 `modules/ide/` 层完成覆写（三槽位 display-buffer 契约、corfu 栈接管行内补全、面包屑接管 header-line、鼠标层接管点击/滚轮语义，最后由 `self-ide-keys` 把日常键收成 IDEA Windows 键图）。standard 档保持语法可读优先；ide 档允许更复杂的实现。
 
 ### 设计原则（按优先级）
 
@@ -46,7 +46,7 @@ UniEmacs/
 │   ├── org/              #   Org 知识栈：org / roam / agenote
 │   ├── prog/             #   编程栈：prog / langs / jupyter / project / vcs / terminal
 │   ├── desktop/          #   桌面运行环境：daemon / apps / discover / keys-desktop
-│   └── ide/              #   IDE 档层：chrome / panel / slots / completion / mouse / blame
+│   └── ide/              #   IDE 档层：chrome / panel / slots / completion / mouse / blame / keys
 ├── profiles/
 │   ├── minimal.el        #   档清单 = 包声明 + require 序列 + 档内覆写
 │   ├── portable.el
@@ -57,7 +57,8 @@ UniEmacs/
 ├── docs/                 # 设计文档（本文件等）
 │   ├── mobile/           #   手机部署指南
 │   ├── windows/          #   Windows 使用与便携包指南
-│   └── platform-matrix.md #  平台分支矩阵
+│   ├── platform-matrix.md #  平台分支矩阵
+│   └── ide-intellij.md    #  IDE 档与 IDEA 的键位 / 外观对照
 ├── justfile              # 本机命令入口
 └── manifest.scm          # Guix 开发环境声明（direnv use guix）
 ```
@@ -169,12 +170,13 @@ self-package 检测顺序（self/package--guix-emacs-p，任一命中即 guix）
 
 | 模块                  | 档位  | 内容                                       |
 | --------------------- | ----- | ------------------------------------------ |
-| `self-ide-chrome`     | ide   | 字体分轨（Maple Mono NF CN + Sarasa UI SC）、绝对行号、面包屑 header-line、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode |
-| `self-ide-panel`      | ide   | Treemacs 左侧项目树（nerd-icons/deferred git/follow/tag-follow），接管 C-b/C-S-e/C-c w f/d/T |
+| `self-ide-chrome`     | ide   | IDEA New UI Dark / Islands 配色与顶栏、绝对行号、面包屑、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode。字体沿用全局 Maple，本档不换家族 |
+| `self-ide-panel`      | ide   | Treemacs 左侧项目树（nerd-icons/deferred git/follow/tag-follow）。启动只开项目树；C-b 等键随后由 self-ide-keys 改成 IDEA 语义 |
 | `self-ide-slots`      | ide   | 三槽位窗口契约（左树/底面板/编辑区）：display-buffer-alist 声明层+兜底层，未声明 buffer 一律进底槽 |
 | `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview；C-S-o/M-s p 接管为 consult-imenu/consult-ripgrep |
 | `self-ide-mouse`      | ide   | 鼠标平权层：Shift+滚轮横滚、gutter（行号槽/fringe）点击切换 dape 断点、prog buffer 右键「代码」子菜单；登记已就绪的 Ctrl+点击跳定义/Ctrl+滚轮缩放 |
 | `self-ide-blame`      | ide   | 行内 Git blame（idle 防抖 + 异步 porcelain + 行尾 overlay） |
+| `self-ide-keys`       | ide   | IDEA Windows / Linux 默认键图（最后加载）。双击 Shift、Ctrl+G、无选区的 Ctrl+C/X 等缺口见 [ide-intellij.md](ide-intellij.md) |
 
 模块清单是演进式的：移植时发现更合理的边界就拆/并，同步更新本表与目录归属。
 

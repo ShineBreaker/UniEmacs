@@ -1,11 +1,11 @@
-;;; ide.el --- ide 档：Zed 对齐的深度定制桌面 -*- lexical-binding: t; -*-
+;;; ide.el --- ide 档：对齐 IntelliJ IDEA 的桌面 -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; IDE 档：完整复刻 Zed/VSCode/JetBrains 的 IDE 体验。在 standard 档
-;; 全量模块之上叠加 IDE 设施——Treemacs 项目树、命令面板式补全栈
-;; （vertico/corfu/kind-icon）、面包屑行、行内 Git blame，
-;; 以及鼠标平权层（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、
-;; 代码右键菜单）。桌面默认档是 standard，本档需显式选择：
+;; IDE 档：对齐 IntelliJ IDEA（Windows / Linux 默认键图 + 2023+ New UI
+;; Dark / Islands 外观）。在 standard 档全量模块之上叠加 Treemacs 项目树、
+;; 命令面板式补全栈（vertico/corfu/kind-icon）、面包屑、行内 Git blame、
+;; 鼠标平权（Ctrl+点击跳定义、Shift+滚轮横滚、行槽断点、代码右键菜单），
+;; 以及 IDEA 键图与 New UI 顶栏。桌面默认档是 standard，本档需显式选择：
 ;;
 ;;   UNI_EMACS_PROFILE=ide
 ;;
@@ -18,13 +18,14 @@
 ;;   · standard   桌面全量、语法可读优先，定位「学习用完备配置」；
 ;;   · ide       本档。模块清单是 standard 的超集：同一批模块按相同顺序
 ;;               require（差异只在 manifest 勾选与模块选择，符合
-;;               AGENTS.md §2 加载契约），末端追加 modules/ide/ 六个
+;;               AGENTS.md §2 加载契约），末端追加 modules/ide/ 的
 ;;               覆写/新增模块。standard 档刻意保留为可读性版本，不要为
 ;;               「避免重复」把 ide 的实现塞回 standard。
+;;               键图与外观对照见 docs/ide-intellij.md。
 ;;
-;; 覆写发生在 ide 模块内部（面包屑接管 header-line、Treemacs 接管
-;; C-b 等键位、corfu 接管行内补全），不在本文件；本文件只负责
-;; 包清单与 require 序列两件事。
+;; 覆写发生在 ide 模块内部（面包屑接管 header-line、corfu 接管行内
+;; 补全、self-ide-keys 把日常键收成 IDEA Windows 键图），不在本文件；
+;; 本文件只负责包清单与 require 序列两件事。
 
 ;;; Code:
 
@@ -60,8 +61,9 @@
 ;; ─── 模块 require 序列 ────────────────────────────────────────────
 ;;
 ;; 前半与 profiles/standard.el 逐行同序（契约说明见该文件注释）；
-;; 末端五个 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → blame」
-;; 排列，全部排在 self-keys-desktop 之后：键位覆写必须最后落地。
+;; 末端 self-ide-* 模块按「外观 → 面板 → 槽位 → 补全 → 鼠标 →
+;; blame → 键图」排列，全部排在 self-keys-desktop 之后：键位覆写必须
+;; 最后落地。
 
 (require 'self-session)
 (require 'self-bootstrap)
@@ -106,6 +108,8 @@
 ;;                        代码右键子菜单，并把已就绪的 Ctrl+点击/
 ;;                        Ctrl+滚轮缩放登记进帮助速查表。
 ;; · self-ide-blame       行内 Git blame，无三方包依赖。
+;; · self-ide-keys        IDEA Windows 默认键图。必须最后加载：前面的
+;;                        模块会先占一批键，这里再覆写成 IDEA 的日常操作。
 
 (require 'self-ide-chrome)
 (require 'self-ide-panel)
@@ -113,6 +117,7 @@
 (require 'self-ide-completion)
 (require 'self-ide-mouse)
 (require 'self-ide-blame)
+(require 'self-ide-keys)
 
 ;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────
 ;; 与 standard 档同款（理由与取舍见 profiles/standard.el 注释）。ide 是桌面档，

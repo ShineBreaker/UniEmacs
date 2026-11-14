@@ -641,7 +641,11 @@ SCRATCH 为承载变换的临时 buffer,CALLBACK 在变换完成后调用。
 
 (add-hook 'conf-mode-hook #'self--maybe-enable-prog-helpers)
 
-(global-xref-mouse-mode 1)
+;; Emacs 30.2 有 `xref-find-definitions-at-mouse'，但还没有
+;; `global-xref-mouse-mode'。有这个模式就打开；没有时 Ctrl+点击由
+;; self-ide-mouse 的键位接到同一个命令。
+(when (fboundp 'global-xref-mouse-mode)
+  (global-xref-mouse-mode 1))
 (setq hs-show-indicators t
       hs-display-lines-hidden t)
 (dolist (cmd '(hs-cycle hs-hide-block hs-show-block

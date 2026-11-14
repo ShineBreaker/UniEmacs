@@ -8,12 +8,13 @@
 ;; Requires: self-keys（`self/bind'）
 ;; Packages: 无新包（dape/eglot/consult 均已在 ide 清单内，经懒加载入口调用）
 ;;
-;; ide 档的鼠标平权目标是 Zed/VSCode/JetBrains 的行为对齐。本模块落地前
+;; ide 档的鼠标行为对齐 IDEA 的日常操作：点项目树、点标签、滚轮、
+;; 行号槽断点。本模块落地前
 ;; 已就绪的部分（写在这里是为了不再重复实现，也便于读者自助查证）：
 ;;
-;;   · Ctrl+点击跳定义：`global-xref-mouse-mode'（self-prog 里已全局
-;;     开启）绑了 C-<down-mouse-1>→ignore 与 C-<mouse-1>→
-;;     xref-find-definitions-at-mouse；
+;;   · Ctrl+点击跳定义：有 `global-xref-mouse-mode' 的 Emacs 由 self-prog
+;;     打开它。Emacs 30.2 还没有这个模式，本文件的 self/bind 把
+;;     C-<mouse-1> 接到 xref-find-definitions-at-mouse；
 ;;   · 鼠标侧键前进/后退：<mouse-8>/<mouse-9>→xref-go-back/forward
 ;;     （self-prog）；
 ;;   · Alt+点击加多光标：M-<down-mouse-1>（self-editing）；
@@ -32,7 +33,7 @@
 ;;     等价 IDE 的 Shift+Wheel 横滚；顺带开 `mouse-wheel-tilt-scroll'
 ;;     让触摸板倾斜滚动也走横滚；
 ;;   · gutter 点击切换断点：<left-fringe>/<left-margin> 的 mouse-1，
-;;     等价 VSCode/JetBrains 点行号槽打断点，底层调 dape；
+;;     点行号槽打断点，底层调 dape；
 ;;   · prog buffer 右键菜单顶部追加「代码」子菜单（跳转/重构/断点/
 ;;     定位文件树），等价 IDE 编辑区右键的第一段。
 ;;
@@ -67,7 +68,7 @@
 
 ;; ─── Shift+滚轮 / 触摸板 tilt：横向滚动 ────────────────────────────
 ;;
-;; 方向约定对齐 VSCode：Shift+WheelUp 把视口往左滚（看到更靠左的列）。
+;; Shift+WheelUp 把视口往左滚（看到更靠左的列）。
 ;; Emacs 里「视口往左、内容往右露」对应命令 scroll-right（reveals
 ;; columns on the left），scroll-left 反之——函数名按「用户看到的方向」
 ;; 起，函数体调用方向相反的内建命令，注释里说明这层反向。
@@ -75,7 +76,7 @@
 (setq mouse-wheel-tilt-scroll t)  ; 触摸板 tilt 事件也走横滚
 
 (defun self/ide-scroll-h-left ()
-  "横向滚动：视口左移，露出更靠左的列（VSCode 的 Shift+WheelUp）。
+  "横向滚动：视口左移，露出更靠左的列。
 实际是调用 `scroll-right'——Emacs 的 scroll-right 把内容往右推、
 从而露出左边的列，与「视口方向」命名恰好相反。也绑在 S-<wheel-up>
 与 S-<wheel-left>。"
@@ -83,7 +84,7 @@
   (scroll-right 8))
 
 (defun self/ide-scroll-h-right ()
-  "横向滚动：视口右移，露出更靠右的列（VSCode 的 Shift+WheelDown）。
+  "横向滚动：视口右移，露出更靠右的列。
 调用 `scroll-left'（方向反向的原因见 `self/ide-scroll-h-left'）。
 也绑在 S-<wheel-down> 与 S-<wheel-right>。"
   (interactive)
@@ -96,14 +97,14 @@
 
 ;; ─── gutter 点击断点 ───────────────────────────────────────────────
 ;;
-;; VSCode/JetBrains 里点行号槽切换断点。Emacs 的行号画在 left-margin
+;; IDEA 里点行号槽切换断点。Emacs 的行号画在 left-margin
 ;; 里、diff-hl 一类指示画在 left-fringe 里，两处点击统一接管。断点
 ;; 只对 prog-mode 派生 buffer 有意义；dape 懒加载，fboundp 守卫防止
 ;; 未装/未载时点击报错（第三方懒加载入口允许守卫）。
 
 (defun self/ide-toggle-breakpoint-at-mouse (event)
   "在点击行（或直接调用时的当前行）切换 DAP 断点。
-等价 VSCode/JetBrains 的 gutter 点击；非 prog-mode buffer 只提示不动作。
+点行号槽或左 fringe 切换断点；非 prog-mode buffer 只提示不动作。
 交互命令：点击行号区或左 fringe 触发，也可 M-x 在当前行切换。"
   (interactive "e")
   ;; event 经鼠标触发时带落点位置；经 M-x/键盘触发时 posn-window 不是
