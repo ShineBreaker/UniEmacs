@@ -110,10 +110,14 @@
 ;; 自动对齐的排版。
 (when (locate-library "editorconfig")
   (require 'editorconfig)
-  (setq editorconfig-trim-whitespaces-mode 'delete-trailing-whitespace-mode)
+  ;; 这个 mode 不是 Emacs 30.2 的内建。挂上之后打开文本文件会
+  ;; void-function，错误写进 echo area，把状态栏盖住。
+  (when (fboundp 'delete-trailing-whitespace-mode)
+    (setq editorconfig-trim-whitespaces-mode 'delete-trailing-whitespace-mode))
   (editorconfig-mode 1))
 
-(add-hook 'text-mode-hook #'delete-trailing-whitespace-mode)
+(when (fboundp 'delete-trailing-whitespace-mode)
+  (add-hook 'text-mode-hook #'delete-trailing-whitespace-mode))
 
 ;; ─── 文本换行与编辑行为 ─────────────────────────────────────────
 ;;

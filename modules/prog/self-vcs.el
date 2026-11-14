@@ -338,8 +338,10 @@ Dired 的 `..'/`.' 行显式拒绝（等价暂存整个仓库，超出意图）�
   (global-diff-hl-mode 1))
 
 ;; 分支切换后静默刷新文件（不打扰正在编辑的人）。
+;; `vc-auto-revert-mode' 不是 Emacs 30.2 的内建，更新的版本才有。
 (setq auto-revert-verbose nil)
-(vc-auto-revert-mode 1)
+(when (fboundp 'vc-auto-revert-mode)
+  (vc-auto-revert-mode 1))
 
 ;; Forge 随 Magit 一同加载，在状态页提供 Issue 与 PR 关联。
 ;; 装包由 profile manifest 负责，此处只声明加载时机。

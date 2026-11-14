@@ -51,9 +51,11 @@
 ;; - 未选中窗口由 Emacs 31 的 `tab-line-inactive` 自动变暗；TTY 环境下
 ;;   的透明背景策略由主题域统一处理。
 ;;
-;; **hook 注册的时序**：`tab-line-exclude-buffers`（Emacs 31 机制）必须
-;; 在 `global-tab-line-mode` 启用之前配置好，否则终端、帮助、Dashboard
-;; 与左侧文件面板窗口会被错误启用标签栏。
+;; **不显示标签栏的窗口**：`tab-line-exclude-buffers` 要在
+;; `global-tab-line-mode` 启用前设好，但这个变量到 Emacs 30.2 还不存在。
+;; 30.2 靠 `after-change-major-mode-hook` 里的
+;; `self/tab-line--hide-on-excluded` 把 buffer-local `tab-line-exclude`
+;; 置上。两条路都让终端、帮助、Dashboard 与左侧文件面板不画标签栏。
 
 ;;; Code:
 
@@ -322,10 +324,12 @@ Emacs 的 safe_call 静音）；dead frame 的参数随之销毁，无需再清�
 
 ;; Emacs 31 提供窗口级 tab-line-inactive 样式：非活动窗口的整条标签栏
 ;; 自动变暗，与标签级的 current/inactive 形成互补。
-(set-face-attribute 'tab-line-inactive nil
-                    :inherit '(tab-line shadow))
-(set-face-attribute 'tab-line-active nil
-                    :inherit 'tab-line)
+(when (facep 'tab-line-inactive)
+  (set-face-attribute 'tab-line-inactive nil
+                      :inherit '(tab-line shadow)))
+(when (facep 'tab-line-active)
+  (set-face-attribute 'tab-line-active nil
+                      :inherit 'tab-line))
 
 ;; 标签栏下缘横线用的是贴在文本下缘的细下划线而非盒模型（盒线无法只画
 ;; 单边），落在标签与填充空白两类 face 上故整行连续；颜色在主题 border
@@ -484,7 +488,18 @@ BUFFER 的唯一调用方 mouse 回调已先行存活检查，不再重复守卫
 (setq tab-line-exclude-buffers
       #'self--tab-line-exclude-non-tab-buffer)
 
+(defun self/tab-line--hide-on-excluded ()
+  "不该出现标签栏的 buffer 关掉 tab-line。
+`tab-line-exclude-buffers' 到 Emacs 30.2 还不存在，设置它没有效果，
+终端窗口会再画一条编辑区标签。30.2 认的是 buffer-local
+`tab-line-exclude'。有新变量的版本两条路结果一样。"
+  (when (self--tab-line-exclude-non-tab-buffer)
+    (setq-local tab-line-exclude t)
+    (when (bound-and-true-p tab-line-mode)
+      (tab-line-mode -1))))
+
 (global-tab-line-mode 1)
+(add-hook 'after-change-major-mode-hook #'self/tab-line--hide-on-excluded)
 
 (add-hook 'window-buffer-change-functions #'self--tabs-on-window-buffer-change)
 (add-hook 'kill-buffer-hook #'self--tabs-on-kill-buffer)

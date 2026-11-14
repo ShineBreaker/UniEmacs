@@ -122,8 +122,11 @@ main.el 之前完成(standalone 首帧也要生效);此处仅供
 
 (setopt xterm-update-cursor t)
 
-(dolist (hook '(prog-mode-hook text-mode-hook))
-  (add-hook hook #'prettify-special-glyphs-mode))
+;; 这个函数不是 Emacs 30.2 的内建。直接加 hook 会在打开文件时报
+;; void-function，错误信息盖住状态栏。有函数的构建才挂上。
+(when (fboundp 'prettify-special-glyphs-mode)
+  (dolist (hook '(prog-mode-hook text-mode-hook))
+    (add-hook hook #'prettify-special-glyphs-mode)))
 
 (dolist (param '((menu-bar-lines . 0)
                  (tool-bar-lines . 0)
@@ -334,6 +337,8 @@ self-tabline 的标签下缘横线复用同一对插值函数，故按 AGENTS.md
 
 (defun self--mix-color (front back weight)
   "把颜色 FRONT 按 WEIGHT 混入 BACK(0=纯 BACK)后返回 #RRGGBB。"
+  ;; color.el 是内建，但不会因为这次调用自动加载。
+  (require 'color)
   (let (channels)
     (dolist (start '(1 3 5))
       (push (/ (+ (* (self--hex-channel front start) weight)
