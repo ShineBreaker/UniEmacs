@@ -144,6 +144,13 @@ daemon 伪帧漏掉 face 初始化时以此补齐；正常帧上是幂等重算�
   :type 'integer
   :group 'self-modeline)
 
+(defvar self:modeline-layout 'standard
+  "状态行布局。
+standard 是 Starship 分段，桌面档默认用它。
+idea 是 IDEA New UI 状态栏：左检查与分支，右行:列、换行、缩进、编码与语言。
+ide 档由 self-ide-chrome 把本变量设成 idea。这里不读 `self:profile'，
+档位差异仍由「谁加载谁」决定。")
+
 (defvar self/modeline--icon-cache (make-hash-table :test #'equal)
   "状态行静态图标缓存。")
 
@@ -233,6 +240,14 @@ NAME 是 nerd-icons 图标名：\"nf-fa-*\" 前缀分发到 nerd-icons-faicon，
                   (and (stringp segment) (not (string-empty-p segment))))
                 segments)
                " · "))
+
+(defun self/modeline--join-plain (&rest segments)
+  "用两个空格连接非空 SEGMENTS（IDEA 状态栏不用中间点）。"
+  (string-join (seq-filter
+                (lambda (segment)
+                  (and (stringp segment) (not (string-empty-p segment))))
+                segments)
+               "  "))
 
 ;; 路径缩写：父目录缩成首字母，当前工程名与文件名保持完整。
 
@@ -566,8 +581,8 @@ wide 写全量 E:n W:n，medium 写紧凑 n:n，其余写总数。"
 贴右缘，必中这个标记，留出一列即可根治。"
   (1- (window-total-width (minibuffer-window frame))))
 
-(defun self/modeline--render (&optional window)
-  "渲染状态行：左段文件信息在前，右段系统状态贴右缘；放不下时截断左段。
+(defun self/modeline--render-standard (&optional window)
+  "渲染 Starship 状态行：左段文件信息在前，右段系统状态贴右缘。
 
 段内容在 WINDOW 的 buffer 中求值（buffer-local 的 `vc-mode'、
 flymake 计数、project 缓存都依赖该上下文）。左半有短消息时由消息顶替
@@ -612,6 +627,78 @@ flymake 计数、project 缓存都依赖该上下文）。左半有短消息时�
                                   (list '- 'right
                                         (+ pad (string-width right)))))
                 right)))))
+
+(defun self/modeline--idea-location ()
+  "IDEA 状态栏的「行:列」。"
+  (self/modeline--segment
+   (format-mode-line "%l:%c" nil self/modeline--target-window)
+   'shadow))
+
+(defun self/modeline--idea-eol ()
+  "IDEA 状态栏的换行符：LF / CRLF / CR。编码未决时返回空串。"
+  (let ((type (coding-system-eol-type buffer-file-coding-system)))
+    (self/modeline--segment
+     (cond ((eq type 0) "LF")
+           ((eq type 1) "CRLF")
+           ((eq type 2) "CR")
+           (t ""))
+     'shadow)))
+
+(defun self/modeline--idea-indent ()
+  "IDEA 状态栏的缩进：空格数，或 Tab。"
+  (self/modeline--segment
+   (if indent-tabs-mode "Tab" (format "%d" tab-width))
+   'shadow))
+
+(defun self/modeline--idea-coding ()
+  "IDEA 状态栏的编码名，不带图标。"
+  (self/modeline--segment
+   (upcase (symbol-name
+            (or (coding-system-base buffer-file-coding-system) 'undecided)))
+   'shadow))
+
+(defun self/modeline--idea-major ()
+  "IDEA 状态栏右端的语言名，用 mode-name 的短标签。"
+  (self/modeline--segment
+   (format-mode-line mode-name nil self/modeline--target-window)
+   'shadow))
+
+(defun self/modeline--render-idea (width pad)
+  "按 IDEA New UI 拼一条状态行。WIDTH 与 PAD 的单位是列。
+调用方已经切到目标窗口的 buffer，并设好 `self/modeline--target-window'。"
+  (let* ((left (concat (make-string pad ?\s)
+                       (or self/modeline--message
+                           (self/modeline--join-plain
+                            (self/modeline--diagnostics-segment 'wide)
+                            (self/modeline--branch-segment 'wide)))))
+         (right (self/modeline--join-plain
+                 (self/modeline--idea-location)
+                 (self/modeline--idea-eol)
+                 (self/modeline--idea-indent)
+                 (self/modeline--idea-coding)
+                 (self/modeline--eglot-segment 'medium)
+                 (self/modeline--idea-major)))
+         (left-max (- width pad (string-width right))))
+    (when (> (string-width left) left-max)
+      (setq left (truncate-string-to-width left (max 1 left-max) nil nil t)))
+    (concat left
+            (propertize " " 'display
+                        (list 'space :align-to
+                              (list '- 'right
+                                    (+ pad (string-width right)))))
+            right)))
+
+(defun self/modeline--render (&optional window)
+  "渲染状态行。布局由 `self:modeline-layout' 选择。
+标准布局的段落说明见 `self/modeline--render-standard'。"
+  (let* ((window (or window self/modeline--target-window (selected-window)))
+         (self/modeline--target-window window)
+         (width (self/modeline--usable-width (window-frame window)))
+         (pad (max 1 self:modeline-padding)))
+    (with-current-buffer (window-buffer window)
+      (if (eq self:modeline-layout 'idea)
+          (self/modeline--render-idea width pad)
+        (self/modeline--render-standard window)))))
 
 (defun self/modeline--apply-base-face (text)
   "给 TEXT 中无 face 的区域补上 minibuffer-line 基 face。
