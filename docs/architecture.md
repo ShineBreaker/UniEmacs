@@ -170,7 +170,7 @@ self-package 检测顺序（self/package--guix-emacs-p，任一命中即 guix）
 
 | 模块                  | 档位  | 内容                                       |
 | --------------------- | ----- | ------------------------------------------ |
-| `self-ide-chrome`     | ide   | IDEA New UI Dark / Islands 配色与顶栏、JetBrains Mono 回退、绝对行号、面包屑、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode |
+| `self-ide-chrome`     | ide   | IDEA New UI Dark / Islands 配色与顶栏、绝对行号、面包屑、标签 Git/诊断着色、裁 menu/tool-bar、frame 标题、colorful-mode。字体沿用全局 Maple，本档不换家族 |
 | `self-ide-panel`      | ide   | Treemacs 左侧项目树（nerd-icons/deferred git/follow/tag-follow）。启动只开项目树；C-b 等键随后由 self-ide-keys 改成 IDEA 语义 |
 | `self-ide-slots`      | ide   | 三槽位窗口契约（左树/底面板/编辑区）：display-buffer-alist 声明层+兜底层，未声明 buffer 一律进底槽 |
 | `self-ide-completion` | ide   | vertico/orderless/marginalia/consult/embark 命令面板栈 + corfu/kind-icon/cape/eldoc-box 行内补全；关闭 completion-preview；C-S-o/M-s p 接管为 consult-imenu/consult-ripgrep |

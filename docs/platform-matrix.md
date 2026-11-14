@@ -135,13 +135,12 @@ UniEmacs 用同一套代码跑 Android 触屏、Windows / Linux 桌面与 TTY。
 
 prog 域**没有平台谓词分支**——它的适配是环境探测型（§5）。desktop 域
 除 Guix 工具走 profile 门控（§6）外，self-daemon 有一处 Windows 自愈
-分支；ide 域两处逐帧分支：
+分支；ide 域的逐帧分支：
 
 | 文件 | 符号 | 平台 | 分支内容 |
 |------|------|------|----------|
 | self-daemon.el | `self/daemon--heal-server-auth-dir` | windows | 开 server-mode 前自愈认证目录所有权（管理员启动留下的 RID 544 quirk） |
-| self-ide-chrome.el | `self/ide--apply-frame-faces` | gui | 图形帧字体分轨 |
-| self-ide-chrome.el | `self/ide--apply-island-geometry` | gui | 图形帧内边距与窗口缝；TTY 不写宽度 |
+| self-ide-chrome.el | `self/ide--apply-island-geometry` | gui | 图形帧内边距与窗口缝；TTY 不写宽度。字体不在本档改，沿用 self-theme 的 Maple |
 | self-ide-panel.el | `self/ide--startup-layout` | gui | 图形帧才摆左侧项目树 |
 
 ## 5. 环境探测型适配（不打标记）

@@ -16,16 +16,16 @@ UNI_EMACS_PROFILE=ide emacs
 | --- | --- |
 | Dark 编辑区 `#1E1F22`、工具窗 `#2B2D30`、强调蓝 `#3574F0` | 盖在 Modus 之上的 face。浅色切换后再盖回来 |
 | Islands：面板之间有缝、圆角 | 帧内边距 + 8px 窗口缝，底色 `#131314`。Emacs 窗口是直角，圆角做不到 |
-| 紧凑主工具栏、汉堡菜单 | 帧顶 `tab-bar`：菜单、项目名、运行、调试、停止、搜索、分支、设置。菜单栏本身关掉 |
+| 紧凑主工具栏、汉堡菜单 | 帧顶 `tab-bar`：菜单、项目名、运行、调试、停止、搜索、终端、分支、设置。菜单栏本身关掉 |
 | 左侧工具窗竖条 | Emacs 没有这条窗口原语。按钮收在顶栏，快捷键仍是 Alt+数字 |
 | 编辑器标签 | 窗口顶部 `tab-line`。当前标签与编辑区同色，其余贴在 `#2B2D30` 上 |
 | 面包屑 | 标签下方 header-line：项目相对路径 › 当前函数 |
 | 状态栏 | echo area。左：检查计数与分支。右：`行:列`、LF/CRLF、缩进、编码、语言 |
-| JetBrains Mono | 编辑区优先这个家族，没有则用 Maple Mono NF CN（中文注释不会变成方框）。顶栏用 Sarasa UI SC |
+| 编辑器字体 | 沿用全局 `self:font-family`（Maple Mono NF CN）。ide 档不另换 JetBrains Mono 或界面字体。没装 Maple 时留下系统默认 |
 | 行号、VCS 色条、断点 | 绝对行号；`diff-hl` 画在左 fringe（增绿、改蓝、删红）；点击行号槽或 fringe 切换 dape 断点 |
 | 行内诊断 | `flymake-show-diagnostics-at-end-of-line`（Emacs 30+ 才画在行尾；更早的版本只有 fringe 与 Alt+6） |
 
-启动图形帧时只打开左侧项目树，终端等 Alt+F12，和 IDEA 一样不默认铺底栏。
+启动图形帧时只打开左侧项目树，终端等 Alt+F12 或顶栏「终端」，和 IDEA 一样不默认铺底栏。项目树单击展开目录、单击打开文件。底栏终端后端是 ghostel：再关一次只藏窗口，进程还在，下一次打开同一条会话。ghostel 没装上时这条命令直接失败，没有自动改用内建 `term`。
 
 ## 键位对照
 

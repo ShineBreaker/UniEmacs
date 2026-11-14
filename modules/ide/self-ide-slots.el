@@ -9,8 +9,8 @@
 ;;           self-terminal（`self/open-terminal'）、self-keys（`self/bind'）
 ;; Packages: 无
 ;;
-;; Zed 式三槽位布局：左侧文件树（Treemacs 自管 side-window）、底部面板
-;; （终端与一切辅助 buffer）、右上剩余区域的编辑器。standard 档的窗口路由
+;; 三槽位：左侧项目树（Treemacs 自管 side-window）、底部面板
+;; （终端与一切辅助 buffer）、其余区域的编辑器。standard 档的窗口路由
 ;; 是「按名单弹底」——名单外的包弹窗落到哪全看运气；本模块把它收紧成
 ;; 槽位契约：**任何 buffer 显示请求必须落在三个槽位之一，未声明的一律
 ;; 进底槽**。这正是用户以前在同类布局里踩过的坑（插件开 buffer 时把
@@ -59,7 +59,7 @@
 ;; ─── 槽位声明表 ──────────────────────────────────────────────────
 ;; 每条 (KIND MATCH SLOT)：KIND=name 按 buffer 名正则匹配，KIND=mode
 ;; 按 major-mode 符号匹配；SLOT 取 editor/left/bottom。默认只声明
-;; 「必须是整页内容」的 buffer——Zed 里它们都是中心 tab 而非底部面板。
+;; 「必须是整页内容」的 buffer——这些在 IDEA 里是编辑区标签，不是底栏。
 ;; COMMIT_EDITMSG、终端、Help、编译输出等已由 self-windowing 共享规则
 ;; 覆盖（提交消息进编辑区、其余进底槽），此处不重复声明。
 
@@ -189,7 +189,7 @@ Treemacs 自己占住本槽，不经此路由。")
    (window-list (selected-frame))))
 
 (defun self/ide-bottom-toggle ()
-  "开关底部面板；等价 Zed 的面板开合。
+  "开关底部面板。
 开着则关（buffer 不杀，会话不断）；关着则把终端显示回底槽——
 终端是底槽的默认内容，其余辅助 buffer 用时自会顶上来。
 交互命令：M-x self/ide-bottom-toggle，也绑在 C-c w b。"

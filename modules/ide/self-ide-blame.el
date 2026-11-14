@@ -8,19 +8,20 @@
 ;; Requires: self-vcs（仓库定位语义同源）
 ;; Packages: 无（vc 判定 + 异步 git blame CLI）
 ;;
-;; Zed 的 inline_blame：光标停在某行约两秒后，行尾浮现
-;; 「作者 · 相对时间 · 提交摘要」。Git 没有按行查询的常驻通道，实现
-;; 只能是「光标停稳 → 对当前行跑一次 git blame -L n,n --porcelain
+;; 当前行的行内 annotate：光标停稳后，行尾浮现
+;; 「作者 · 相对时间 · 提交摘要」。IDEA 的 Annotate 是整文件色条；
+;; 这里只标当前行，避免每次重画整缓冲。Git 没有按行查询的常驻通道，
+;; 实现是「光标停稳 → 对当前行跑一次 git blame -L n,n --porcelain
 ;; → 解析 → overlay 画在行尾」。链条：
 ;;
 ;;   post-command-hook（仅一次行号整数比较，零 I/O，合规的热路径）
-;;     → idle timer 防抖（默认 1.2s，Zed 是 2s）
+;;     → idle timer 防抖（默认 1.2s）
 ;;     → make-process 异步起 git blame（交互绝不同步等 CLI 的硬约束）
 ;;     → sentinel 解析 porcelain 输出、在目标行尾放 overlay
 ;;
 ;; 失效路径：编辑（after-change 让行号失真）、光标换行、模式关闭、
 ;; buffer 杀死，各自负责清 overlay 与取消 timer/进程。
-;; 不在 git 仓库 / 未跟踪 / 空行的查询静默落空，与 Zed 同行为。
+;; 不在 git 仓库、未跟踪或空行时查询静默落空。
 ;;
 ;; 开关：`self/ide-blame-mode' 是 buffer-local minor mode，由
 ;; `self/ide-blame-maybe-enable' 在打开文件时自动判定启用；
@@ -33,7 +34,7 @@
 ;; ─── 状态 ──────────────────────────────────────────────────────────
 
 (defcustom self:ide-blame-delay 1.2
-  "光标停稳多少秒后发起当前行的 blame 查询；Zed 为 2s。"
+  "光标停稳多少秒后发起当前行的 blame 查询。"
   :type 'number
   :group 'self-ide)
 
