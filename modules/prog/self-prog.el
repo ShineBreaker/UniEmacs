@@ -370,14 +370,27 @@ mode-alist 的残留映射(如 gdscript→gdformat),缺二进制的 formatter �
   "eglot-managed-mode 回调：开启 inlay hints。"
   (eglot-inlay-hints-mode 1))
 
+(defun self--language-has-server-p (mode)
+  "MODE 在 `self:language-capabilities' 里是否配了 LSP server。
+:server 为 nil 的语言（elisp/markdown 等）没有可连的服务器，
+`eglot-ensure' 对它们仍会 post-command 尝试连接并报 processp nil，
+故激活前先按本表守卫。"
+  (let ((hit nil))
+    (dolist (cap self:language-capabilities)
+      (when (and (memq mode (plist-get cap :modes))
+                 (plist-get cap :server))
+        (setq hit t)))
+    hit))
+
 (defun self--maybe-enable-prog-helpers ()
   "`prog/conf-mode-hook' 回调:小 buffer 才启用 LSP 与折叠。
 大文件(buffer 超过 `self:large-file-size-threshold')的 LSP 索引
 (rust-analyzer 全 crate 扫描)与 hs 折叠块解析是同步高成本操作,且与
 `global-so-long-mode' 的降级路径互斥,故跳过;LSP 仍可用 M-x eglot
-手动启动。"
+手动启动。无 server 的语言不 ensure（见 `self--language-has-server-p'）。"
   (unless (> (buffer-size) self:large-file-size-threshold)
-    (eglot-ensure)
+    (when (self--language-has-server-p major-mode)
+      (eglot-ensure))
     (hs-minor-mode 1)))
 
 (use-package eglot
