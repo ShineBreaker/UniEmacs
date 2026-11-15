@@ -87,6 +87,7 @@ UNI_EMACS_PROFILE=ide emacs
 | Update Project | Ctrl+T | `magit-pull-from-upstream` |
 | Push | Ctrl+Shift+K | `magit-push-current-to-pushremote` |
 | Close Tab | Ctrl+F4 | `kill-current-buffer` |
+| 最大化编辑区 / 恢复面板 | 双击标签 | `self/ide-panels-toggle`（收起/恢复左树与底槽） |
 | Undo / Redo | Ctrl+Z / Ctrl+Shift+Z | `undo` / `undo-redo` |
 | Save All | Ctrl+S | `save-some-buffers`。只存当前文件仍是 `C-x C-s` |
 | Select All | Ctrl+A | `mark-whole-buffer` |

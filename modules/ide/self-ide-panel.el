@@ -172,6 +172,13 @@ Alt+F1 的「在项目树中定位」调用本命令。C-S-e 在本档是最近�
                      (window-list (selected-frame)))))
     (select-window main)))
 
+;; IDEA 双击编辑器标签最大化编辑区（收起全部工具窗），再双击恢复。
+;; tab-line 单击仍是切换标签，双击叠加本绑定不干扰单击;复用双面板
+;; 总开关的「任一开着则全关、全关则全开」语义，恰好对应最大化/恢复。
+(defvar tab-line-tab-map)
+(with-eval-after-load 'tab-line
+  (define-key tab-line-tab-map [double-mouse-1] #'self/ide-panels-toggle))
+
 ;; ─── 档私有键位覆写 ─────────────────────────────────────────────────
 
 (defun self/ide--rebind (key command description &optional group)
