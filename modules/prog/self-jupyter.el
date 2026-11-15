@@ -35,6 +35,8 @@
 ;; 与内核都由 Guix profile 提供（`jupyter' 包带 python3/ipykernel，
 ;; `guix' 包带 scheme 内核）。C-c j r 列出全部内核供选；C-c j j 直连
 ;; python3。若 `jupyter' 不在 exec-path，REPL 启动会报找不到命令。
+;; 未安装的机器（如便携 Python 不含 jupyter）Babel 侧跳过登记，避免
+;; 启动期 kernelspec 报错；REPL 侧调用时报缺命令。
 ;;
 ;; ## 键位
 ;;
@@ -78,7 +80,9 @@
 (use-package jupyter
   :defer t
   :custom
-  (jupyter-use-zmq t)
+  ;; jupyter-use-zmq 不硬编码：包默认值按 (locate-library "zmq") 自动探测，
+  ;; 有 zmq 库走 zmq 通道（缺动态模块时 zmq 自身会引导下载/编译），
+  ;; 无 zmq 库落 websocket；硬写 t 会让无 zmq 库环境在 (require 'zmq) 处直接失败。
   (jupyter-executable "jupyter")
   ;; 普通 buffer 的执行结果以浮层贴在代码下方，不再跳 REPL 看重播。
   (jupyter-eval-use-overlays t)
@@ -105,9 +109,13 @@
 ;; 代价是首次打开 Org 文件多约 0.5s（ob-jupyter 全栈）；之后会话内
 ;; 不再重复。REPL 侧仍是纯 autoload，不碰 Org 时不付这笔钱。
 
+;; jupyter 缺位时 ob-jupyter 加载即跑 `jupyter kernelspec list' 报
+;; file-missing（便携 Python 不含 jupyter）。可执行文件在场才登记 Babel，
+;; 否则优雅退化；REPL 侧调用时自行报缺命令。
 (with-eval-after-load 'org
-  (require 'ob-jupyter)
-  (add-to-list 'org-babel-load-languages '(jupyter . t)))
+  (when (executable-find "jupyter")
+    (require 'ob-jupyter)
+    (add-to-list 'org-babel-load-languages '(jupyter . t))))
 
 ;; ─── REPL 建立后的连接传播 ────────────────────────────────────────
 ;;
@@ -132,6 +140,8 @@
 内核名写死 python3：Guix 的 `jupyter' / `python-ipykernel' 固定提供
 这个名字（`jupyter kernelspec list' 可见）。要别的内核用 C-c j r。"
   (interactive)
+  (unless (executable-find "jupyter")
+    (user-error "未找到 jupyter 可执行文件，请先安装 jupyter 与 ipykernel"))
   (jupyter-run-repl "python3"))
 
 ;; ─── 键位 ─────────────────────────────────────────────────────────
