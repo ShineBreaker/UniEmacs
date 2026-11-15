@@ -165,6 +165,8 @@ buffer-local 标记，由 `self/dired--panel-setup' 打上。
   (with-current-buffer buffer
     ;; 精简视图：隐藏文件权限与大小细节，只突出目录与文件名层级。
     (dired-hide-details-mode 1)
+    ;; 全局行号是给编辑缓冲的；面板是导航工具，行号纯属噪音。
+    (display-line-numbers-mode -1)
     ;; header-line 显示完整路径（窄面板里 Dired 自带的首行放不下）。
     (setq-local header-line-format 'default-directory)
     (setq-local self--dired-panel-p t)
