@@ -308,6 +308,13 @@ self-theme 的外观应用、self-ui-touch 触屏档与 self-bootstrap 的安装
 判定都读它。ide 档不另换字体族，编辑区、顶栏和终端沿用这里。
 普通版 Maple Mono 无 NF 图标字形，装了也不算数（判定只认这个全名）。")
 
+;; nerd-icons 默认认独立字体 "Symbols Nerd Font Mono"，本配置不另装它——
+;; NF 字形已含在主字体 `self:font-family' 里。家族名必须在包加载前置好：
+;; `nerd-icons-define-icon' 加载时把当前值固化进各图标族的 family 函数，
+;; 加载后再改就晚了（modeline/tabline/dashboard/treemacs 全在这一处取字形）。
+(defvar nerd-icons-font-family)
+(setq nerd-icons-font-family self:font-family)
+
 (defvar self:nerd-icons-available (require 'nerd-icons nil t)
   "nerd-icons 包是否已加载；图标渲染的统一守卫变量。
 缺包环境返回 nil 不报错；UI 模块（modeline/tabline/dashboard）
