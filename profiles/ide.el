@@ -132,16 +132,24 @@
   :config
   (gcmh-mode 1))
 
+(declare-function self/pin-state-paths "self-session")
+
 (use-package no-littering
+  :defines (no-littering-var-directory no-littering-etc-directory)
   :demand t
-  :custom
-  (no-littering-var-directory self:var-directory)
-  (no-littering-etc-directory self:etc-directory)
+  ;; :custom 对 no-littering 1.9 的 defvar 变量无效，必须 :init 直接 setq；
+  ;; 理由与失败现象见 profiles/standard.el 同段注释。
+  :init
+  (setq no-littering-var-directory self:var-directory
+        no-littering-etc-directory self:etc-directory)
   :config
   (setq backup-directory-alist
         `((".*" . ,(no-littering-expand-var-file-name "backup/"))))
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+  ;; no-littering 会改掉 recentf / savehist / save-place 的落点，钉回
+  ;; self-session 的路径（读写同源），否则每次重启历史都丢。
+  (self/pin-state-paths)
   (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
   (when (file-exists-p custom-file)
     (load custom-file t)))

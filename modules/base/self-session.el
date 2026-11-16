@@ -20,8 +20,14 @@
 ;;   进程而非会话，属 core/self-lib.el。
 ;; · gcmh 与 no-littering——第三方包，与「minimal 档不得声明任何第三方包」
 ;;   冲突，故写在 profiles/standard.el 尾部作档内配置。本文件因此用纯 setq
-;;   手工完成同样的目录隔离，四档都拿得到，standard 档的 no-littering 只是把
-;;   同一组目录再声明一遍（两边取值同源，不会打架）。
+;;   手工完成同样的目录隔离，四档都拿得到。
+;;
+;;   注意 no-littering 与本节管的是同一批变量，且它认自己的文件名
+;;   （recentf-save.el / savehist.el / save-place.el）。standard / ide 档
+;;   加载它之后必须再调用 `self/pin-state-paths' 把路径钉回来，否则 mode
+;;   启动读本节路径、退出写 no-littering 路径，最近文件与历史每次重启都会
+;;   丢。钉回调用写在 profiles/standard.el 与 profiles/ide.el 的 no-littering
+;;   段末尾。
 ;; · `server-mode'——属 daemon 启动路径，在 self-daemon.el。
 ;;
 ;; 【目录隔离】
@@ -95,47 +101,47 @@
 (when (file-exists-p custom-file)
   (load custom-file t))
 
+;; ─── 持久化路径钉定 ──────────────────────────────────────────────
+;; standard / ide 档尾部加载的 no-littering 会在加载时把 recentf、savehist、
+;; save-place 等变量改写成 <user-emacs-directory>/var/ 下它自己的文件名
+;; （recentf-save.el 等）。若各自设置，mode 启动时读到的是本文件的路径，
+;; 退出时写到的却是 no-littering 的路径——读写分家，重启后历史就丢了。
+;; 故把这一组路径收进一个函数：本文件启动时钉一次，standard / ide 档在
+;; no-littering 加载之后再钉一次，保证读写始终是同一组文件。
+(defun self/pin-state-paths ()
+  "把会话持久化文件的落点钉到 `self:var-directory' 下。
+调用时机：本文件启动时一次；standard / ide 档在 no-littering 加载后再调
+一次。重复调用无副作用。"
+  (setq savehist-file (expand-file-name "history" self:var-directory)
+        recentf-save-file (expand-file-name "recentf.eld" self:var-directory)
+        save-place-file (expand-file-name "places.eld" self:var-directory)
+        ;; 下面四个库启动时才加载，变量先绑定，库加载时的 defcustom 不会
+        ;; 覆盖已有值。eshell 用的是 eshell-history-file-name
+        ;; （eshell-directory-name 在现版本 Emacs 已不存在）。
+        bookmark-default-file (expand-file-name "bookmarks.eld" self:var-directory)
+        tramp-persistency-file-name (expand-file-name "tramp" self:var-directory)
+        url-history-file (expand-file-name "url-history.eld" self:var-directory)
+        eshell-history-file-name (expand-file-name "eshell/history" self:var-directory)))
+
 ;; ─── 输入与文件历史 ──────────────────────────────────────────────
 ;; savehist 记住 minibuffer 输入与搜索历史；recentf 记住最近 300 个文件，
 ;; 5 分钟自动存盘一次（守护进程异常退出也不丢），存盘时静默不回显。
 ;;
-;; savehist-file / recentf-save-file 默认落 ~/.emacs.d，收进状态目录——
-;; 必须在对应 mode 启动前设置，否则它已按旧路径存过一次。
+;; 路径必须在对应 mode 启动前钉好，否则它已按旧路径存过一次。
 
-(setq savehist-file (expand-file-name "history" self:var-directory))
+(self/pin-state-paths)
 (savehist-mode 1)
 
 (setq recentf-max-saved-items 300
       recentf-autosave-interval 300
-      recentf-show-messages nil
-      recentf-save-file (expand-file-name "recentf.eld" self:var-directory))
+      recentf-show-messages nil)
 (recentf-mode 1)
 
 ;; ─── 光标位置记忆 ────────────────────────────────────────────────
 ;; 下次打开同一文件时回到上次离开的光标处，同样 5 分钟存盘。
-;; save-place-file 默认落 ~/.emacs.d，收进状态目录。
 
-(setq save-place-autosave-interval 300
-      save-place-file (expand-file-name "places.eld" self:var-directory))
+(setq save-place-autosave-interval 300)
 (save-place-mode 1)
-
-;; ─── 其他内建状态文件 ──────────────────────────────────────────────
-;; 这些库启动时不加载，路径默认散落在 ~/.emacs.d（或 XDG 下），一并收
-;; 进状态目录。收容清单（变量 → 文件名）：
-;;   ((bookmark-default-file . "bookmarks.eld")
-;;    (tramp-persistency-file-name . "tramp")
-;;    (url-history-file . "url-history.eld")
-;;    (eshell-history-file-name . "eshell/history"))
-;; 注意 eshell 用的是 eshell-history-file-name（eshell-directory-name
-;; 在现版本 Emacs 已不存在）。url-history-file 默认 nil，设了才持久化。
-(setq bookmark-default-file
-      (expand-file-name "bookmarks.eld" self:var-directory)
-      tramp-persistency-file-name
-      (expand-file-name "tramp" self:var-directory)
-      url-history-file
-      (expand-file-name "url-history.eld" self:var-directory)
-      eshell-history-file-name
-      (expand-file-name "eshell/history" self:var-directory))
 
 ;; ─── 失焦自动保存 ────────────────────────────────────────────────
 

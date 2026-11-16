@@ -125,17 +125,28 @@
 ;; no-littering 把备份、自动保存等文件从配置根目录赶进 var/，
 ;; 把 custom.el 放进 etc/，让仓库目录保持只读源码身份。
 ;; 原配置依赖 no-littering 的默认值（指向 user-emacs-directory），
-;; UniEmacs 的仓库不在 ~/.emacs.d 下，故在此显式指定两处目录。
+;; UniEmacs 的仓库不在 ~/.emacs.d 下，故先把两处目录钉到状态目录。
+;;
+;; 必须用 :init 直接 setq 而不是 :custom：no-littering 1.9 用 defvar 定义
+;; 这两个目录变量，不是 defcustom，`:custom' 生成的设置会静默失效（实测
+;; `(custom-variable-p 'no-littering-var-directory)' 为 nil），它便退回
+;; <user-emacs-directory>/var/，与 self-session 的落点分家。
+(declare-function self/pin-state-paths "self-session")
+
 (use-package no-littering
+  :defines (no-littering-var-directory no-littering-etc-directory)
   :demand t
-  :custom
-  (no-littering-var-directory self:var-directory)
-  (no-littering-etc-directory self:etc-directory)
+  :init
+  (setq no-littering-var-directory self:var-directory
+        no-littering-etc-directory self:etc-directory)
   :config
   (setq backup-directory-alist
         `((".*" . ,(no-littering-expand-var-file-name "backup/"))))
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+  ;; no-littering 加载时会把 recentf / savehist / save-place 等变量改成它
+  ;; 自己的文件名；再钉一次，让读写留在 self-session 定下的同一组文件。
+  (self/pin-state-paths)
   ;; 注意：`custom-file' 是 Emacs 内建变量（自定义项的加载文件），
   ;; 不是本配置命名空间的符号，按 AGENTS.md §3 规定不改名。
   (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
