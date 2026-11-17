@@ -33,6 +33,9 @@ UniEmacs 在 Windows 上的完整使用手册：安装、部署、首次启动�
 git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 ```
 
+国内网络把地址换成 `https://gitee.com/brokenshine/UniEmacs.git`（镜像，与主仓库
+自动同步，见 [../china.md](../china.md)）。
+
 （设过 `HOME=C:\Users\<你>` 的话用 `~/.emacs.d`；early-init 的「本文件
 所在目录」解析自动命中仓库根。）
 

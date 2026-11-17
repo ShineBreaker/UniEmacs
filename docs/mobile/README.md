@@ -61,8 +61,8 @@ termux 版 Emacs 在 `https://ftp.gnu.org/gnu/emacs/android/termux/`（国内镜
 - **入口两文件的副本**：放 Emacs 应用自己家目录的 `.emacs.d`（= `/data/data/org.gnu.emacs/files/.emacs.d/`）——Android 原生 Emacs 只读自己家目录下的 init，**不会**自动读 Termux 目录；副本里 `early-init.el` 的探测逻辑负责把加载位置重定向到 Termux 仓库。
 
 ```sh
-# Termux 中执行
-git clone <本仓库> ~/.config/emacs
+# Termux 中执行（国内网络把地址换成 https://gitee.com/brokenshine/UniEmacs.git）
+git clone https://github.com/ShineBreaker/UniEmacs.git ~/.config/emacs
 mkdir -p /data/data/org.gnu.emacs/files/.emacs.d
 cp ~/.config/emacs/early-init.el ~/.config/emacs/init.el \
    /data/data/org.gnu.emacs/files/.emacs.d/
