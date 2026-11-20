@@ -10,11 +10,19 @@
 curl -fsSL https://raw.githubusercontent.com/ShineBreaker/UniEmacs/main/install.sh | sh
 ```
 
+中国大陆网络改用 Gitee 镜像（同一份代码，与 GitHub 自动同步，详见[国内网络](#国内网络)）：
+
+```sh
+curl -fsSL https://gitee.com/brokenshine/UniEmacs/raw/main/install.sh | sh -s -- --mirror gitee
+```
+
 **Windows**——PowerShell（Emacs 安装见 [Windows 指南](docs/windows/README.md)）：
 
 ```powershell
 git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 ```
+
+国内网络把地址换成 `https://gitee.com/brokenshine/UniEmacs.git`。
 
 然后启动 `emacs`。首次启动会自动安装全部依赖（约 60 个包与字体，15–35 分钟，期间无输出属正常，详见[首次启动](#首次启动)），装完即用。
 
@@ -36,6 +44,20 @@ git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 | `ide`      | standard 超集，对齐 IntelliJ IDEA：Windows 默认键图、New UI Dark、项目树、命令面板、面包屑、blame、鼠标。对照见 `docs/ide-intellij.md` | `UNI_EMACS_PROFILE=ide`     |
 
 > 两个桌面档是不同目标体验：standard 档把 Emacs 独有机制做成可学习的一等公民（含 `self-discover` 发现层）；ide 档承接 IntelliJ IDEA 的日常操作和 New UI 外观，在 standard 之上做键图、外观覆写与鼠标平权。键位对照见 `docs/ide-intellij.md`。
+
+## 国内网络
+
+GitHub 在中国大陆常不可达或被限速。四个环节各有解法：前两行不需要额外配置，
+后两行要自己给代理。
+
+| 环节 | 默认源 | 做法 |
+| --- | --- | --- |
+| 取安装脚本、克隆仓库 | GitHub | 用上面的 Gitee 命令（`--mirror gitee`），镜像与主仓库自动同步 |
+| ELPA 归档 | 清华 TUNA 镜像 | 无需操作；换源改 `self:elpa-mirror`（`'ustc` 或 `nil`） |
+| 首次启动装约 60 个包 | elpaca 逐个 clone GitHub 上游仓库 | 给 git 配一条 URL 改写走代理，见 [docs/china.md](docs/china.md) |
+| 字体、Windows 语法库 | GitHub Releases | 同上，或手动下载后 `M-x self/bootstrap-fonts`、`M-x self/bootstrap-grammars` 重试 |
+
+镜像只承载代码：Releases 资产与 issue / PR 仍在 GitHub。各条办法的边界、撤销方式与失败恢复见 [docs/china.md](docs/china.md)。
 
 ## 安装细则
 
@@ -63,7 +85,7 @@ git clone https://github.com/ShineBreaker/UniEmacs "$env:APPDATA\.emacs.d"
 - `modules/` — 全部功能模块（`self-*.el`，含 `ide/` 档专属层）
 - `profiles/` — 四档的模块清单与包声明
 - `data/` — 翻译表、图标资产、便携包字体
-- `docs/architecture.md` — 设计文档；`docs/platform-matrix.md` — 平台分支矩阵；`docs/mobile/` — 手机安装指南；`docs/windows/` — Windows 使用与便携包指南
+- `docs/architecture.md` — 设计文档；`docs/platform-matrix.md` — 平台分支矩阵；`docs/mobile/` — 手机安装指南；`docs/windows/` — Windows 使用与便携包指南；`docs/china.md` — 中国大陆网络加速
 - `install.sh` — 一键安装器；`scripts/` / `justfile` — 验证与运维命令
 
 ## 开发

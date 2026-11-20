@@ -6,6 +6,13 @@
 # 或克隆后：
 #   sh install.sh
 #
+# 中国大陆网络（GitHub 常不可达）改用 Gitee 镜像：
+#   curl -fsSL https://gitee.com/brokenshine/UniEmacs/raw/main/install.sh | sh -s -- --mirror gitee
+#
+# 选项：
+#   --mirror <github|gitee>  仓库来源，默认 github；gitee 为国内镜像（自动同步）
+#   -h, --help               显示说明
+#
 # 做三件事：
 #   1. 仓库 clone 到 ~/.config/emacs（桌面默认位置；已存在则 git pull）
 #   2. 入口文件就位：仓库即默认位置，无需副本；Android 时复制到
@@ -16,13 +23,52 @@
 # （early-init 的解析优先级里环境变量与 repo-location 仍高于本默认位置）。
 set -eu
 
-REPO_URL="https://github.com/ShineBreaker/UniEmacs.git"
+msg() { printf '\033[1;32m==>\033[0m %s\n' "$1"; }
+die() { printf '\033[1;31m错误:\033[0m %s\n' "$1" >&2; exit 1; }
+
+usage() {
+    cat <<'USAGE'
+用法: install.sh [--mirror <github|gitee>]
+
+  --mirror <源>  仓库来源：github（默认）或 gitee（国内镜像，与主仓库自动同步）
+  -h, --help     显示本说明
+
+一条命令安装（需已装好 git 与 emacs）：
+  curl -fsSL https://raw.githubusercontent.com/ShineBreaker/UniEmacs/main/install.sh | sh
+
+国内网络：脚本地址换 Gitee，并用 sh -s -- 传参指定镜像：
+  curl -fsSL https://gitee.com/brokenshine/UniEmacs/raw/main/install.sh | sh -s -- --mirror gitee
+USAGE
+}
+
+# ── 参数 ────────────────────────────────────────────────────
+# 仓库来源：默认 GitHub。国内走 Gitee 镜像（与主仓库自动同步），clone 与
+# 后续 git pull 都落在镜像上。
+MIRROR=github
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --mirror)
+            [ $# -ge 2 ] || die "--mirror 缺少取值（github 或 gitee）"
+            MIRROR="$2"; shift 2 ;;
+        --mirror=*)
+            MIRROR="${1#--mirror=}"; shift ;;
+        -h|--help)
+            usage; exit 0 ;;
+        *)
+            usage >&2
+            die "未知参数：$1" ;;
+    esac
+done
+
+case "$MIRROR" in
+    github) REPO_URL="https://github.com/ShineBreaker/UniEmacs.git" ;;
+    gitee)  REPO_URL="https://gitee.com/brokenshine/UniEmacs.git" ;;
+    *)      die "未知镜像：$MIRROR（可用：github / gitee）" ;;
+esac
+
 TARGET="${HOME}/.config/emacs"
 ANDROID_EMACS_HOME="/data/data/org.gnu.emacs/files/.emacs.d"
 TERMUX_REPO="/data/data/com.termux/files/home/.config/emacs"
-
-msg() { printf '\033[1;32m==>\033[0m %s\n' "$1"; }
-die() { printf '\033[1;31m错误:\033[0m %s\n' "$1" >&2; exit 1; }
 
 # ── 前置检查 ────────────────────────────────────────────────
 command -v git >/dev/null 2>&1 || die "需要 git（Termux: pkg install git）"
