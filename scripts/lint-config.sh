@@ -30,6 +30,8 @@ project_el() {
        -not -path './.git/*' \
        -not -path './.sandbox/*' \
        -not -path './.agents/*' \
+       -not -path './var/*' \
+       -not -path './scripts/verify-*.el' \
     | sed 's|^\./||' | sort
 }
 

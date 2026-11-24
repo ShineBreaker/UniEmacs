@@ -79,48 +79,54 @@ esac
 TARGET="${HOME}/.config/emacs"
 ANDROID_EMACS_HOME="/data/data/org.gnu.emacs/files/.emacs.d"
 TERMUX_REPO="/data/data/com.termux/files/home/.config/emacs"
+REPO_TARGET="$TARGET"
 
 # ── 前置检查 ────────────────────────────────────────────────
 command -v git >/dev/null 2>&1 || die "需要 git（Termux: pkg install git）"
 command -v emacs >/dev/null 2>&1 || die "需要 emacs（Termux 需同签名重签版，见 docs/mobile/README.md）"
 
 # ── 1. 仓库就位 ─────────────────────────────────────────────
-if [ -d "${TARGET}/.git" ]; then
-	msg "仓库已存在，更新到最新…"
-	git -C "$TARGET" pull --ff-only
-elif [ -e "$TARGET" ] && [ ! -d "$TARGET" ]; then
-	die "${TARGET} 存在但不是目录，请先处理（它是 UniEmacs 的标准落点）"
-else
-	msg "克隆 UniEmacs 到 ${TARGET}…"
-	mkdir -p "$(dirname "$TARGET")"
-	git clone --depth=1 "$REPO_URL" "$TARGET"
-fi
-
-# ── 2. 入口就位 ─────────────────────────────────────────────
 if [ -d /data/data/org.gnu.emacs ]; then
-	# Android：仓库本体另放 Termux 家目录（Emacs 与 Termux 不同 UID，
-	# 应用家目录放不下 .git；惯例位置见 early-init 第 4 优先级）。
-	if [ "$TARGET" != "$TERMUX_REPO" ] && [ ! -d "${TERMUX_REPO}/.git" ]; then
-		msg "Android：仓库本体放到 Termux 家目录 ${TERMUX_REPO}…"
-		mkdir -p "$(dirname "$TERMUX_REPO")"
-		git clone --depth=1 "$REPO_URL" "$TERMUX_REPO"
+	# Android：仓库本体只放在 Termux 家目录。Emacs 应用家目录只保存
+	# 入口副本，因为两个应用的 UID 不同，不能在那里维护 .git。
+	REPO_TARGET="$TERMUX_REPO"
+	if [ -d "${REPO_TARGET}/.git" ]; then
+		msg "Android：更新 Termux 仓库…"
+		git -C "$REPO_TARGET" pull --ff-only
+	elif [ -e "$REPO_TARGET" ] && [ ! -d "$REPO_TARGET" ]; then
+		die "${REPO_TARGET} 存在但不是目录，请先处理"
+	else
+		msg "Android：克隆仓库到 Termux 家目录 ${REPO_TARGET}…"
+		mkdir -p "$(dirname "$REPO_TARGET")"
+		git clone --depth=1 "$REPO_URL" "$REPO_TARGET"
 	fi
 	msg "Android：入口文件复制到 Emacs 应用家目录…"
 	mkdir -p "$ANDROID_EMACS_HOME"
-	cp "${TERMUX_REPO}/early-init.el" "${TERMUX_REPO}/init.el" "$ANDROID_EMACS_HOME/"
+	cp "${REPO_TARGET}/early-init.el" "${REPO_TARGET}/init.el" "$ANDROID_EMACS_HOME/"
+else
+	if [ -d "${REPO_TARGET}/.git" ]; then
+		msg "仓库已存在，更新到最新…"
+		git -C "$REPO_TARGET" pull --ff-only
+	elif [ -e "$REPO_TARGET" ] && [ ! -d "$REPO_TARGET" ]; then
+		die "${REPO_TARGET} 存在但不是目录，请先处理（它是 UniEmacs 的标准落点）"
+	else
+		msg "克隆 UniEmacs 到 ${REPO_TARGET}…"
+		mkdir -p "$(dirname "$REPO_TARGET")"
+		git clone --depth=1 "$REPO_URL" "$REPO_TARGET"
+	fi
 fi
 # 桌面：~/.config/emacs 即仓库，入口即仓库文件，无需任何副本。
 
 # ── 3. 首次启动验证 ─────────────────────────────────────────
 msg "首次启动验证（首次会安装第三方包，可能 15–35 分钟，期间无输出属正常）…"
-if UNI_EMACS_REPO="$TARGET" emacs --batch -q \
-	-l "${TARGET}/early-init.el" -l "${TARGET}/init.el" \
+if UNI_EMACS_REPO="$REPO_TARGET" emacs --batch -q \
+	-l "${REPO_TARGET}/early-init.el" -l "${REPO_TARGET}/init.el" \
 	--eval '(message "INSTALL-VERIFY-OK")' </dev/null 2>&1 | tail -5; then
 	:
 fi
 # 上面 tail -5 已把关键输出放行；用哨兵再判定一次。
-if UNI_EMACS_REPO="$TARGET" emacs --batch -q \
-	-l "${TARGET}/early-init.el" -l "${TARGET}/init.el" \
+if UNI_EMACS_REPO="$REPO_TARGET" emacs --batch -q \
+	-l "${REPO_TARGET}/early-init.el" -l "${REPO_TARGET}/init.el" \
 	--eval '(message "INSTALL-VERIFY-OK")' </dev/null 2>&1 |
 	grep -q "INSTALL-VERIFY-OK"; then
 	msg "安装完成。直接启动 emacs 即可（默认 standard 档）。"

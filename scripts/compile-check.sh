@@ -13,8 +13,7 @@
 # AGENTS.md 的硬约束。独立进程让每个文件面对干净的符号表，代价是每个
 # 文件多约 0.2 秒，30 个文件总计约 6 秒。
 #
-# 退出码：0 = 零错误（允许有警告）；1 = 有错误。
-# 缺依赖导致的 require 失败单独归类为 load-failed，不计入错误总数。
+# 退出码：0 = 零警告、零错误、零 load-failed；1 = 存在任一问题。
 
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -80,4 +79,4 @@ for f in "${files[@]}"; do
 done
 
 echo "=== COMPILE $n files, $total_w warnings, $total_e errors, $total_lf load-failed ==="
-[ "$total_e" -eq 0 ]
+[ "$total_w" -eq 0 ] && [ "$total_e" -eq 0 ] && [ "$total_lf" -eq 0 ]

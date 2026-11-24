@@ -86,6 +86,7 @@
 ;; 只在代码缓冲里建 imenu。which-func-modes 为 t 时，文本和 Markdown
 ;; 也会跑索引，失败就把 "which-func-ff-hook error" 写进 echo area，
 ;; 盖住状态栏。函数名只对 prog-mode 有意义。
+(defvar which-func-modes)
 (setq which-func-modes '(prog-mode))
 (which-function-mode 1)
 

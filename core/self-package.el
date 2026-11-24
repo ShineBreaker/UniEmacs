@@ -46,6 +46,7 @@
 (declare-function elpaca-process-queues "elpaca" (&optional filter))
 (declare-function elpaca-wait "elpaca" ())
 (declare-function elpaca-generate-autoloads "elpaca" (package dir))
+(declare-function elpaca-process-call "elpaca" (&rest args))
 (declare-function url-retrieve-synchronously "url"
                   (url &optional silent inhibit-cookies timeout))
 
