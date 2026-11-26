@@ -16,24 +16,13 @@
 ;; 移植自桌面端配置「启动与基础设施」域的最小集（pi 版底座 + staging 版
 ;; 补齐的 auto-revert 段）。刻意留在本文件之外的东西：
 ;;
-;; · 垃圾回收节律与进程级环境（read-process-output-max 等）——描述的是
-;;   进程而非会话，属 core/self-lib.el。
-;; · gcmh 与 no-littering——第三方包，与「minimal 档不得声明任何第三方包」
-;;   冲突，故写在 profiles/standard.el 尾部作档内配置。本文件因此用纯 setq
-;;   手工完成同样的目录隔离，四档都拿得到。
-;;
-;;   注意 no-littering 与本节管的是同一批变量，且它认自己的文件名
-;;   （recentf-save.el / savehist.el / save-place.el）。standard / ide 档
-;;   加载它之后必须再调用 `self/pin-state-paths' 把路径钉回来，否则 mode
-;;   启动读本节路径、退出写 no-littering 路径，最近文件与历史每次重启都会
-;;   丢。钉回调用写在 profiles/standard.el 与 profiles/ide.el 的 no-littering
-;;   段末尾。
-;; · `server-mode'——属 daemon 启动路径，在 self-daemon.el。
+;; · 垃圾回收节律与进程级环境（read-process-output-max 等）——描述的是进程
+;;   而非会话，属 core/self-lib.el；空闲 GC 由 Emacs 内建定时器负责。
+;; · server-mode——属 daemon 启动路径，在 self-daemon.el。
 ;;
 ;; 【目录隔离】
 ;;   备份、自动保存、自定义项（custom.el）统一重定向到状态目录，让仓库目录
-;;   保持只读源码身份。原配置依赖 no-littering 的默认值（指向
-;;   user-emacs-directory），UniEmacs 的仓库不在 ~/.emacs.d 下，故显式指定。
+;;   保持只读源码身份。仓库不在 user-emacs-directory 下，故显式指定。
 ;;
 ;; 【输入与文件历史】
 ;;   savehist 记住输入命令与搜索历史；recentf 记住最近 300 个文件，
@@ -99,19 +88,19 @@
   (make-directory self:etc-directory t))
 (setq custom-file (expand-file-name "custom.el" self:etc-directory))
 (when (file-exists-p custom-file)
-  (load custom-file t))
+  (condition-case err
+      (load custom-file t)
+    (error
+     (display-warning
+      'self-session
+      (format "custom-file 加载失败（%s）：%s"
+              custom-file (error-message-string err))))))
 
 ;; ─── 持久化路径钉定 ──────────────────────────────────────────────
-;; standard / ide 档尾部加载的 no-littering 会在加载时把 recentf、savehist、
-;; save-place 等变量改写成 <user-emacs-directory>/var/ 下它自己的文件名
-;; （recentf-save.el 等）。若各自设置，mode 启动时读到的是本文件的路径，
-;; 退出时写到的却是 no-littering 的路径——读写分家，重启后历史就丢了。
-;; 故把这一组路径收进一个函数：本文件启动时钉一次，standard / ide 档在
-;; no-littering 加载之后再钉一次，保证读写始终是同一组文件。
+;; 这一组路径收进一个函数，供启动时统一钉定，也供档内覆写后重新同步。
 (defun self/pin-state-paths ()
   "把会话持久化文件的落点钉到 `self:var-directory' 下。
-调用时机：本文件启动时一次；standard / ide 档在 no-littering 加载后再调
-一次。重复调用无副作用。"
+启动时调用一次，重复调用无副作用。"
   (setq savehist-file (expand-file-name "history" self:var-directory)
         recentf-save-file (expand-file-name "recentf.eld" self:var-directory)
         save-place-file (expand-file-name "places.eld" self:var-directory)

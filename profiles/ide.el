@@ -49,7 +49,7 @@
         agent-shell dsh-emacs guix
         ghostel
         agenote
-        gcmh no-littering
+
         ;; ide 档新增
         vertico orderless marginalia consult embark embark-consult
         corfu cape kind-icon eldoc-box
@@ -118,41 +118,6 @@
 (require 'self-ide-mouse)
 (require 'self-ide-blame)
 (require 'self-ide-keys)
-
-;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────
-;; 与 standard 档同款（理由与取舍见 profiles/standard.el 注释）。ide 是桌面档，
-;; 同样需要 GC 空闲回收与 var/ 目录隔离。
-
-(use-package gcmh
-  :demand t
-  :custom
-  (gcmh-idle-delay 'auto)
-  (gcmh-auto-idle-delay-factor 10)
-  (gcmh-high-cons-threshold (* 32 1024 1024))
-  :config
-  (gcmh-mode 1))
-
-(declare-function self/pin-state-paths "self-session")
-
-(use-package no-littering
-  :defines (no-littering-var-directory no-littering-etc-directory)
-  :demand t
-  ;; :custom 对 no-littering 1.9 的 defvar 变量无效，必须 :init 直接 setq；
-  ;; 理由与失败现象见 profiles/standard.el 同段注释。
-  :init
-  (setq no-littering-var-directory self:var-directory
-        no-littering-etc-directory self:etc-directory)
-  :config
-  (setq backup-directory-alist
-        `((".*" . ,(no-littering-expand-var-file-name "backup/"))))
-  (setq auto-save-file-name-transforms
-        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
-  ;; no-littering 会改掉 recentf / savehist / save-place 的落点，钉回
-  ;; self-session 的路径（读写同源），否则每次重启历史都丢。
-  (self/pin-state-paths)
-  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
-  (when (file-exists-p custom-file)
-    (load custom-file t)))
 
 (provide 'self-profile-ide)
 ;;; ide.el ends here

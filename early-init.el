@@ -51,9 +51,19 @@ portable → 默认 standard。")
 (when (and (null self:repo)
            (file-exists-p (expand-file-name "repo-location.el"
                                             user-emacs-directory)))
-  (load (expand-file-name "repo-location.el" user-emacs-directory) nil t)
+  (let ((location-file (expand-file-name "repo-location.el"
+                                         user-emacs-directory)))
+    (condition-case err
+        (load location-file nil t)
+      (error
+       (display-warning
+        'self
+        (format "仓库位置文件加载失败（%s）：%s"
+                location-file (error-message-string err))))))
   (unless (and self:repo
-               (file-directory-p (expand-file-name "core" self:repo)))
+               (condition-case nil
+                   (file-directory-p (expand-file-name "core" self:repo))
+                 (error nil)))
     (setq self:repo nil)))
 
 ;; 3. 本文件所在目录：软链或就地运行场景下其真实路径即仓库根。

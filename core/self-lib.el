@@ -90,7 +90,7 @@ Android 用 Termux 家目录；其余取 $XDG_DATA_HOME（空字符串视为未�
 
 (defconst self:etc-directory
   (expand-file-name "config/emacs/" self:var-directory)
-  "用户自定义文件目录：custom.el 的落点。standard 档的 no-littering 配置读它。")
+  "用户自定义文件目录：custom.el 的落点。")
 
 ;; ─── Org 与笔记目录 ──────────────────────────────────────────────
 ;;
@@ -279,8 +279,7 @@ MOVE 决定，跨设备搬迁失败会逐个报错但不中断。"
 ;;
 ;; 描述的是 Emacs **进程**而非「用户会话」的行为：任何模块被 require 之前
 ;; 就该生效，且不随某档的模块清单增减而反复重设。全部是内建变量，四档共用。
-;; （垃圾回收节律另见 `self/restore-startup-perf'；gcmh 属第三方包，
-;; 因此留在 profiles/standard.el 档内配置。）
+;; （垃圾回收节律另见 `self/restore-startup-perf'，由 Emacs 内建定时器负责。）
 
 ;; 子进程与输入吞吐：抬高 read-process-output-max 提升 LSP 与终端的输出
 ;; 吞吐；关掉自适应读缓冲以降低单次读取延迟；允许滚动时跳过像素级精确。
@@ -404,16 +403,39 @@ profile.el 即回到平台默认档（桌面 standard）。本命令不改当前
 
 ;; ─── 启动优化复位 ────────────────────────────────────────────────
 
+(defconst self:idle-gc-delay 10
+  "空闲 GC 定时器的间隔秒数。
+只在 Emacs 没有输入时触发，避免把完整回收插进连续编辑的按键路径。")
+
+(defvar self--idle-gc-timer nil
+  "UniEmacs 空闲 GC 定时器。")
+
+(defun self/idle-gc ()
+  "在没有待处理输入或活动 minibuffer 时运行一次原生 GC。"
+  (when (and (not (input-pending-p))
+             (not (active-minibuffer-window)))
+    (garbage-collect)))
+
+(defun self/enable-idle-gc ()
+  "启用可重复、可取消的空闲 GC 定时器。
+重复加载配置时先取消旧定时器，避免每次重载都增加一条 GC 调度链。"
+  (when (timerp self--idle-gc-timer)
+    (cancel-timer self--idle-gc-timer))
+  (setq self--idle-gc-timer
+        (run-with-idle-timer self:idle-gc-delay self:idle-gc-delay
+                             #'self/idle-gc)))
+
+
 (defun self/restore-startup-perf ()
   "恢复 GC 稳态阈值与文件名处理器，空闲时回收一次启动垃圾。
 挂在 `emacs-startup-hook' 上：after-init 的首屏生成仍在高阈值下进行。
 （移植自移动端配置的同名函数语义。）"
-  (setq gc-cons-threshold (* 16 1024 1024)
+  (setq gc-cons-threshold (* 32 1024 1024)
         gc-cons-percentage 0.1)
   ;; early-init 未运行的极端场景下变量不存在，boundp 兜底。
   (when (boundp 'self--startup-file-name-handlers)
     (setq file-name-handler-alist self--startup-file-name-handlers))
-  (run-with-idle-timer 3 nil #'garbage-collect))
+  (self/enable-idle-gc))
 
 (add-hook 'emacs-startup-hook #'self/restore-startup-perf)
 
@@ -424,22 +446,33 @@ profile.el 即回到平台默认档（桌面 standard）。本命令不改当前
 (defun self/lib--el-stale-p (el)
   "EL 对应的 .elc 缺失或旧于源码时返回非 nil。"
   (let ((elc (concat el "c")))
-    (or (not (file-exists-p elc))
-        (time-less-p (file-attribute-modification-time
-                      (file-attributes elc))
-                     (file-attribute-modification-time
-                      (file-attributes el))))))
+    (when (file-exists-p el)
+      (let ((el-attributes (file-attributes el))
+            (elc-attributes (and (file-exists-p elc)
+                                 (file-attributes elc))))
+        (or (null elc-attributes)
+            (and el-attributes
+                 (time-less-p (file-attribute-modification-time
+                               elc-attributes)
+                              (file-attribute-modification-time
+                               el-attributes))))))))
 
 (defun self/compile-modules ()
   "编译 modules/ 下缺失或过期的 .el，编完一个再约下一轮。"
   (let ((stale '()))
-    (dolist (el (directory-files (expand-file-name "modules" self:repo)
-                                 t "\\.el\\'"))
+    (dolist (el (directory-files-recursively
+                 (expand-file-name "modules" self:repo) "\\.el\\'"))
       (when (self/lib--el-stale-p el)
         (push el stale)))
     (setq stale (nreverse stale))
     (when stale
-      (byte-compile-file (car stale))
+      (condition-case err
+          (byte-compile-file (car stale))
+        (error
+         (display-warning
+          'self-lib
+          (format "后台编译 %s 失败：%s"
+                  (car stale) (error-message-string err)))))
       (run-with-idle-timer 2 nil #'self/compile-modules))))
 
 (defun self/lib--schedule-compile ()

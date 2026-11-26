@@ -34,21 +34,14 @@
 ;; 自己拉起（`daemon' 参数即以 server 模式运行），batch 与非交互场景根本
 ;; 不该监听 TCP，所以三处都要挡掉。
 ;;
-;; server 这段有两个落点，核心是「认证目录必须先于 server-start 定好」：
-;; · 认证目录要钉回 emacsclient 认得的默认落点。emacsclient 是独立 C 程序，
-;;   不读 Elisp 的 `server-auth-dir'，默认只查 ~/.emacs.d/server/（或
-;;   $XDG_CONFIG_HOME/emacs/server/）；而 standard/ide 档尾部的 no-littering
-;;   会把该目录搬进 var/server/auth/，搬完 Emacs 把认证文件写去新址、
-;;   emacsclient 仍按旧址找就连不上。认证目录是与 emacsclient 的公共约定，
-;;   不是可随意搬的杂物。钉回挂在 no-littering 的 eval-after-load 上：认证
-;;   文件写去哪由 server-start 那一刻的变量值决定，server 起来后再改不会挪
-;;   文件，所以必须赶在 server-start 前钉好——no-littering 在 init 期加载，
-;;   此刻钉回必然早于 after-init-hook 的 server-mode 与 daemon 的 server-start。
-;; · 非 daemon 的 server-mode 经 `self/daemon--enable-server-mode' 包一层，
-;;   延到 after-init-hook（此时钉目录已落地）：Windows 便携包先自愈认证目录
-;;   所有权（管理员身份跑过启动器会把目录落成 Administrators 组 RID 544，
-;;   普通账户被 `server-ensure-safe-dir' 拒绝），且启动失败只警告不中断——
-;;   server 是可选便利，不该拖垮整份配置。
+;; server 这段有两个落点，核心是认证目录必须先于 server-start 定好：
+;; · 认证目录钉回 emacsclient 认得的默认落点。emacsclient 是独立 C 程序，
+;;   不读 Elisp 的 server-auth-dir，默认只查 ~/.emacs.d/server/（或
+;;   $XDG_CONFIG_HOME/emacs/server/）。本模块加载时直接设置该变量，保证
+;;   交互式启动和 daemon 启动都在 server-start 前完成设置。
+;; · 非 daemon 的 server-mode 经 self/daemon--enable-server-mode 包一层，
+;;   延到 after-init-hook，并在 Windows 上先修复认证目录所有权。启动失败只
+;;   警告不中断，server 是可选便利。
 
 ;;; Code:
 
@@ -97,20 +90,16 @@ server-mode 内部建目录、写认证文件属文件 I/O，condition-case 是�
 ;; ─── 认证目录钉回默认落点（emacsclient 的公共约定）──────────────────
 ;; 钉回必须赶在 server-start 之前：认证文件写去哪由 server-start 那一刻的
 ;; `server-auth-dir' 决定，server 起来后再改变量并不会挪动已写出的认证文件。
-;; 故挂在 no-littering 的 eval-after-load 上——no-littering 在 profile 尾部、
-;; init 期内加载，此刻钉回必然早于 after-init-hook 里的 server-mode，也早于
+;; 入口模块加载时直接钉定，必然早于 after-init-hook 里的 server-mode，也早于
 ;; daemon 的 server-start，两条启动路都落在 emacsclient 认得处。
 (defun self/daemon--pin-server-auth-dir ()
-  "把 `server-auth-dir' 钉回 emacsclient 默认查找的目录。
-no-littering 会把它搬进 var/，但 emacsclient 不读该变量、只认默认落点，
-搬了就连不上，故在此恢复默认。"
+  "把认证目录钉回 emacsclient 默认查找的位置。"
   (setq server-auth-dir (locate-user-emacs-file "server/")))
 
-(with-eval-after-load 'no-littering
-  (self/daemon--pin-server-auth-dir))
+(self/daemon--pin-server-auth-dir)
 
-;; 非 daemon 的交互式启动延到 after-init-hook 开 server-mode：此时钉目录已
-;; 随 no-littering 加载落地，heal 与 server-start 都落在最终落点。
+;; 非 daemon 的交互式启动延到 after-init-hook 开 server-mode：此时认证目录已
+;; 钉定，heal 与 server-start 都落在最终落点。
 (unless (or (daemonp) noninteractive)
   (add-hook 'after-init-hook #'self/daemon--enable-server-mode))
 

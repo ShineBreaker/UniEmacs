@@ -75,8 +75,6 @@
    "emacs-guix"
    "emacs-ghostel"
    "emacs-agenote"
-   "emacs-gcmh"
-   "emacs-no-littering"
 
    ;; ─── portable / ide 档共用补全栈 ──────────────────────────────
    ;; 便携档（Android / 触屏点选）与 ide 档（桌面命令面板式补全）共用。

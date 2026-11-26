@@ -21,8 +21,7 @@
 ;;; Code:
 
 ;; ─── 本档第三方包清单 ─────────────────────────────────────────────
-;; MELPA 包名，逐档汇总各模块头部的 `;; Packages:' 去重而来，外加尾部
-;; gcmh / no-littering 两段 profile 私有配置所需的包。
+;; MELPA 包名，逐档汇总各模块头部的 Packages 清单去重而来。
 ;; 注意新增第三方包须同时在 manifest.scm（Guix 侧）登记。
 ;; 只列第三方包。内建（which-key / winner / editorconfig / eglot /
 ;; flymake / project / context-menu / modus-themes）不登记；
@@ -43,8 +42,7 @@
         fish-mode gdscript-mode kdl-mode nix-mode pdf-tools zig-mode
         agent-shell dsh-emacs guix
         ghostel
-        agenote
-        gcmh no-littering))
+        agenote))
 
 (self/package-ensure)
 
@@ -100,58 +98,6 @@
 (require 'self-daemon)
 (require 'self-discover)
 (require 'self-keys-desktop)
-
-;; ─── 本档私有的两段 use-package 配置 ──────────────────────────────
-;;
-;; gcmh（空闲垃圾回收）与 no-littering（目录隔离）刻意不进共享模块：
-;; 前者是第三方包，minimal 档明令不得声明任何第三方包；后者接管
-;; backup-directory-alist / auto-save-file-name-transforms / custom-file
-;; 三处全局重定向，而 portable 档已有内建的等价实现在 self-session 里，
-;; 两边同时生效会互相覆盖。故这两段按 AGENTS.md §2「档内覆写写在 profile
-;; 文件内」的约定留在本文件尾部。进程级设置（read-process-output-max、
-;; inhibit-startup-screen 等）与档位无关，已上提到 core/self-lib.el。
-
-(use-package gcmh
-  :demand t
-  :custom
-  ;; 空闲垃圾回收：持续敲键盘时暂停 GC，直到停下进入空闲才清理，
-  ;; 彻底杜绝打字过程中的微卡顿。
-  (gcmh-idle-delay 'auto)
-  (gcmh-auto-idle-delay-factor 10)
-  (gcmh-high-cons-threshold (* 32 1024 1024))
-  :config
-  (gcmh-mode 1))
-
-;; no-littering 把备份、自动保存等文件从配置根目录赶进 var/，
-;; 把 custom.el 放进 etc/，让仓库目录保持只读源码身份。
-;; 原配置依赖 no-littering 的默认值（指向 user-emacs-directory），
-;; UniEmacs 的仓库不在 ~/.emacs.d 下，故先把两处目录钉到状态目录。
-;;
-;; 必须用 :init 直接 setq 而不是 :custom：no-littering 1.9 用 defvar 定义
-;; 这两个目录变量，不是 defcustom，`:custom' 生成的设置会静默失效（实测
-;; `(custom-variable-p 'no-littering-var-directory)' 为 nil），它便退回
-;; <user-emacs-directory>/var/，与 self-session 的落点分家。
-(declare-function self/pin-state-paths "self-session")
-
-(use-package no-littering
-  :defines (no-littering-var-directory no-littering-etc-directory)
-  :demand t
-  :init
-  (setq no-littering-var-directory self:var-directory
-        no-littering-etc-directory self:etc-directory)
-  :config
-  (setq backup-directory-alist
-        `((".*" . ,(no-littering-expand-var-file-name "backup/"))))
-  (setq auto-save-file-name-transforms
-        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
-  ;; no-littering 加载时会把 recentf / savehist / save-place 等变量改成它
-  ;; 自己的文件名；再钉一次，让读写留在 self-session 定下的同一组文件。
-  (self/pin-state-paths)
-  ;; 注意：`custom-file' 是 Emacs 内建变量（自定义项的加载文件），
-  ;; 不是本配置命名空间的符号，按 AGENTS.md §3 规定不改名。
-  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
-  (when (file-exists-p custom-file)
-    (load custom-file t)))
 
 (provide 'self-profile-standard)
 ;;; standard.el ends here

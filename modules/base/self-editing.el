@@ -393,7 +393,7 @@ use-package 会生成一个指向包内文件的 autoload 占位，顺序颠倒�
   :commands (tempel-expand tempel-complete)
   :config
   ;; 模板目录归 `self:etc-directory'（core/self-lib.el 定义），不借道
-  ;; no-littering 的函数——后者是 standard 档才有的第三方包，在 minimal 档
+  ;; 外部目录隔离包的函数——本配置不依赖它，在 minimal 档
   ;; 调用会直接报 void-function。放在 :config 里是因为 :init 会即时求值，
   ;; 那时 tempel 尚未加载，配置根本保存不住。
   (setq tempel-path
